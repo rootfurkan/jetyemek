@@ -1,0 +1,6 @@
+import React from 'react';
+import PlatformAdminDashboard from '../../../components/admin/PlatformAdminDashboard.jsx';
+
+export default function Campaigns() {
+  return <PlatformAdminDashboard propActiveTab="campaigns" hideSidebar={true} />;
+}

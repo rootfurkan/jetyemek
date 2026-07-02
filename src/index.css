@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #b51c00;
+  --color-secondary: #b90040;
+  --color-brand-orange: #ff4b2b;
+  --color-brand-pink: #ff416c;
+}
+
+@utility brand-gradient-bg {
+  background: linear-gradient(135deg, #b51c00 0%, #b90040 100%);
+}
+
+@utility hero-gradient {
+  background: linear-gradient(180deg, rgba(40, 23, 20, 0.4) 0%, rgba(40, 23, 20, 0.8) 100%);
+}
+
+@utility card-perspective {
+  perspective: 1000px;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+

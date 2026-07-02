@@ -1,0 +1,6 @@
+{
+  "name": "CraveDash",
+  "description": "A high-fidelity modern React client-side food delivery app featuring beautiful restaurant search, detailed menus, interactive shopping cart, order tracking, and profile management screens.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
