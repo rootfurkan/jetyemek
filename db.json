@@ -1,0 +1,152 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Ahmet",
+      "surname": "Yılmaz",
+      "email": "ahmet.yilmaz@gmail.com",
+      "phone": "0532 123 45 67",
+      "birthdate": "15.05.1988",
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ"
+    }
+  ],
+  "addresses": [
+    {
+      "id": 1,
+      "userId": 1,
+      "title": "Ev",
+      "details": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "icon": "home"
+    },
+    {
+      "id": 2,
+      "userId": 1,
+      "title": "İş",
+      "details": "Levent Mah. Büyükdere Cad. No:193 K:12 Beşiktaş, İstanbul",
+      "icon": "work"
+    }
+  ],
+  "cards": [
+    {
+      "id": 1,
+      "userId": 1,
+      "name": "Maaş Kartım",
+      "type": "Mastercard",
+      "number": "4291",
+      "expiry": "08/26",
+      "isDefault": true
+    }
+  ],
+  "restaurants": [
+    {
+      "id": "gourmet-burger",
+      "name": "Gourmet Burger House",
+      "rating": "4.9",
+      "time": "20-30 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "150 TL",
+      "category": "Hamburger & Pizza",
+      "tag": "hamburger",
+      "city": "Beşiktaş, İstanbul",
+      "commission": 15,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": true,
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA"
+    },
+    {
+      "id": "lezzet-sofrasi",
+      "name": "Lezzet Sofrası",
+      "rating": "4.8",
+      "time": "35-45 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "120 TL",
+      "category": "Ev Yemekleri",
+      "tag": "evyemekleri",
+      "city": "Kadıköy, İstanbul",
+      "commission": 12,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": true,
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U"
+    },
+    {
+      "id": "burger-empire",
+      "name": "Burger Empire",
+      "rating": "4.7",
+      "time": "30-40 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "150 TL",
+      "category": "Fast Food",
+      "tag": "hamburger",
+      "city": "Beşiktaş, İstanbul",
+      "commission": 12.5,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": false,
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA"
+    },
+    {
+      "id": "pizza-express",
+      "name": "Pizza Express",
+      "rating": "4.5",
+      "time": "25-35 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "220 TL",
+      "category": "Pizza",
+      "tag": "pizza",
+      "city": "Fatih, İstanbul",
+      "commission": 10,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": false,
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA"
+    }
+  ],
+  "menuItems": [
+    {
+      "id": "signature-truffle-burger",
+      "restaurantId": "gourmet-burger",
+      "name": "Signature Truffle Burger",
+      "price": 245,
+      "description": "Double beef patty, truffle mayo, caramelized onions, melted brie, and wild mushrooms.",
+      "time": "20-25 dk",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "category": "Popüler",
+      "tag": "Hot"
+    },
+    {
+      "id": "classic-margherita",
+      "restaurantId": "gourmet-burger",
+      "name": "Classic Margherita",
+      "price": 180,
+      "description": "Traditional tomato sauce, fresh buffalo mozzarella, hand-picked basil, and extra virgin olive oil.",
+      "time": "15-20 dk",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBygBpUWwh8OtaJC8RU2J-A3XvmOOJca3DQs7kGCsbTxO3fcb4wn7A_YykulSKHii-Y-aMMYDY2BDj27jevbX3OcLGAiQfHaJV5bnGn78U5EzoK7T-jD81IcSCQbdncrCQoJ8FagaFgoTzAsGi94d3yC7alslg07ls9QDj09SQ1AUqY2Y6owNH8TjCL_VUVJ2wPzZ1xo0cf7e8ZqdmqB_y-GLeXkZZDQ8TMB5d22qQAqqQGz-Kh9C8NXjLlbUn5oQMiZZ85v5_zA6U",
+      "category": "Popüler",
+      "tag": "%25 Off"
+    },
+    {
+      "id": "texas-bbq-burger",
+      "restaurantId": "gourmet-burger",
+      "name": "Texas BBQ Burger",
+      "price": 230,
+      "description": "Smoky BBQ sauce, double cheddar, crispy onion rings, beef bacon, and jalapenos.",
+      "time": "25-30 dk",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuD-xY1ESozbcRunXRdcckHoR3xD-Ddu2NmbZnRZh1LXYHQhhg8KyuJs9kxM2kTfBbrP6THsaLo69_0NlNFJgVMB2sXjosshOXxz3uLDHpl39kNZKqIP3b1cuR-HYPqPInfMc8ZCnqM9giyt7npX_np_CUkxcJUDjR7lf6SvzNUapeb5VjkaDWR6DfXPgJub9ZdM_tTZG65G03FAyonv1ebKfQg7LBi2NUg-hta336lmD-JqkhD4OSzmtt_4QbgpD7idFt3LrQvA2n0",
+      "category": "Burgerler"
+    }
+  ],
+  "orders": [],
+  "reviews": [],
+  "couriers": [],
+  "campaigns": [],
+  "financeLogs": [],
+  "settings": [
+    {
+      "id": 1,
+      "baseCommission": 12,
+      "baseDeliveryFee": 24.9
+    }
+  ]
+}

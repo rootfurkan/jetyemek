@@ -21,6 +21,11 @@ const restaurantsSlice = createSlice({
     selectedRestaurantId: null,
   },
   reducers: {
+    setRestaurants: (state, action) => {
+      state.list = action.payload;
+      state.sponsorList = action.payload.filter(restaurant => restaurant.isSponsor);
+      state.gridList = action.payload;
+    },
     setSelectedRestaurantId: (state, action) => {
       state.selectedRestaurantId = action.payload;
     },
@@ -54,6 +59,7 @@ const restaurantsSlice = createSlice({
 });
 
 export const {
+  setRestaurants,
   setSelectedRestaurantId,
   toggleRestaurantStatus,
   updateRestaurantCommission,
