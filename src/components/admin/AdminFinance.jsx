@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 
 export default function AdminFinance() {
+  const addToast = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('Last30'); // 'Today' | 'Last7' | 'Last30'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -105,7 +107,7 @@ export default function AdminFinance() {
           <div className="h-4 w-[1px] bg-stone-200 mx-1 hidden sm:block"></div>
           
           <button 
-            onClick={() => alert('Özel tarih aralığı filtresi yakında eklenecektir!')}
+            onClick={() => addToast({ message: 'Özel tarih aralığı filtresi yakında eklenecektir!', type: 'info' })}
             className="px-3.5 py-1.5 rounded-full text-xs font-bold text-stone-500 hover:text-primary transition-all flex items-center gap-1 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[15px]">calendar_today</span>
@@ -297,7 +299,7 @@ export default function AdminFinance() {
           <div className="flex justify-between items-center mb-6">
             <h4 className="text-base font-extrabold text-stone-800">En Çok Satan Ürünler</h4>
             <button 
-              onClick={() => alert('Tam liste menü yönetiminde listelenmektedir.')}
+              onClick={() => addToast({ message: 'Tam liste menü yönetiminde listelenmektedir.', type: 'info' })}
               className="text-primary hover:text-primary-container text-xs font-bold hover:underline"
             >
               Tümünü Gör

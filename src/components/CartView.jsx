@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useToast } from '../common/components/Toast.jsx';
+import CreditCardForm, { validateCardForm } from '../common/components/CreditCardForm.jsx';
 
 export default function CartView({ 
   cartItems = [], 
@@ -11,6 +13,8 @@ export default function CartView({
   onApplyCoupon, 
   onRemoveCoupon 
 }) {
+  const addToast = useToast();
+
   const [deliveryType, setDeliveryType] = useState('kurye'); // 'kurye' or 'gelal'
   const [paymentType, setPaymentType] = useState('card'); // 'card' or 'door'
   const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -19,11 +23,9 @@ export default function CartView({
   const [selectedAddressId, setSelectedAddressId] = useState(addresses[0]?.id || 1);
   const [couponInput, setCouponInput] = useState('');
   
-  // Live credit card state
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCVV, setCardCVV] = useState('');
+  // Live credit card state (for shared CreditCardForm)
+  const [cardFields, setCardFields] = useState({ cardNumber: '', cardName: '', cardExpiry: '', cardCVV: '' });
+  const [cardErrors, setCardErrors] = useState({});
 
   // Calculations
   const subtotal = cartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
@@ -38,52 +40,28 @@ export default function CartView({
     if (couponInput.toUpperCase() === 'İLK50') {
       onApplyCoupon('İLK50');
       setCouponInput('');
+      addToast({ message: "'İLK50' kupon kodu uygulandı! 50 TL indirim kazandınız.", type: 'success' });
     } else {
-      alert("Geçersiz kupon kodu. Denemek için 'İLK50' kodunu girebilirsiniz!");
+      addToast({ message: "Geçersiz kupon kodu. Denemek için 'İLK50' kodunu girebilirsiniz!", type: 'error' });
     }
-  };
-
-  const handleCardNumberChange = (e) => {
-    const rawVal = e.target.value.replace(/\D/g, '');
-    let formatted = '';
-    for (let i = 0; i < rawVal.length && i < 16; i++) {
-      if (i > 0 && i % 4 === 0) {
-        formatted += ' ';
-      }
-      formatted += rawVal[i];
-    }
-    setCardNumber(formatted);
-  };
-
-  const handleExpiryChange = (e) => {
-    const rawVal = e.target.value.replace(/\D/g, '');
-    let formatted = '';
-    if (rawVal.length > 0) {
-      formatted += rawVal.substring(0, 2);
-    }
-    if (rawVal.length > 2) {
-      formatted += '/' + rawVal.substring(2, 4);
-    }
-    setCardExpiry(formatted);
-  };
-
-  const handleCVVChange = (e) => {
-    const rawVal = e.target.value.replace(/\D/g, '').substring(0, 3);
-    setCardCVV(rawVal);
   };
 
   const onSubmitCheckout = () => {
     if (cartItems.length === 0) {
-      alert("Sepetinizde ürün bulunmamaktadır!");
+      addToast({ message: 'Sepetinizde ürün bulunmamaktadır!', type: 'error' });
       return;
     }
 
     if (paymentType === 'card') {
-      if (!cardName.trim() || cardNumber.length < 19 || cardExpiry.length < 5 || cardCVV.length < 3) {
-        alert("Lütfen geçerli bir kredi kartı bilgisi giriniz!");
+      const { isValid, errors } = validateCardForm(cardFields);
+      if (!isValid) {
+        setCardErrors(errors);
+        addToast({ message: 'Lütfen geçerli bir kredi kartı bilgisi giriniz!', type: 'error' });
         return;
       }
     }
+
+    setCardErrors({});
 
     // Call checkout trigger
     const newOrderObj = {
@@ -97,6 +75,7 @@ export default function CartView({
     };
 
     onPlaceOrder && onPlaceOrder(newOrderObj);
+    addToast({ message: 'Siparişiniz başarıyla verildi! Afiyet olsun 🎉', type: 'success', duration: 4500 });
   };
 
   return (
@@ -135,7 +114,7 @@ export default function CartView({
             Görünüşe göre sepetinize henüz hiçbir lezzet eklemediniz. Hemen leziz menülerimizi incelemeye başlayın!
           </p>
           <button 
-            onClick={() => onUpdateQty && onUpdateQty('home')} // switch back or direct
+            onClick={() => onUpdateQty && onUpdateQty('home')}
             className="mt-6 px-8 py-3 bg-primary hover:bg-secondary text-white font-bold rounded-full shadow-md active:scale-95 transition-all cursor-pointer"
           >
             Lezzetleri Keşfet
@@ -311,81 +290,20 @@ export default function CartView({
                 </label>
               </div>
 
-              {/* Interactive Credit Card Form & Real-time Preview */}
+              {/* Shared CreditCardForm with flip animation */}
               {paymentType === 'card' && (
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center border-t border-stone-100 pt-6">
-                  {/* Credit Card inputs */}
-                  <div className="space-y-4 text-left">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-500 mb-1">Kart Üzerindeki İsim</label>
-                      <input 
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold uppercase placeholder-stone-400" 
-                        placeholder="AD SOYAD" 
-                        type="text" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-stone-500 mb-1">Kart Numarası</label>
-                      <input 
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        maxLength="19"
-                        className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold placeholder-stone-400" 
-                        placeholder="0000 0000 0000 0000" 
-                        type="text" 
-                      />
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="flex-1">
-                        <label className="block text-xs font-bold text-stone-500 mb-1">Son Kul. Tarihi</label>
-                        <input 
-                          value={cardExpiry}
-                          onChange={handleExpiryChange}
-                          maxLength="5"
-                          className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold placeholder-stone-400" 
-                          placeholder="AA/YY" 
-                          type="text" 
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs font-bold text-stone-500 mb-1">CVV</label>
-                        <input 
-                          value={cardCVV}
-                          onChange={handleCVVChange}
-                          maxLength="3"
-                          className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold placeholder-stone-400" 
-                          placeholder="***" 
-                          type="password" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3D Payment Card Live Preview (Floating style) */}
-                  <div className="flex items-center justify-center p-4 card-perspective hidden md:flex select-none">
-                    <div className="w-[320px] h-[190px] rounded-2xl bg-gradient-to-br from-primary to-secondary p-6 shadow-xl relative text-white flex flex-col justify-between transform hover:rotate-y-6 hover:scale-105 transition-all duration-500">
-                      <div className="absolute top-5 right-5 font-black italic text-lg opacity-40 select-none">
-                        CraveDash
-                      </div>
-                      <div className="w-10 h-8 bg-gradient-to-r from-amber-300 to-amber-500 rounded-lg opacity-80 mt-1"></div>
-                      
-                      <div className="text-lg font-mono tracking-widest mt-4">
-                        {cardNumber || '**** **** **** ****'}
-                      </div>
-
-                      <div className="flex justify-between items-end">
-                        <div className="text-xs font-semibold tracking-wider uppercase truncate max-w-[160px]">
-                          {cardName || 'KART SAHİBİ'}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-[9px] opacity-60 mb-0.5">VALID THRU</p>
-                          <p className="font-bold text-xs">{cardExpiry || '12/28'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="mt-8 border-t border-stone-100 pt-6">
+                  <CreditCardForm
+                    cardNumber={cardFields.cardNumber}
+                    cardName={cardFields.cardName}
+                    cardExpiry={cardFields.cardExpiry}
+                    cardCVV={cardFields.cardCVV}
+                    onChange={(fields) => {
+                      setCardFields(fields);
+                      if (Object.keys(cardErrors).length) setCardErrors({});
+                    }}
+                    errors={cardErrors}
+                  />
                 </div>
               )}
             </section>

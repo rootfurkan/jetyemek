@@ -98,7 +98,12 @@ export default function Navbar({
             Admin Paneli
           </button>
 
-          <button className="material-symbols-outlined text-stone-500 hover:text-primary transition-colors cursor-pointer select-none text-[22px] p-1.5 rounded-full hover:bg-stone-50">
+          <button 
+            onClick={() => setCurrentTab('favorites')}
+            className={`material-symbols-outlined transition-colors cursor-pointer select-none text-[22px] p-1.5 rounded-full hover:bg-stone-50 ${
+              currentTab === 'favorites' ? 'text-primary' : 'text-stone-500 hover:text-primary'
+            }`}
+          >
             favorite
           </button>
 

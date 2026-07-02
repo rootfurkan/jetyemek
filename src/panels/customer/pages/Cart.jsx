@@ -3,30 +3,40 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { removeFromCart, addToCart, clearCart } from '../../../features/cart/cartSlice.js';
 import { placeOrder } from '../../../features/orders/ordersSlice.js';
+import { addAddress } from '../../../features/auth/authSlice.js';
+import { useToast } from '../../../common/components/Toast.jsx';
+import CreditCardForm, { validateCardForm } from '../../../common/components/CreditCardForm.jsx';
+import Modal from '../../../common/components/Modal.jsx';
 
 export default function Cart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const addToast = useToast();
 
   // Redux states
   const cartItems = useSelector((state) => state.cart.items);
   const userProfile = useSelector((state) => state.auth.userProfile);
   const addresses = useSelector((state) => state.auth.addresses);
+  const previousOrders = useSelector((state) => state.orders.previousOrders) || [];
 
   const [deliveryType, setDeliveryType] = useState('kurye'); // 'kurye' or 'gelal'
   const [paymentType, setPaymentType] = useState('card'); // 'card' or 'door'
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  
+  // New address modal state
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [newAddrTitle, setNewAddrTitle] = useState('');
+  const [newAddrDetails, setNewAddrDetails] = useState('');
+  const [newAddrIcon, setNewAddrIcon] = useState('home');
   
   // Local checkout inputs
   const [selectedAddressId, setSelectedAddressId] = useState(addresses[0]?.id || 1);
   const [couponApplied, setCouponApplied] = useState(null);
   const [couponInput, setCouponInput] = useState('');
   
-  // Live credit card state
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCVV, setCardCVV] = useState('');
+  // Live credit card state (for shared CreditCardForm)
+  const [cardFields, setCardFields] = useState({ cardNumber: '', cardName: '', cardExpiry: '', cardCVV: '' });
+  const [cardErrors, setCardErrors] = useState({});
 
   // Calculations
   const subtotal = cartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
@@ -38,11 +48,27 @@ export default function Cart() {
 
   const handleApplyCouponBtn = (e) => {
     e.preventDefault();
-    if (couponInput.toUpperCase() === 'İLK50') {
-      setCouponApplied('İLK50');
-      setCouponInput('');
+    const cleanCoupon = couponInput.toUpperCase().trim();
+    if (cleanCoupon === 'İLK50') {
+      const isFirstOrder = previousOrders.length === 0;
+      const isTotalValid = subtotal > 200;
+
+      if (isFirstOrder && isTotalValid) {
+        setCouponApplied('İLK50');
+        setCouponInput('');
+        addToast({ message: "'İLK50' kupon kodu uygulandı! 50 TL indirim kazandınız.", type: 'success' });
+      } else {
+        let reasons = [];
+        if (!isFirstOrder) {
+          reasons.push("Bu kupon sadece ilk siparişinizde geçerlidir.");
+        }
+        if (!isTotalValid) {
+          reasons.push("Sepet toplam tutarı 200 TL'den fazla olmalıdır.");
+        }
+        addToast({ message: `Kupon uygulanamadı: ${reasons.join(" ve ")}`, type: 'error' });
+      }
     } else {
-      alert("Geçersiz kupon kodu. Denemek için 'İLK50' kodunu girebilirsiniz!");
+      addToast({ message: "Geçersiz kupon kodu. Denemek için 'İLK50' kodunu girebilirsiniz!", type: 'error' });
     }
   };
 
@@ -77,18 +103,22 @@ export default function Cart() {
 
   const onSubmitCheckout = () => {
     if (cartItems.length === 0) {
-      alert("Sepetinizde ürün bulunmamaktadır!");
+      addToast({ message: 'Sepetinizde ürün bulunmamaktadır!', type: 'error' });
       return;
     }
 
     if (paymentType === 'card') {
-      if (!cardName.trim() || cardNumber.length < 19 || cardExpiry.length < 5 || cardCVV.length < 3) {
-        alert("Lütfen geçerli bir kredi kartı bilgisi giriniz!");
+      const { isValid, errors } = validateCardForm(cardFields);
+      if (!isValid) {
+        setCardErrors(errors);
+        addToast({ message: 'Lütfen geçerli bir kredi kartı bilgisi giriniz!', type: 'error' });
         return;
       }
     }
+    setCardErrors({});
 
     // Call checkout trigger
+    const orderId = "VH-" + (Math.floor(Math.random() * 9000) + 1000);
     const newOrderObj = {
       restaurant: "Gourmet Burger House",
       items: `${cartItems.length} Ürün`,
@@ -98,9 +128,13 @@ export default function Cart() {
 
     dispatch(placeOrder(newOrderObj));
     dispatch(clearCart());
-    
-    alert("Siparişiniz başarıyla alındı! Kuryemiz en kısa sürede kapınızda olacaktır.");
-    navigate('/profile');
+    navigate('/order-success', {
+      state: {
+        restaurant: newOrderObj.restaurant,
+        total: total.toFixed(2),
+        orderId: orderId
+      }
+    });
   };
 
   return (
@@ -247,7 +281,17 @@ export default function Cart() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-[11px] text-stone-400 font-bold uppercase tracking-wider mb-2">Adreslerim</p>
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-[11px] text-stone-400 font-bold uppercase tracking-wider">Adreslerim</p>
+                      <button 
+                        type="button"
+                        onClick={() => setShowAddressModal(true)}
+                        className="flex items-center gap-1 text-primary font-bold text-xs hover:underline cursor-pointer border-none bg-transparent"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">add</span>
+                        Yeni Adres Ekle
+                      </button>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {addresses.map(addr => (
                         <div 
@@ -315,79 +359,20 @@ export default function Cart() {
                 </label>
               </div>
 
-              {/* Interactive Credit Card Form & Real-time Preview */}
+              {/* Shared CreditCardForm with flip animation */}
               {paymentType === 'card' && (
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center border-t border-stone-100 pt-6">
-                  <div className="space-y-4 text-left">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-500 mb-1">Kart Üzerindeki İsim</label>
-                      <input 
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold uppercase placeholder-stone-400" 
-                        placeholder="AD SOYAD" 
-                        type="text" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-stone-500 mb-1">Kart Numarası</label>
-                      <input 
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        maxLength="19"
-                        className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold placeholder-stone-400" 
-                        placeholder="0000 0000 0000 0000" 
-                        type="text" 
-                      />
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="flex-1">
-                        <label className="block text-xs font-bold text-stone-500 mb-1">Son Kul. Tarihi</label>
-                        <input 
-                          value={cardExpiry}
-                          onChange={handleExpiryChange}
-                          maxLength="5"
-                          className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold placeholder-stone-400" 
-                          placeholder="AA/YY" 
-                          type="text" 
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs font-bold text-stone-500 mb-1">CVV</label>
-                        <input 
-                          value={cardCVV}
-                          onChange={handleCVVChange}
-                          maxLength="3"
-                          className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 py-3 px-4 text-sm font-semibold placeholder-stone-400" 
-                          placeholder="***" 
-                          type="password" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center p-4 card-perspective hidden md:flex select-none">
-                    <div className="w-[320px] h-[190px] rounded-2xl bg-gradient-to-br from-primary to-secondary p-6 shadow-xl relative text-white flex flex-col justify-between transform hover:scale-105 transition-all duration-500">
-                      <div className="absolute top-5 right-5 font-black italic text-lg opacity-40 select-none">
-                        CraveDash
-                      </div>
-                      <div className="w-10 h-8 bg-gradient-to-r from-amber-300 to-amber-500 rounded-lg opacity-80 mt-1"></div>
-                      
-                      <div className="text-lg font-mono tracking-widest mt-4">
-                        {cardNumber || '**** **** **** ****'}
-                      </div>
-
-                      <div className="flex justify-between items-end">
-                        <div className="text-xs font-semibold tracking-wider uppercase truncate max-w-[160px]">
-                          {cardName || 'KART SAHİBİ'}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-[9px] opacity-60 mb-0.5">VALID THRU</p>
-                          <p className="font-bold text-xs">{cardExpiry || '12/28'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="mt-8 border-t border-stone-100 pt-6">
+                  <CreditCardForm
+                    cardNumber={cardFields.cardNumber}
+                    cardName={cardFields.cardName}
+                    cardExpiry={cardFields.cardExpiry}
+                    cardCVV={cardFields.cardCVV}
+                    onChange={(fields) => {
+                      setCardFields(fields);
+                      if (Object.keys(cardErrors).length) setCardErrors({});
+                    }}
+                    errors={cardErrors}
+                  />
                 </div>
               )}
             </section>
@@ -478,6 +463,109 @@ export default function Cart() {
           </div>
         </div>
       )}
+
+      {/* Add Address Form Modal */}
+      <Modal
+        isOpen={showAddressModal}
+        onClose={() => {
+          setShowAddressModal(false);
+          setNewAddrTitle('');
+          setNewAddrDetails('');
+        }}
+        title="Yeni Teslimat Adresi Ekle"
+      >
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!newAddrTitle.trim() || !newAddrDetails.trim()) {
+              addToast({ message: "Lütfen tüm alanları doldurun!", type: "error" });
+              return;
+            }
+            const generatedId = Date.now();
+            dispatch(addAddress({
+              id: generatedId,
+              title: newAddrTitle,
+              details: newAddrDetails,
+              icon: newAddrIcon
+            }));
+            
+            // Auto select and notify
+            setSelectedAddressId(generatedId);
+            setShowAddressModal(false);
+            setNewAddrTitle('');
+            setNewAddrDetails('');
+            addToast({ message: "Adres başarıyla eklendi ve seçildi!", type: "success" });
+          }}
+          className="space-y-4 text-left"
+        >
+          <div>
+            <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Adres Başlığı</label>
+            <input 
+              type="text"
+              placeholder="Evim, İş Yeri vb."
+              value={newAddrTitle}
+              onChange={(e) => setNewAddrTitle(e.target.value)}
+              className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Adres İkonu</label>
+            <div className="flex gap-2">
+              {[
+                { name: 'Ev', icon: 'home' },
+                { name: 'İş', icon: 'work' },
+                { name: 'Diğer', icon: 'place' }
+              ].map(opt => (
+                <button
+                  key={opt.icon}
+                  type="button"
+                  onClick={() => setNewAddrIcon(opt.icon)}
+                  className={`flex-1 py-3 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    newAddrIcon === opt.icon
+                      ? 'border-primary bg-rose-50/20 text-primary'
+                      : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">{opt.icon}</span>
+                  <span>{opt.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Açık Adres Detayı</label>
+            <textarea
+              placeholder="Mahalle, sokak, daire, kat no ve detaylar..."
+              value={newAddrDetails}
+              onChange={(e) => setNewAddrDetails(e.target.value)}
+              rows="3"
+              className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-stone-100 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddressModal(false);
+                setNewAddrTitle('');
+                setNewAddrDetails('');
+              }}
+              className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 rounded-full font-bold text-xs text-stone-600 transition-all cursor-pointer"
+            >
+              İptal Et
+            </button>
+            <button
+              type="submit"
+              className="px-7 py-2.5 bg-primary hover:bg-primary-container text-white rounded-full font-bold text-xs transition-all cursor-pointer shadow-md"
+            >
+              Adresi Kaydet
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

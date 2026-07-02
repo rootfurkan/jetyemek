@@ -103,7 +103,7 @@ export default function Sidebar({
 
         {/* Quick logout link button at the bottom */}
         <button 
-          onClick={() => alert("Kullanıcı çıkış işlemi (Frontend demosu)")}
+          onClick={() => { console.info('[Demo] Kullanıcı çıkış işlemi (Frontend demosu)'); }}
           className="flex items-center gap-4 text-stone-500 hover:text-primary p-4 hover:bg-rose-50/20 transition-all mt-4 bg-white rounded-2xl shadow-sm border border-stone-100/80 cursor-pointer font-semibold text-sm"
         >
           <span className="material-symbols-outlined text-[20px] select-none text-stone-400">

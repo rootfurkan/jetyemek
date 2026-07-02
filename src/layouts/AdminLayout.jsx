@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { ToastProvider } from '../common/components/Toast.jsx';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -8,7 +9,8 @@ export default function AdminLayout() {
   const activePath = location.pathname;
 
   return (
-    <div className="min-h-screen bg-[#0d0f12] text-stone-300 flex font-sans antialiased">
+    <ToastProvider>
+      <div className="min-h-screen bg-[#0d0f12] text-stone-300 flex font-sans antialiased">
       {/* Sidebar Panel for Platform Super Admin */}
       <aside className="w-72 bg-[#16121a] border-r border-stone-800 flex flex-col py-6 px-4 shrink-0 fixed top-0 bottom-0 left-0 z-40">
         {/* Brand Header with platform tag */}
@@ -85,6 +87,7 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 
 export default function AdminSettings() {
+  const addToast = useToast();
   // Store details state
   const [storeName, setStoreName] = useState('Hearty Delights');
   const [cuisineType, setCuisineType] = useState('Burger & Fast Food');
@@ -39,7 +41,7 @@ export default function AdminSettings() {
   };
 
   const handleSaveChanges = () => {
-    alert('Mağaza ayarlarınız başarıyla kaydedildi! Değişiklikler canlı mağaza vitrininizde güncellendi.');
+    addToast({ message: 'Mağaza ayarlarınız başarıyla kaydedildi! Değişiklikler canlı mağaza vitrininizde güncellendi.', type: 'success' });
   };
 
   return (
@@ -208,7 +210,7 @@ export default function AdminSettings() {
                 ></div>
                 <div className="absolute inset-0 bg-black/5"></div>
                 <button 
-                  onClick={() => alert('Pin harita konumu düzenleyici yakında eklenecektir!')}
+                  onClick={() => addToast({ message: 'Pin harita konumu düzenleyici yakında eklenecektir!', type: 'info' })}
                   className="absolute bottom-3 right-3 bg-white hover:bg-stone-50 text-stone-700 px-3 py-1.5 rounded-full shadow-md text-[10px] font-extrabold uppercase tracking-wide flex items-center gap-1 cursor-pointer transition-transform duration-150 active:scale-95"
                 >
                   <span className="material-symbols-outlined text-xs">map</span>

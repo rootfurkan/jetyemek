@@ -18,15 +18,29 @@ const ordersSlice = createSlice({
   reducers: {
     placeOrder: (state, action) => {
       const { restaurant, items, total, image } = action.payload;
+      const date = new Date();
+      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const formattedDate = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+
       const newOrder = {
+        id: Date.now(),
         restaurant,
         items,
-        total,
-        status: 'Sipariş Alındı',
-        progress: 10,
+        total: `₺${total}`,
+        status: 'Teslim Edildi',
+        date: formattedDate,
         image: image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBygBpUWwh8OtaJC8RU2J-A3XvmOOJca3DQs7kGCsbTxO3fcb4wn7A_YykulSKHii-Y-aMMYDY2BDj27jevbX3OcLGAiQfHaJV5bnGn78U5EzoK7T-jD81IcSCQbdncrCQoJ8FagaFgoTzAsGi94d3yC7alslg07ls9QDj09SQ1AUqY2Y6owNH8TjCL_VUVJ2wPzZ1xo0cf7e8ZqdmqB_y-GLeXkZZDQ8TMB5d22qQAqqQGz-Kh9C8NXjLlbUn5oQMiZZ85v5_zA6U',
       };
-      state.activeOrder = newOrder;
+      
+      // Save in user order history
+      state.previousOrders.unshift(newOrder);
+
+      // Set as active order
+      state.activeOrder = {
+        ...newOrder,
+        status: 'Sipariş Alındı',
+        progress: 25
+      };
 
       // Add to platform orders
       state.platformOrders.unshift({

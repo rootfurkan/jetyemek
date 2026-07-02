@@ -11,10 +11,16 @@ import {
 } from '../../../features/auth/authSlice.js';
 import { addToCart } from '../../../features/cart/cartSlice.js';
 import Sidebar from '../../../components/Sidebar.jsx';
+import { useToast } from '../../../common/components/Toast.jsx';
+import ConfirmModal from '../../../common/components/ConfirmModal.jsx';
+import CreditCardForm, { validateCardForm } from '../../../common/components/CreditCardForm.jsx';
 
 export default function Profile() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const addToast = useToast();
+  const [deleteCardTarget, setDeleteCardTarget] = useState(null);
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
 
   // Load state from Redux
   const userProfile = useSelector((state) => state.auth.userProfile);
@@ -39,12 +45,11 @@ export default function Profile() {
   const [newAddrDetails, setNewAddrDetails] = useState('');
   const [newAddrIcon, setNewAddrIcon] = useState('home');
 
-  // Card form inline
+  // Card form inline — now using CreditCardForm
   const [showCardForm, setShowCardForm] = useState(false);
-  const [newCardName, setNewCardName] = useState('');
-  const [newCardNum, setNewCardNum] = useState('');
+  const [cardFields, setCardFields] = useState({ cardName: '', cardNumber: '', cardExpiry: '', cardCVV: '' });
   const [newCardType, setNewCardType] = useState('Visa');
-  const [newCardExpiry, setNewCardExpiry] = useState('');
+  const [cardErrors, setCardErrors] = useState({});
 
   // Password fields
   const [currPassword, setCurrPassword] = useState('********');
@@ -57,20 +62,14 @@ export default function Profile() {
 
   const handleSaveProfileForm = (e) => {
     e.preventDefault();
-    dispatch(updateProfile({
-      name: profileName,
-      surname: profileSurname,
-      phone: profilePhone,
-      birthdate: profileBirth,
-      email: profileEmail
-    }));
-    alert("Kişisel bilgileriniz başarıyla güncellendi!");
+    dispatch(updateProfile({ name: profileName, surname: profileSurname, phone: profilePhone, birthdate: profileBirth, email: profileEmail }));
+    addToast({ message: 'Kişisel bilgileriniz başarıyla güncellendi!', type: 'success' });
   };
 
   const handleAddAddressBtn = (e) => {
     e.preventDefault();
     if (!newAddrTitle.trim() || !newAddrDetails.trim()) {
-      alert("Lütfen adres başlığı ve detayını boş bırakmayın!");
+      addToast({ message: 'Lütfen adres başlığı ve detayını boş bırakmayın!', type: 'error' });
       return;
     }
     dispatch(addAddress({
@@ -81,68 +80,104 @@ export default function Profile() {
     setNewAddrTitle('');
     setNewAddrDetails('');
     setShowAddressForm(false);
-    alert("Yeni adresiniz başarıyla eklendi!");
+    addToast({ message: 'Yeni adresiniz başarıyla eklendi!', type: 'success' });
   };
 
   const handleAddCardBtn = (e) => {
     e.preventDefault();
-    const cleanNum = newCardNum.replace(/\D/g, '');
-    if (!newCardName.trim() || cleanNum.length < 4) {
-      alert("Lütfen geçerli kart adı ve numarası giriniz!");
+    const { isValid, errors } = validateCardForm(cardFields);
+    if (!isValid) {
+      setCardErrors(errors);
+      addToast({ message: 'Lütfen kart bilgilerini eksiksiz ve doğru doldurun.', type: 'error' });
       return;
     }
-    
+    setCardErrors({});
+
     const cardLogos = {
       Visa: "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
       Mastercard: "https://lh3.googleusercontent.com/aida-public/AB6AXuCepLVd8hsizjFucB5HUGRh9P5WIbXle5yDNhxbFZ4IUL4x-UUkzX8Twd9ThLtYulSUXTlhtuaaVFRS4E8y5h0Ced3Fz_jI3E5m4xVrkEaQF6VNkeccJLSAtlN4ITJwO_hYI8F-o-V5HRmx33xv3iuacoJjXQWrraAK8fMmgFSeJPme2Oz95nnutZMot7FnWfo_9W0yzrvN_Goq-eetI761mTfWrpRY5le3T5J84fwXs1hlITDhkgaqKA",
       Troy: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLelAgxpKLxx0GanhzDVSzQhxrz60C6J5aMlVsXXABIhdJvrKukQjpRc6hCKy6r1W1qap8gzXhmMPbW-3W_n8RTM7lmUMvBkT7P8rSLW0ITqspe8dXjqUhr-FDCv_H5aXzuEEEcrKiMa7bjj29OIAzIE9jr-6dwD7weg4YCMEI1VCCr4DXb7Hd7zB-XGY-i-PPMWphcZZtSGzxHe2WLjfxHPSwhrhtzf5GxFweYc5GbNcezzcgjQZ8Wg"
     };
 
+    const cleanNum = cardFields.cardNumber.replace(/\s/g, '');
     dispatch(addCard({
-      name: newCardName,
+      name: cardFields.cardName,
       type: newCardType,
       number: cleanNum.substring(cleanNum.length - 4),
-      expiry: newCardExpiry || "09/28",
+      expiry: cardFields.cardExpiry,
       isDefault: false,
       logo: cardLogos[newCardType]
     }));
 
-    setNewCardName('');
-    setNewCardNum('');
-    setNewCardExpiry('');
+    setCardFields({ cardName: '', cardNumber: '', cardExpiry: '', cardCVV: '' });
     setShowCardForm(false);
-    alert("Yeni ödeme yönteminiz başarıyla eklendi!");
+    addToast({ message: 'Yeni ödeme yönteminiz başarıyla eklendi!', type: 'success' });
   };
 
   const handleUpdatePassword = (e) => {
     e.preventDefault();
     if (!newPassword.trim()) {
-      alert("Lütfen yeni bir şifre giriniz!");
+      addToast({ message: 'Lütfen yeni bir şifre giriniz!', type: 'error' });
       return;
     }
     if (newPassword !== confirmPassword) {
-      alert("Şifreler uyuşmuyor!");
+      addToast({ message: 'Şifreler uyuşmuyor!', type: 'error' });
       return;
     }
     setCurrPassword('********');
     setNewPassword('');
     setConfirmPassword('');
-    alert("Şifreniz başarıyla güncellendi!");
+    addToast({ message: 'Şifreniz başarıyla güncellendi!', type: 'success' });
   };
 
   const handleSavePreferences = () => {
-    alert("Kampanya tercihleriniz başarıyla kaydedildi!");
+    addToast({ message: 'Kampanya tercihleriniz başarıyla kaydedildi!', type: 'success' });
   };
 
   const handleDeleteAccount = () => {
-    if (confirm("Hesabınızı tamamen kapatmak istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
-      alert("Hesabınız silindi (Simülasyon). Ana sayfaya yönlendiriliyorsunuz.");
-      setActiveSubSection('orders');
-    }
+    setDeleteAccountModalOpen(true);
+  };
+
+  const handleConfirmDeleteAccount = () => {
+    addToast({ message: 'Hesabınız silindi (Simülasyon).', type: 'info' });
+    setDeleteAccountModalOpen(false);
+    setActiveSubSection('orders');
   };
 
   return (
     <div className="flex flex-col md:flex-row w-full gap-8 items-start min-h-[calc(100vh-140px)] animate-fade-in text-left">
+      {/* Delete Card Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!deleteCardTarget}
+        onClose={() => setDeleteCardTarget(null)}
+        onConfirm={() => {
+          if (deleteCardTarget) {
+            dispatch(deleteCard(deleteCardTarget.id));
+            addToast({ message: 'Kayıtlı kart silindi!', type: 'success' });
+            setDeleteCardTarget(null);
+          }
+        }}
+        title="Kartı Sil"
+        message={`"${deleteCardTarget?.name || ''}" kartını kalıcı olarak silmek istediğinize emin misiniz?`}
+        confirmLabel="Evet, Sil"
+        cancelLabel="Vazgeç"
+        danger
+        icon="credit_card_off"
+      />
+
+      {/* Delete Account Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteAccountModalOpen}
+        onClose={() => setDeleteAccountModalOpen(false)}
+        onConfirm={handleConfirmDeleteAccount}
+        title="Hesabı Sil"
+        message="Hesabınızı tamamen kapatmak istediğinize emin misiniz? Bu işlem geri alınamaz."
+        confirmLabel="Hesabımı Sil"
+        cancelLabel="Vazgeç"
+        danger
+        icon="delete_forever"
+      />
+
       {/* Sidebar Selector Component */}
       <Sidebar 
         activeSubSection={activeSubSection} 
@@ -151,7 +186,7 @@ export default function Profile() {
         onEnterAdmin={() => navigate('/restaurant')}
         onEnterSuperAdmin={() => navigate('/admin')}
         onChangeAvatar={() => {
-          const newUrl = prompt("Lütfen yeni profil resminizin URL adresini giriniz:", userProfile.avatar);
+          const newUrl = window.prompt('Lütfen yeni profil resminizin URL adresini giriniz:', userProfile.avatar);
           if (newUrl) {
             dispatch(changeAvatar(newUrl));
           }
@@ -249,7 +284,7 @@ export default function Profile() {
                             category: "Popüler",
                             description: order.items
                           }));
-                          alert(`${order.restaurant} siparişiniz sepetinize tekrar eklendi!`);
+                          addToast({ message: `${order.restaurant} siparişiniz sepetinize tekrar eklendi!`, type: 'success' });
                           navigate('/cart');
                         }}
                         className="px-4 py-2 bg-stone-100 hover:bg-rose-50 hover:text-primary text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer border border-stone-100"
@@ -262,7 +297,7 @@ export default function Profile() {
                 ))}
                 
                 <button 
-                  onClick={() => alert("Daha fazla geçmiş sipariş bulunamadı.")}
+                  onClick={() => addToast({ message: 'Daha fazla geçmiş sipariş bulunamadı.', type: 'info' })}
                   className="w-full py-4 border border-dashed border-stone-200 hover:border-primary/40 rounded-xl text-primary font-bold text-xs hover:bg-rose-50/20 transition-all flex items-center justify-center gap-1 cursor-pointer select-none"
                 >
                   <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -342,7 +377,7 @@ export default function Profile() {
                     type="email" 
                   />
                   <button 
-                    onClick={() => alert("E-posta adresinize doğrulama linki gönderildi.")}
+                    onClick={() => addToast({ message: 'E-posta adresinize doğrulama linki gönderildi.', type: 'info' })}
                     className="bg-rose-50 text-primary border border-rose-100 px-6 py-3 rounded-xl font-bold text-xs hover:bg-rose-100/50 transition-colors cursor-pointer shrink-0"
                   >
                     Doğrula
@@ -441,7 +476,7 @@ export default function Profile() {
                     </div>
                     <div className="flex gap-1">
                       <button 
-                        onClick={() => alert("Adres düzenleme simüle ediliyor.")}
+                        onClick={() => addToast({ message: 'Adres düzenleme yakında aktif olacak.', type: 'info' })}
                         className="material-symbols-outlined text-stone-400 hover:text-primary text-[16px] p-1 rounded-md hover:bg-stone-100 cursor-pointer border-none bg-transparent"
                       >
                         edit
@@ -536,46 +571,38 @@ export default function Profile() {
 
             {showCardForm && (
               <form onSubmit={handleAddCardBtn} className="bg-white rounded-3xl p-6 border border-stone-100 shadow-sm text-left space-y-4">
-                <p className="text-sm font-bold text-stone-800">Yeni Ödeme Yöntemi Ekle</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-stone-500 ml-1">Kart Başlığı</label>
-                    <input 
-                      value={newCardName}
-                      onChange={(e) => setNewCardName(e.target.value)}
-                      placeholder="örn: Şahsi Kartım, Bonus"
-                      className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2.5 px-3 text-xs" 
-                      type="text" 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-stone-500 ml-1">Kart Tipi</label>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-stone-800">Yeni Ödeme Yöntemi Ekle</p>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[11px] font-bold text-stone-500">Kart Tipi</label>
                     <select 
                       value={newCardType}
                       onChange={(e) => setNewCardType(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2.5 px-3 text-xs"
+                      className="rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2 px-3 text-xs"
                     >
                       <option value="Visa">Visa</option>
                       <option value="Mastercard">Mastercard</option>
                       <option value="Troy">Troy</option>
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-stone-500 ml-1">Kart Numarası</label>
-                    <input 
-                      value={newCardNum}
-                      onChange={(e) => setNewCardNum(e.target.value)}
-                      maxLength="16"
-                      placeholder="4000 1234 5678 9012"
-                      className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2.5 px-3 text-xs font-mono" 
-                      type="text" 
-                    />
-                  </div>
                 </div>
+
+                <CreditCardForm
+                  cardNumber={cardFields.cardNumber}
+                  cardName={cardFields.cardName}
+                  cardExpiry={cardFields.cardExpiry}
+                  cardCVV={cardFields.cardCVV}
+                  onChange={(fields) => {
+                    setCardFields(fields);
+                    if (Object.keys(cardErrors).length) setCardErrors({});
+                  }}
+                  errors={cardErrors}
+                />
+
                 <div className="flex justify-end gap-2 text-xs">
                   <button 
                     type="button"
-                    onClick={() => setShowCardForm(false)}
+                    onClick={() => { setShowCardForm(false); setCardErrors({}); }}
                     className="px-4 py-2 border border-stone-200 rounded-lg text-stone-500 hover:bg-stone-100"
                   >
                     İptal
@@ -612,12 +639,7 @@ export default function Profile() {
                     </div>
 
                     <button 
-                      onClick={() => {
-                        if (confirm("Bu kartı silmek istediğinize emin misiniz?")) {
-                          dispatch(deleteCard(card.id));
-                          alert("Kayıtlı kart silindi!");
-                        }
-                      }}
+                      onClick={() => setDeleteCardTarget(card)}
                       className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-rose-50 hover:text-primary text-stone-400 transition-colors cursor-pointer select-none border-none bg-transparent"
                     >
                       <span className="material-symbols-outlined text-[18px]">delete</span>

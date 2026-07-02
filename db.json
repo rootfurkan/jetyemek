@@ -101,9 +101,50 @@
       "isOpen": true,
       "isSponsor": false,
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA"
+    },
+    {
+      "id": "kebapci-hasan",
+      "name": "Kebapçı Hasan Usta",
+      "rating": "4.8",
+      "time": "30-40 dk",
+      "deliveryFee": "15 TL",
+      "minOrder": "200 TL",
+      "category": "Kebap & Et",
+      "tag": "kebap",
+      "city": "Şişli, İstanbul",
+      "commission": 10,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": false,
+      "image": "http://googleusercontent.com/profile/picture/6"
+    },
+    {
+      "id": "tatlici-safak",
+      "name": "Tatlıcı Şafak",
+      "rating": "4.9",
+      "time": "20-30 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "100 TL",
+      "category": "Tatlı",
+      "tag": "tatli",
+      "city": "Beşiktaş, İstanbul",
+      "commission": 8,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": true,
+      "image": "http://googleusercontent.com/profile/picture/7"
     }
   ],
   "menuItems": [
+    {
+      "id": "cigkofte-durum",
+      "restaurantId": "kebapci-hasan",
+      "name": "Çiğköfte Dürüm",
+      "price": 80,
+      "description": "Özel baharatlarla yoğrulmuş acılı çiğköfte",
+      "time": "15-20 dk",
+      "category": "Dürümler"
+    },
     {
       "id": "signature-truffle-burger",
       "restaurantId": "gourmet-burger",

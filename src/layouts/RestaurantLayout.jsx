@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { ToastProvider } from '../common/components/Toast.jsx';
 
 export default function RestaurantLayout() {
   const navigate = useNavigate();
@@ -8,7 +9,8 @@ export default function RestaurantLayout() {
   const activePath = location.pathname;
 
   return (
-    <div className="min-h-screen bg-stone-50/40 flex text-stone-800 font-sans antialiased">
+    <ToastProvider>
+      <div className="min-h-screen bg-stone-50/40 flex text-stone-800 font-sans antialiased">
       {/* 1. Left Fixed Sidebar Navigation Panel */}
       <aside className="w-72 bg-white border-r border-rose-100/10 flex flex-col py-6 px-4 shrink-0 fixed top-0 bottom-0 left-0 z-40 shadow-sm">
         {/* Brand Header */}
@@ -83,6 +85,7 @@ export default function RestaurantLayout() {
           <Outlet />
         </main>
       </div>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

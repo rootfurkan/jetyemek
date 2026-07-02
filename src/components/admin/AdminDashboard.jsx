@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 import AdminOrders from './AdminOrders.jsx';
 import AdminMenu from './AdminMenu.jsx';
 import AdminReviews from './AdminReviews.jsx';
@@ -6,6 +7,7 @@ import AdminFinance from './AdminFinance.jsx';
 import AdminSettings from './AdminSettings.jsx';
 
 export default function AdminDashboard({ onExitAdmin }) {
+  const addToast = useToast();
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'menu' | 'reviews' | 'finance' | 'settings'
 
   // Summary Metrics for the main Admin Dashboard overview
@@ -184,7 +186,7 @@ export default function AdminDashboard({ onExitAdmin }) {
 
             <div className="flex gap-1.5">
               <button 
-                onClick={() => alert('Sistem bildiriminiz yok.')}
+                onClick={() => addToast({ message: 'Sistem bildiriminiz yok.', type: 'info' })}
                 className="p-2 text-stone-400 hover:text-stone-700 bg-white border border-stone-200 shadow-sm rounded-xl hover:scale-102 transition-all relative"
               >
                 <span className="material-symbols-outlined text-[20px]">notifications</span>

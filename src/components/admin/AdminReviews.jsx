@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 
 export default function AdminReviews() {
+  const addToast = useToast();
   const [filter, setFilter] = useState('All'); // 'All' | 'Unreplied' | 'Negative' | 'WithImages'
   const [sortBy, setSortBy] = useState('Recent'); // 'Recent' | 'Highest' | 'Lowest'
   const [replyTextMap, setReplyTextMap] = useState({});
@@ -61,7 +63,7 @@ export default function AdminReviews() {
   const handleSendReply = (id) => {
     const text = replyTextMap[id];
     if (!text || text.trim() === '') {
-      alert('Lütfen bir yanıt metni yazınız.');
+      addToast({ message: 'Lütfen bir yanıt metni yazınız.', type: 'error' });
       return;
     }
 

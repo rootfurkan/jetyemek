@@ -4,6 +4,9 @@ import {
   PREVIOUS_ORDERS, 
   INITIAL_ACTIVE_ORDER 
 } from '../data.jsx';
+import { useToast } from '../common/components/Toast.jsx';
+import ConfirmModal from '../common/components/ConfirmModal.jsx';
+import CreditCardForm, { validateCardForm } from '../common/components/CreditCardForm.jsx';
 
 export default function ProfileView({ 
   activeSubSection, 
@@ -20,6 +23,8 @@ export default function ProfileView({
   onEnterAdmin,
   onEnterSuperAdmin
 }) {
+  const addToast = useToast();
+
   // Local editable form states
   const [profileName, setProfileName] = useState(userProfile.name);
   const [profileSurname, setProfileSurname] = useState(userProfile.surname);
@@ -33,21 +38,27 @@ export default function ProfileView({
   const [newAddrDetails, setNewAddrDetails] = useState('');
   const [newAddrIcon, setNewAddrIcon] = useState('home');
 
-  // Card add form inline
+  // Card add form — using shared CreditCardForm fields
   const [showCardForm, setShowCardForm] = useState(false);
-  const [newCardName, setNewCardName] = useState('');
-  const [newCardNum, setNewCardNum] = useState('');
+  const [cardFields, setCardFields] = useState({ cardName: '', cardNumber: '', cardExpiry: '', cardCVV: '' });
   const [newCardType, setNewCardType] = useState('Visa');
-  const [newCardExpiry, setNewCardExpiry] = useState('');
+  const [cardErrors, setCardErrors] = useState({});
 
   // Password fields
   const [currPassword, setCurrPassword] = useState('********');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState({});
 
   // Marketing preferences
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [emailOptIn, setEmailOptIn] = useState(true);
+
+  // Confirm modals
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
+  const [deleteCardTarget, setDeleteCardTarget] = useState(null); // card object to delete
+
+  // ---- Handlers ----
 
   const handleSaveProfileForm = (e) => {
     e.preventDefault();
@@ -58,13 +69,13 @@ export default function ProfileView({
       birthdate: profileBirth,
       email: profileEmail
     });
-    alert("Kişisel bilgileriniz başarıyla güncellendi!");
+    addToast({ message: 'Kişisel bilgileriniz başarıyla güncellendi!', type: 'success' });
   };
 
   const handleAddAddressBtn = (e) => {
     e.preventDefault();
     if (!newAddrTitle.trim() || !newAddrDetails.trim()) {
-      alert("Lütfen adres başlığı ve detayını boş bırakmayın!");
+      addToast({ message: 'Lütfen adres başlığı ve detayını boş bırakmayın!', type: 'error' });
       return;
     }
     onAddAddress && onAddAddress({
@@ -76,70 +87,110 @@ export default function ProfileView({
     setNewAddrTitle('');
     setNewAddrDetails('');
     setShowAddressForm(false);
-    alert("Yeni adresiniz başarıyla eklendi!");
+    addToast({ message: 'Yeni adresiniz başarıyla eklendi!', type: 'success' });
   };
 
   const handleAddCardBtn = (e) => {
     e.preventDefault();
-    const cleanNum = newCardNum.replace(/\D/g, '');
-    if (!newCardName.trim() || cleanNum.length < 4) {
-      alert("Lütfen geçerli kart adı ve numarası giriniz!");
+    const { isValid, errors } = validateCardForm(cardFields);
+    if (!isValid) {
+      setCardErrors(errors);
+      addToast({ message: 'Lütfen kart bilgilerini eksiksiz ve doğru doldurun.', type: 'error' });
       return;
     }
-    
-    // Use matching logo icon placeholder
+    setCardErrors({});
+
     const cardLogos = {
-      Visa: "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
-      Mastercard: "https://lh3.googleusercontent.com/aida-public/AB6AXuCepLVd8hsizjFucB5HUGRh9P5WIbXle5yDNhxbFZ4IUL4x-UUkzX8Twd9ThLtYulSUXTlhtuaaVFRS4E8y5h0Ced3Fz_jI3E5m4xVrkEaQF6VNkeccJLSAtlN4ITJwO_hYI8F-o-V5HRmx33xv3iuacoJjXQWrraAK8fMmgFSeJPme2Oz95nnutZMot7FnWfo_9W0yzrvN_Goq-eetI761mTfWrpRY5le3T5J84fwXs1hlITDhkgaqKA",
-      Troy: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLelAgxpKLxx0GanhzDVSzQhxrz60C6J5aMlVsXXABIhdJvrKukQjpRc6hCKy6r1W1qap8gzXhmMPbW-3W_n8RTM7lmUMvBkT7P8rSLW0ITqspe8dXjqUhr-FDCv_H5aXzuEEEcrKiMa7bjj29OIAzIE9jr-6dwD7weg4YCMEI1VCCr4DXb7Hd7zB-XGY-i-PPMWphcZZtSGzxHe2WLjfxHPSwhrhtzf5GxFweYc5GbNcezzcgjQZ8Wg"
+      Visa: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ',
+      Mastercard: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCepLVd8hsizjFucB5HUGRh9P5WIbXle5yDNhxbFZ4IUL4x-UUkzX8Twd9ThLtYulSUXTlhtuaaVFRS4E8y5h0Ced3Fz_jI3E5m4xVrkEaQF6VNkeccJLSAtlN4ITJwO_hYI8F-o-V5HRmx33xv3iuacoJjXQWrraAK8fMmgFSeJPme2Oz95nnutZMot7FnWfo_9W0yzrvN_Goq-eetI761mTfWrpRY5le3T5J84fwXs1hlITDhkgaqKA',
+      Troy: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDLelAgxpKLxx0GanhzDVSzQhxrz60C6J5aMlVsXXABIhdJvrKukQjpRc6hCKy6r1W1qap8gzXhmMPbW-3W_n8RTM7lmUMvBkT7P8rSLW0ITqspe8dXjqUhr-FDCv_H5aXzuEEEcrKiMa7bjj29OIAzIE9jr-6dwD7weg4YCMEI1VCCr4DXb7Hd7zB-XGY-i-PPMWphcZZtSGzxHe2WLjfxHPSwhrhtzf5GxFweYc5GbNcezzcgjQZ8Wg'
     };
 
+    const cleanNum = cardFields.cardNumber.replace(/\s/g, '');
     onAddCard && onAddCard({
       id: Date.now(),
-      name: newCardName,
+      name: cardFields.cardName,
       type: newCardType,
       number: cleanNum.substring(cleanNum.length - 4),
-      expiry: newCardExpiry || "09/28",
+      expiry: cardFields.cardExpiry,
       isDefault: false,
       logo: cardLogos[newCardType]
     });
 
-    setNewCardName('');
-    setNewCardNum('');
-    setNewCardExpiry('');
+    setCardFields({ cardName: '', cardNumber: '', cardExpiry: '', cardCVV: '' });
     setShowCardForm(false);
-    alert("Yeni ödeme yönteminiz başarıyla eklendi!");
+    addToast({ message: 'Yeni ödeme yönteminiz başarıyla eklendi!', type: 'success' });
   };
 
   const handleUpdatePassword = (e) => {
     e.preventDefault();
-    if (!newPassword.trim()) {
-      alert("Lütfen yeni bir şifre giriniz!");
+    const errs = {};
+    if (!newPassword.trim()) errs.newPassword = 'Lütfen yeni bir şifre giriniz.';
+    if (newPassword !== confirmPassword) errs.confirmPassword = 'Şifreler uyuşmuyor!';
+    if (Object.keys(errs).length) {
+      setPasswordErrors(errs);
+      addToast({ message: Object.values(errs)[0], type: 'error' });
       return;
     }
-    if (newPassword !== confirmPassword) {
-      alert("Şifreler uyuşmuyor!");
-      return;
-    }
+    setPasswordErrors({});
     setCurrPassword('********');
     setNewPassword('');
     setConfirmPassword('');
-    alert("Şifreniz başarıyla güncellendi!");
+    addToast({ message: 'Şifreniz başarıyla güncellendi!', type: 'success' });
   };
 
   const handleSavePreferences = () => {
-    alert("Kampanya tercihleriniz başarıyla kaydedildi!");
+    addToast({ message: 'Kampanya tercihleriniz başarıyla kaydedildi!', type: 'success' });
   };
 
   const handleDeleteAccount = () => {
-    if (confirm("Hesabınızı tamamen kapatmak istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
-      alert("Hesabınız silindi (Simülasyon). Ana sayfaya yönlendiriliyorsunuz.");
-      setActiveSubSection('orders');
+    // Confirmed via modal
+    addToast({ message: 'Hesabınız silindi (Simülasyon).', type: 'info' });
+    setActiveSubSection('orders');
+  };
+
+  const handleConfirmDeleteCard = () => {
+    if (deleteCardTarget) {
+      onDeleteCard && onDeleteCard(deleteCardTarget.id);
+      addToast({ message: 'Kayıtlı kart silindi!', type: 'success' });
+      setDeleteCardTarget(null);
     }
+  };
+
+  const handleRepeatOrder = (order) => {
+    onRepeatOrder && onRepeatOrder(order);
+    addToast({ message: `${order.restaurant} siparişiniz sepetinize tekrar eklendi!`, type: 'success' });
   };
 
   return (
     <div className="flex flex-col md:flex-row w-full gap-8 items-start min-h-[calc(100vh-140px)] animate-fade-in">
+
+      {/* Delete Card Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!deleteCardTarget}
+        onClose={() => setDeleteCardTarget(null)}
+        onConfirm={handleConfirmDeleteCard}
+        title="Kartı Sil"
+        message={`"${deleteCardTarget?.name || ''}" kartını kalıcı olarak silmek istediğinize emin misiniz?`}
+        confirmLabel="Evet, Sil"
+        cancelLabel="Vazgeç"
+        danger
+        icon="credit_card_off"
+      />
+
+      {/* Delete Account Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteAccountModalOpen}
+        onClose={() => setDeleteAccountModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+        title="Hesabı Sil"
+        message="Hesabınızı tamamen kapatmak istediğinize emin misiniz? Bu işlem geri alınamaz. Sipariş geçmişiniz ve kayıtlı kartlarınız kalıcı olarak silinecektir."
+        confirmLabel="Hesabımı Sil"
+        cancelLabel="Vazgeç"
+        danger
+        icon="delete_forever"
+      />
+
       {/* Sidebar Selector Component */}
       <Sidebar 
         activeSubSection={activeSubSection} 
@@ -148,20 +199,17 @@ export default function ProfileView({
         onEnterAdmin={onEnterAdmin}
         onEnterSuperAdmin={onEnterSuperAdmin}
         onChangeAvatar={() => {
-          const newUrl = prompt("Lütfen yeni profil resminizin URL adresini giriniz:", userProfile.avatar);
-          if (newUrl) {
-            onSaveProfile({ ...userProfile, avatar: newUrl });
-          }
+          addToast({ message: 'Avatar değiştirme yakında aktif olacak!', type: 'info' });
         }}
       />
 
       {/* Main Account Details Canvas Column */}
       <div className="flex-1 w-full space-y-6">
         
-        {/* SUBSECTION: ORDERS (Siparişlerim & Active progress trackers) */}
+        {/* SUBSECTION: ORDERS */}
         {activeSubSection === 'orders' && (
           <section className="space-y-8">
-            {/* Active order progress block (Ahmet's screen format) */}
+            {/* Active order progress block */}
             <div>
               <h3 className="font-bold text-primary flex items-center gap-2 mb-4 text-xs uppercase tracking-wider select-none">
                 <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
@@ -204,7 +252,7 @@ export default function ProfileView({
               </div>
             </div>
 
-            {/* Historic previous order listings with reorder triggers */}
+            {/* Historic previous order listings */}
             <div>
               <h3 className="font-bold text-stone-700 mb-4 text-xs uppercase tracking-wider select-none text-left">
                 ÖNCEKİ SİPARİŞLERİM
@@ -235,10 +283,7 @@ export default function ProfileView({
                         </div>
                       </div>
                       <button 
-                        onClick={() => {
-                          onRepeatOrder && onRepeatOrder(order);
-                          alert(`${order.restaurant} siparişiniz sepetinize tekrar eklendi!`);
-                        }}
+                        onClick={() => handleRepeatOrder(order)}
                         className="px-4 py-2 bg-stone-100 hover:bg-rose-50 hover:text-primary text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer border border-stone-100"
                       >
                         <span className="material-symbols-outlined text-[15px]">replay</span>
@@ -249,7 +294,7 @@ export default function ProfileView({
                 ))}
                 
                 <button 
-                  onClick={() => alert("Daha fazla geçmiş sipariş bulunamadı.")}
+                  onClick={() => addToast({ message: 'Daha fazla geçmiş sipariş bulunamadı.', type: 'info' })}
                   className="w-full py-4 border border-dashed border-stone-200 hover:border-primary/40 rounded-xl text-primary font-bold text-xs hover:bg-rose-50/20 transition-all flex items-center justify-center gap-1 cursor-pointer select-none"
                 >
                   <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -331,7 +376,7 @@ export default function ProfileView({
                     type="email" 
                   />
                   <button 
-                    onClick={() => alert("E-posta adresinize doğrulama linki gönderildi.")}
+                    onClick={() => addToast({ message: 'E-posta adresinize doğrulama linki gönderildi.', type: 'info' })}
                     className="bg-rose-50 text-primary border border-rose-100 px-6 py-3 rounded-xl font-bold text-xs hover:bg-rose-100/50 transition-colors cursor-pointer shrink-0"
                   >
                     Doğrula
@@ -433,7 +478,7 @@ export default function ProfileView({
                     </div>
                     <div className="flex gap-1">
                       <button 
-                        onClick={() => alert("Adres düzenleme simüle ediliyor.")}
+                        onClick={() => addToast({ message: 'Adres düzenleme yakında aktif olacak.', type: 'info' })}
                         className="material-symbols-outlined text-stone-400 hover:text-primary text-[16px] p-1 rounded-md hover:bg-stone-100 cursor-pointer"
                       >
                         edit
@@ -480,9 +525,15 @@ export default function ProfileView({
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-stone-50 border border-stone-200/60 rounded-xl py-3 px-4 text-sm font-semibold focus:border-primary focus:bg-white focus:outline-none" 
+                      className={`w-full bg-stone-50 border rounded-xl py-3 px-4 text-sm font-semibold focus:bg-white focus:outline-none ${passwordErrors.newPassword ? 'border-rose-400' : 'border-stone-200/60 focus:border-primary'}`}
                       type="password" 
                     />
+                    {passwordErrors.newPassword && (
+                      <p className="text-xs text-rose-500 font-semibold flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">error</span>
+                        {passwordErrors.newPassword}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-stone-500 ml-1">Yeni Şifre Tekrar</label>
@@ -490,9 +541,15 @@ export default function ProfileView({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-stone-50 border border-stone-200/60 rounded-xl py-3 px-4 text-sm font-semibold focus:border-primary focus:bg-white focus:outline-none" 
+                      className={`w-full bg-stone-50 border rounded-xl py-3 px-4 text-sm font-semibold focus:bg-white focus:outline-none ${passwordErrors.confirmPassword ? 'border-rose-400' : 'border-stone-200/60 focus:border-primary'}`}
                       type="password" 
                     />
+                    {passwordErrors.confirmPassword && (
+                      <p className="text-xs text-rose-500 font-semibold flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">error</span>
+                        {passwordErrors.confirmPassword}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex justify-end mt-2">
@@ -527,49 +584,42 @@ export default function ProfileView({
               </button>
             </div>
 
-            {/* Add Card Form inline */}
+            {/* Add Card Form inline — using shared CreditCardForm */}
             {showCardForm && (
               <form onSubmit={handleAddCardBtn} className="bg-white rounded-3xl p-6 border border-stone-100 shadow-sm text-left space-y-4">
-                <p className="text-sm font-bold text-stone-800">Yeni Ödeme Yöntemi Ekle</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-stone-500 ml-1">Kart Başlığı</label>
-                    <input 
-                      value={newCardName}
-                      onChange={(e) => setNewCardName(e.target.value)}
-                      placeholder="örn: Şahsi Kartım, Bonus"
-                      className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2.5 px-3 text-xs" 
-                      type="text" 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-stone-500 ml-1">Kart Tipi</label>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-stone-800">Yeni Ödeme Yöntemi Ekle</p>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[11px] font-bold text-stone-500">Kart Tipi</label>
                     <select 
                       value={newCardType}
                       onChange={(e) => setNewCardType(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2.5 px-3 text-xs"
+                      className="rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2 px-3 text-xs"
                     >
                       <option value="Visa">Visa</option>
                       <option value="Mastercard">Mastercard</option>
                       <option value="Troy">Troy</option>
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-stone-500 ml-1">Kart Numarası</label>
-                    <input 
-                      value={newCardNum}
-                      onChange={(e) => setNewCardNum(e.target.value)}
-                      maxLength="16"
-                      placeholder="4000 1234 5678 9012"
-                      className="w-full rounded-xl border border-stone-200/80 bg-stone-50 focus:border-primary focus:bg-white focus:outline-none py-2.5 px-3 text-xs font-mono" 
-                      type="text" 
-                    />
-                  </div>
                 </div>
+
+                <CreditCardForm
+                  cardNumber={cardFields.cardNumber}
+                  cardName={cardFields.cardName}
+                  cardExpiry={cardFields.cardExpiry}
+                  cardCVV={cardFields.cardCVV}
+                  onChange={(fields) => {
+                    setCardFields(fields);
+                    // Clear errors on change
+                    if (Object.keys(cardErrors).length) setCardErrors({});
+                  }}
+                  errors={cardErrors}
+                />
+
                 <div className="flex justify-end gap-2 text-xs">
                   <button 
                     type="button"
-                    onClick={() => setShowCardForm(false)}
+                    onClick={() => { setShowCardForm(false); setCardErrors({}); }}
                     className="px-4 py-2 border border-stone-200 rounded-lg text-stone-500 hover:bg-stone-100"
                   >
                     İptal
@@ -607,12 +657,7 @@ export default function ProfileView({
                     </div>
 
                     <button 
-                      onClick={() => {
-                        if (confirm("Bu kartı silmek istediğinize emin misiniz?")) {
-                          onDeleteCard && onDeleteCard(card.id);
-                          alert("Kayıtlı kart silindi!");
-                        }
-                      }}
+                      onClick={() => setDeleteCardTarget(card)}
                       className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-rose-50 hover:text-primary text-stone-400 transition-colors cursor-pointer select-none"
                     >
                       <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -733,7 +778,7 @@ export default function ProfileView({
                   </p>
                 </div>
                 <button 
-                  onClick={handleDeleteAccount}
+                  onClick={() => setDeleteAccountModalOpen(true)}
                   className="px-6 py-2.5 bg-secondary text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition-colors cursor-pointer border-none shadow-sm flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-sm font-bold">delete_forever</span>

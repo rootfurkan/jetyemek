@@ -4,13 +4,18 @@ import {
   RESTAURANT_GRID, 
   FOOD_CATEGORIES 
 } from '../data.jsx';
+import ConfirmModal from '../common/components/ConfirmModal.jsx';
+import { useToast } from '../common/components/Toast.jsx';
 
 export default function HomeView({ setCurrentTab, onApplyDiscount }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [activeSort, setActiveSort] = useState(null); // 'rating', 'free', 'minOrder'
   const [searchQuery, setSearchQuery] = useState('');
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [favoritedIds, setFavoritedIds] = useState(new Set());
   
   const scrollContainerRef = useRef(null);
+  const addToast = useToast();
 
   // Filter & sort logic
   let displayedRestaurants = [...RESTAURANT_GRID];
@@ -52,12 +57,44 @@ export default function HomeView({ setCurrentTab, onApplyDiscount }) {
   };
 
   const onCouponClaim = () => {
+    setCouponModalOpen(true);
+  };
+
+  const handleCouponConfirm = () => {
     onApplyDiscount && onApplyDiscount('İLK50');
-    alert("Harika! 'İLK50' kupon kodu sepetinize başarıyla tanımlandı. 50 TL indirim kazandınız!");
+    addToast({
+      message: "'İLK50' kupon kodu sepetinize tanımlandı. 50 TL indirim kazandınız!",
+      type: 'success',
+    });
+  };
+
+  const handleToggleFavorite = (rest, e) => {
+    e.stopPropagation();
+    const newSet = new Set(favoritedIds);
+    if (newSet.has(rest.id)) {
+      newSet.delete(rest.id);
+      addToast({ message: `${rest.name} favorilerden çıkarıldı.`, type: 'info' });
+    } else {
+      newSet.add(rest.id);
+      addToast({ message: `${rest.name} favorilere eklendi! ❤️`, type: 'success' });
+    }
+    setFavoritedIds(newSet);
   };
 
   return (
     <div className="space-y-10 animate-fade-in">
+      {/* Coupon Confirm Modal */}
+      <ConfirmModal
+        isOpen={couponModalOpen}
+        onClose={() => setCouponModalOpen(false)}
+        onConfirm={handleCouponConfirm}
+        title="Kuponu Kullan"
+        message="'İLK50' kupon kodunu sepetinize eklemek istiyor musunuz? İlk siparişinizde 50 TL indirim kazanacaksınız!"
+        confirmLabel="Kuponu Al"
+        cancelLabel="Vazgeç"
+        icon="local_offer"
+      />
+
       {/* 1. Campaign Slider Banner */}
       <section className="py-2">
         <div className="relative overflow-hidden rounded-[32px] bg-primary-container h-[360px] md:h-[400px] group shadow-xl shadow-rose-100/30">
@@ -301,13 +338,15 @@ export default function HomeView({ setCurrentTab, onApplyDiscount }) {
                   {/* Top-right Actions overlay */}
                   <div className="absolute top-3 right-3 z-10 flex gap-2">
                     <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert(`${rest.name} favorilere eklendi!`);
-                      }}
+                      onClick={(e) => handleToggleFavorite(rest, e)}
                       className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-stone-600 hover:text-primary hover:bg-white active:scale-90 transition-all shadow-sm flex items-center justify-center cursor-pointer border border-white/50"
                     >
-                      <span className="material-symbols-outlined text-[18px]">favorite</span>
+                      <span
+                        className="material-symbols-outlined text-[18px]"
+                        style={favoritedIds.has(rest.id) ? { fontVariationSettings: "'FILL' 1", color: '#e11d48' } : {}}
+                      >
+                        favorite
+                      </span>
                     </button>
                   </div>
                 </div>

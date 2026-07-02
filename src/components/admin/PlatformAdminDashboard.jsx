@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 
 export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hideSidebar }) {
+  const addToast = useToast();
   // Navigation tabs for Super Admin
   const [localActiveTab, setLocalActiveTab] = useState('overview'); // 'overview' | 'restaurants' | 'users' | 'orders' | 'couriers' | 'campaigns' | 'finance' | 'settings'
   const activeTab = propActiveTab || localActiveTab;
@@ -157,7 +159,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   const [selectedCourierToAssign, setSelectedCourierToAssign] = useState(2);
 
   const handleAssignOrder = () => {
-    alert(`Sipariş #${selectedOrderToAssign}, kurye ${couriers.find(c => c.id === Number(selectedCourierToAssign))?.name} üzerine başarıyla atandı ve kurye cihazına bildirim gönderildi!`);
+    addToast({ message: `Sipariş #${selectedOrderToAssign}, kurye ${couriers.find(c => c.id === Number(selectedCourierToAssign))?.name} üzerine başarıyla atandı!`, type: 'success' });
     // update status
     setCouriers(prev => prev.map(c => c.id === Number(selectedCourierToAssign) ? { ...c, status: 'Teslimatta' } : c));
     setOrders(prev => prev.map(o => o.id === selectedOrderToAssign ? { ...o, status: 'Yolda' } : o));
@@ -192,7 +194,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     setPromos(prev => [newPromo, ...prev]);
     setNewCampaignName('');
     setNewCampaignCode('');
-    alert(`Yeni kampanya ve "${newPromo.code}" kuponu canlı sisteme tanımlandı!`);
+    addToast({ message: `Yeni kampanya ve "${newPromo.code}" kuponu canlı sisteme tanımlandı!`, type: 'success' });
   };
 
 
@@ -209,7 +211,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     setPdfLoading(true);
     setTimeout(() => {
       setPdfLoading(false);
-      alert('Platform mali tablosu PDF raporu başarıyla üretildi ve indirilmeye başlandı.');
+      addToast({ message: 'Platform mali tablosu PDF raporu başarıyla üretildi ve indirilmeye başlandı.', type: 'success' });
     }, 1500);
   };
 
@@ -223,7 +225,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   const [adminEmail, setAdminProfileEmail] = useState('cansu.y@vibranthearth.com');
 
   const handleSaveSystemSettings = () => {
-    alert('Platform genel ayarları ve sistem parametreleri başarıyla güncellendi!');
+    addToast({ message: 'Platform genel ayarları ve sistem parametreleri başarıyla güncellendi!', type: 'success' });
   };
 
   // Helper filters

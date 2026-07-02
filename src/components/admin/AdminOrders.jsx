@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 
 export default function AdminOrders() {
+  const addToast = useToast();
   const [activeTab, setActiveTab] = useState('All'); // 'All' | 'New' | 'Preparing' | 'Ready'
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   
@@ -332,7 +334,7 @@ export default function AdminOrders() {
                       onClick={(e) => {
                         e.stopPropagation();
                         // Print action mock
-                        alert(`Sipariş #${order.id} mutfak fişi yazdırılıyor...`);
+                        addToast({ message: `Sipariş #${order.id} mutfak fişi yazdırılıyor...`, type: 'info' });
                       }}
                       className="p-1.5 text-stone-400 hover:text-stone-700 transition-colors bg-white border border-stone-200/50 rounded-lg shadow-sm"
                       title="Yazdır"

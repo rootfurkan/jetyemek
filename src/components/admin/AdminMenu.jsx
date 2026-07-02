@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useToast } from '../../common/components/Toast.jsx';
 
 export default function AdminMenu() {
+  const addToast = useToast();
   const [selectedCategory, setSelectedCategory] = useState('Burgers');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -106,24 +108,21 @@ export default function AdminMenu() {
 
   // Handle product deletion
   const handleDeleteProduct = (id) => {
-    if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
-      const deletedProd = products.find(p => p.id === id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-      
-      // Update counts
-      if (deletedProd) {
-        setCategories(prev => prev.map(c => 
-          c.id === deletedProd.category ? { ...c, count: Math.max(0, c.count - 1) } : c
-        ));
-      }
+    const deletedProd = products.find(p => p.id === id);
+    setProducts(prev => prev.filter(p => p.id !== id));
+    if (deletedProd) {
+      setCategories(prev => prev.map(c => 
+        c.id === deletedProd.category ? { ...c, count: Math.max(0, c.count - 1) } : c
+      ));
     }
+    addToast({ message: 'Ürün başarıyla silindi.', type: 'success' });
   };
 
   // Add new product submit handler
   const handleAddProductSubmit = (e) => {
     e.preventDefault();
     if (!newProductName || !newProductPrice) {
-      alert('Lütfen en az ürün adı ve fiyatını doldurunuz.');
+      addToast({ message: 'Lütfen en az ürün adı ve fiyatını doldurunuz.', type: 'error' });
       return;
     }
 
@@ -158,11 +157,11 @@ export default function AdminMenu() {
 
   // Handle add custom category
   const handleAddCategory = () => {
-    const catName = prompt('Yeni kategori adını girin:');
+    const catName = window.prompt('Yeni kategori adını girin:');
     if (catName && catName.trim() !== '') {
       const exists = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
       if (exists) {
-        alert('Bu kategori zaten mevcut!');
+        addToast({ message: 'Bu kategori zaten mevcut!', type: 'error' });
         return;
       }
       setCategories(prev => [...prev, { id: catName, name: catName, count: 0 }]);
@@ -291,7 +290,7 @@ export default function AdminMenu() {
 
                   <div className="flex gap-1">
                     <button 
-                      onClick={() => alert('Ürün düzenleme yakında eklenecek! Şimdilik silebilir veya yeni ürün ekleyebilirsiniz.')}
+                      onClick={() => addToast({ message: 'Ürün düzenleme yakında eklenecek! Şimdilik silebilir veya yeni ürün ekleyebilirsiniz.', type: 'info' })}
                       className="p-1.5 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-all"
                       title="Düzenle"
                     >

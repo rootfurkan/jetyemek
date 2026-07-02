@@ -1,11 +1,53 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { FOOD_CATEGORIES } from '../../../data.jsx';
+import { useToast } from '../../../common/components/Toast.jsx';
+import ConfirmModal from '../../../common/components/ConfirmModal.jsx';
+import { motion, AnimatePresence } from 'motion/react';
+import { toggleFavorite } from '../../../features/auth/authSlice.js';
 
 export default function Home() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const addToast = useToast();
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const favoritedIds = useSelector((state) => state.auth.favorites) || [];
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const slides = [
+    {
+      id: 0,
+      badge: "SINIRLI SÜRE",
+      title: <>İlk Siparişine<br />50TL İndirim</>,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA",
+      buttonText: "Kuponu Al",
+      action: () => setCouponModalOpen(true)
+    },
+    {
+      id: 1,
+      badge: "HAFTASONU ÖZEL",
+      title: <>Tüm Pizzalarda<br />%25 İndirim</>,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdsrEu0cTgCoAyw-HYvB8hMUEXf8mijFgr2COUjT4SaGIGbQCLEVqNQtdK2e8Xtrby-L_i53rdRO3Shm6qKK1umC71PCYlkfY6Z2b4_U_drhT2luNRMPPsD2jsqX-9OZ69M1Fi545TVlxKaRypp9Q4UECwSHEIIl5rniNqVMGek6mD8eUWyFk4BxBAKJPrLuOUrTh9B7n4t4Dz5XlQ9UTGshFgZcdvb7UW042vdbpVrbqKLA00vLZ26EyNZZ11_HqBZvBwZ-sCcRU",
+      buttonText: "Restoranları Gör",
+      action: () => handleScroll('right')
+    },
+    {
+      id: 2,
+      badge: "ÜCRETSİZ TESLİMAT",
+      title: <>Seçili Restoranlarda<br />Sıfır Kargo Ücreti</>,
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U",
+      buttonText: "Menüyü Keşfet",
+      action: () => navigate('/restaurant/gourmet-burger')
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   // Load datasets from Redux state
   const sponsorRestaurants = useSelector((state) => state.restaurants.sponsorList);
@@ -57,38 +99,80 @@ export default function Home() {
   };
 
   const onCouponClaim = () => {
-    alert("Harika! 'İLK50' kupon kodu sepetinize başarıyla tanımlandı. 50 TL indirim kazandınız!");
+    setCouponModalOpen(true);
+  };
+
+  const handleToggleFavorite = (rest, e) => {
+    e.stopPropagation();
+    const isFav = favoritedIds.includes(rest.id);
+    dispatch(toggleFavorite(rest.id));
+    if (isFav) {
+      addToast({ message: `${rest.name} favorilerden çıkarıldı.`, type: 'info' });
+    } else {
+      addToast({ message: `${rest.name} favorilere eklendi! ❤️`, type: 'success' });
+    }
   };
 
   return (
     <div className="space-y-10 animate-fade-in">
+      {/* Coupon Confirm Modal */}
+      <ConfirmModal
+        isOpen={couponModalOpen}
+        onClose={() => setCouponModalOpen(false)}
+        onConfirm={() => addToast({ message: "'İLK50' kupon kodu sepetinize tanımlandı. 50 TL indirim kazandınız!", type: 'success' })}
+        title="Kuponu Kullan"
+        message="'İLK50' kupon kodunu sepetinize eklemek istiyor musunuz? İlk siparişinizde 50 TL indirim kazanacaksınız!"
+        confirmLabel="Kuponu Al"
+        cancelLabel="Vazgeç"
+        icon="local_offer"
+      />
       {/* 1. Campaign Slider Banner */}
       <section className="py-2">
         <div className="relative overflow-hidden rounded-[32px] bg-primary-container h-[360px] md:h-[400px] group shadow-xl shadow-rose-100/30">
-          <div 
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" 
-            style={{ 
-              backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA')` 
-            }}
-          ></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent flex flex-col justify-center px-8 md:px-16">
-            <span className="bg-white/25 backdrop-blur-md text-white text-[11px] font-extrabold uppercase tracking-widest w-fit px-3.5 py-1.5 rounded-full mb-4">
-              SINIRLI SÜRE
-            </span>
-            <h1 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6 tracking-tight">
-              İlk Siparişine<br />%50 İndirim
-            </h1>
-            <button 
-              onClick={onCouponClaim}
-              className="bg-white hover:bg-rose-50 text-primary px-10 py-4 rounded-full font-extrabold text-sm md:text-base hover:shadow-2xl hover:-translate-y-0.5 transition-all w-fit cursor-pointer active:scale-95 shadow-lg shadow-black/20"
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSlide}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0"
             >
-              Kuponu Al
-            </button>
-          </div>
-          <div className="absolute bottom-6 left-8 md:left-16 flex gap-2 select-none">
-            <div className="w-10 h-1.5 bg-white rounded-full"></div>
-            <div className="w-10 h-1.5 bg-white/30 rounded-full"></div>
-            <div className="w-10 h-1.5 bg-white/30 rounded-full"></div>
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] group-hover:scale-105" 
+                style={{ 
+                  backgroundImage: `url('${slides[activeSlide].image}')` 
+                }}
+              ></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent flex flex-col justify-center px-8 md:px-16">
+                <span className="bg-white/25 backdrop-blur-md text-white text-[11px] font-extrabold uppercase tracking-widest w-fit px-3.5 py-1.5 rounded-full mb-4">
+                  {slides[activeSlide].badge}
+                </span>
+                <h1 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6 tracking-tight">
+                  {slides[activeSlide].title}
+                </h1>
+                <button 
+                  onClick={slides[activeSlide].action}
+                  className="bg-white hover:bg-rose-50 text-primary px-10 py-4 rounded-full font-extrabold text-sm md:text-base hover:shadow-2xl hover:-translate-y-0.5 transition-all w-fit cursor-pointer active:scale-95 shadow-lg shadow-black/20"
+                >
+                  {slides[activeSlide].buttonText}
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Slider Controls / Indicators */}
+          <div className="absolute bottom-6 left-8 md:left-16 flex gap-2 select-none z-10">
+            {slides.map((slide, idx) => (
+              <button
+                key={slide.id}
+                onClick={() => setActiveSlide(idx)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  activeSlide === idx ? 'w-10 bg-white' : 'w-4 bg-white/30 hover:bg-white/50'
+                }`}
+                aria-label={`Slide ${idx + 1}`}
+              ></button>
+            ))}
           </div>
         </div>
       </section>
@@ -299,13 +383,15 @@ export default function Home() {
 
                   <div className="absolute top-3 right-3 z-10 flex gap-2">
                     <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert(`${rest.name} favorilere eklendi!`);
-                      }}
+                      onClick={(e) => handleToggleFavorite(rest, e)}
                       className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-stone-600 hover:text-primary hover:bg-white active:scale-90 transition-all shadow-sm flex items-center justify-center cursor-pointer border border-white/50"
                     >
-                      <span className="material-symbols-outlined text-[18px]">favorite</span>
+                      <span
+                        className="material-symbols-outlined text-[18px]"
+                        style={favoritedIds.includes(rest.id) ? { fontVariationSettings: "'FILL' 1", color: '#e11d48' } : {}}
+                      >
+                        favorite
+                      </span>
                     </button>
                   </div>
                 </div>

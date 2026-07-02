@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart } from '../../../features/cart/cartSlice.js';
+import { useToast } from '../../../common/components/Toast.jsx';
+import Modal from '../../../common/components/Modal.jsx';
 
 export default function RestaurantMenu() {
   const dispatch = useDispatch();
+  const addToast = useToast();
 
   // Load menu from menuSlice
   const menuItems = useSelector((state) => state.menu.items);
   const currentCartItems = useSelector((state) => state.cart.items);
+  const reviews = useSelector((state) => state.reviews.list) || [];
 
   const [selectedSection, setSelectedSection] = useState('Popüler');
   const [menuSearch, setMenuSearch] = useState('');
+  
+  // Modals state
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [customizingItem, setCustomizingItem] = useState(null);
+
+  // Customize options
+  const [wrapOption, setWrapOption] = useState('Tek lavaş');
+  const [drinkOption, setDrinkOption] = useState('Kola');
+  const [grammageOption, setGrammageOption] = useState('90gr');
+  const [sauceOption, setSauceOption] = useState('İstemiyorum');
 
   const sections = ['Popüler', 'Burgerler', 'Yan Ürünler', 'İçecekler', 'Tatlılar'];
 
@@ -23,7 +37,11 @@ export default function RestaurantMenu() {
   });
 
   const handleAddClick = (item) => {
-    dispatch(addToCart(item));
+    setWrapOption('Tek lavaş');
+    setDrinkOption('Kola');
+    setGrammageOption('90gr');
+    setSauceOption('İstemiyorum');
+    setCustomizingItem(item);
   };
 
   const getItemCountInCart = (itemId) => {
@@ -58,18 +76,21 @@ export default function RestaurantMenu() {
             <span className="text-xs font-bold bg-white/20 px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/25">
               Hamburger & Pizza
             </span>
-            <div className="flex items-center gap-1 text-xs font-bold bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded-full border border-amber-500/30">
+            <button 
+              onClick={() => setShowReviewsModal(true)}
+              className="flex items-center gap-1 text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-4.5 py-1.5 rounded-full border border-amber-500/30 hover:scale-102 active:scale-95 transition-all cursor-pointer shadow-sm select-none"
+            >
               <span className="material-symbols-outlined text-[15px] text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
               <span>4.8</span>
-              <span className="opacity-80 font-medium">(2k+ değerlendirme)</span>
-            </div>
+              <span className="opacity-80 font-medium">(2k+ değerlendirme • Yorumları Gör)</span>
+            </button>
           </div>
         </div>
       </section>
 
       {/* Campaigns & Flash Deals Inside Restaurant */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-primary-container text-on-primary-container flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all border border-rose-100/10">
+        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-rose-900 to-red-800 text-white flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all border border-rose-800/10">
           <div className="z-10">
             <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-2.5 py-1 rounded-full">
               Günün Fırsatı
@@ -81,8 +102,8 @@ export default function RestaurantMenu() {
               Sadece bugüne özel siparişlerde geçerlidir!
             </p>
             <button 
-              onClick={() => alert("Menü fırsatı seçildi! Lütfen dilediğiniz burgerleri sepete ekleyin.")}
-              className="mt-4 px-6 py-2.5 bg-white hover:bg-rose-50 text-primary font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+              onClick={() => addToast({ message: 'Menü fırsatı seçildi! Lütfen dilediğiniz burgerleri sepete ekleyin.', type: 'info' })}
+              className="mt-4 px-6 py-2.5 bg-white hover:bg-rose-50 text-rose-900 font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95 border-none"
             >
               Şimdi Sipariş Ver
             </button>
@@ -92,7 +113,7 @@ export default function RestaurantMenu() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-tertiary-container text-on-tertiary-container flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all border border-sky-100/10">
+        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-amber-900 to-amber-700 text-white flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all border border-amber-800/10">
           <div className="z-10">
             <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-2.5 py-1 rounded-full">
               Özel İndirim
@@ -100,15 +121,15 @@ export default function RestaurantMenu() {
             <h3 className="text-xl md:text-2xl font-extrabold text-white mt-3 leading-tight">
               %25 İndirim Fırsatı
             </h3>
-            <p className="text-xs mt-1 text-sky-100 font-medium">
+            <p className="text-xs mt-1 text-amber-100 font-medium">
               Tüm pizza çeşitlerinde geçerli anında indirim.
             </p>
             <button 
               onClick={() => {
                 setSelectedSection('Popüler');
-                alert("Pizza ve popüler lezzetler filtrelendi!");
+                addToast({ message: 'Pizza ve popüler lezzetler filtrelendi!', type: 'info' });
               }}
-              className="mt-4 px-6 py-2.5 bg-white hover:bg-sky-50 text-tertiary font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+              className="mt-4 px-6 py-2.5 bg-white hover:bg-amber-50 text-amber-900 font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95 border-none"
             >
               Menüyü İncele
             </button>
@@ -238,7 +259,236 @@ export default function RestaurantMenu() {
             })}
           </div>
         )}
-      </section>
+    </section>
+
+      {/* Reviews Modal */}
+      <Modal
+        isOpen={showReviewsModal}
+        onClose={() => setShowReviewsModal(false)}
+        title="Müşteri Değerlendirmeleri"
+      >
+        <div className="space-y-4 text-left">
+          <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/50 mb-6 flex justify-between items-center">
+            <div>
+              <p className="text-2xl font-black text-stone-800">4.8</p>
+              <div className="flex gap-0.5 text-amber-500 mt-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                ))}
+              </div>
+            </div>
+            <div className="text-right text-xs text-stone-500 font-semibold">
+              <p>2.420 Toplam Puanlama</p>
+              <p className="text-[10px] text-stone-400 mt-0.5">%96 Olumlu Geri Dönüş</p>
+            </div>
+          </div>
+          <div className="divide-y divide-stone-100 max-h-[350px] overflow-y-auto pr-1">
+            {reviews.map(review => (
+              <div key={review.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <span className="font-bold text-stone-800 text-sm">{review.user}</span>
+                    <div className="flex gap-0.5 text-amber-500 mt-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <span
+                          key={i}
+                          className="material-symbols-outlined text-[12px]"
+                          style={{ fontVariationSettings: i < review.rating ? "'FILL' 1" : undefined }}
+                        >
+                          star
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-stone-400 font-semibold">{review.date}</span>
+                </div>
+                <p className="text-xs text-stone-600 leading-relaxed font-medium mt-1.5">{review.comment}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Customize Options Modal */}
+      <Modal
+        isOpen={!!customizingItem}
+        onClose={() => setCustomizingItem(null)}
+        title={customizingItem ? `${customizingItem.name} Seçenekleri` : "Ürün Seçenekleri"}
+      >
+        {customizingItem && (() => {
+          const isCigkofta = customizingItem.category === 'Çiğ Köfte' || 
+                             customizingItem.category === 'Dürümler' || 
+                             customizingItem.name.toLowerCase().includes('çiğ') || 
+                             customizingItem.name.toLowerCase().includes('cig');
+          const isMenu = customizingItem.category === 'Menüler' || 
+                         customizingItem.name.toLowerCase().includes('menü') || 
+                         customizingItem.name.toLowerCase().includes('menu');
+          const isBurger = customizingItem.category === 'Burgerler' || 
+                           customizingItem.name.toLowerCase().includes('burger');
+
+          // Addons price calculation
+          let addonPrice = 0;
+          if (isBurger) {
+            if (grammageOption === '120gr') addonPrice += 100;
+            if (grammageOption === '150gr') addonPrice += 200;
+          }
+          if (sauceOption === 'Ketçap' || sauceOption === 'Mayonez') {
+            addonPrice += 20;
+          }
+
+          const currentPrice = customizingItem.price + addonPrice;
+
+          const handleConfirmAdd = () => {
+            let details = [];
+            if (isCigkofta) details.push(wrapOption);
+            if (isMenu) details.push(drinkOption);
+            if (isBurger) details.push(grammageOption);
+            if (sauceOption !== 'İstemiyorum') details.push(sauceOption);
+
+            const detailsText = details.join(', ');
+            const finalName = details.length > 0 
+              ? `${customizingItem.name} (${detailsText})` 
+              : customizingItem.name;
+            const finalId = details.length > 0 
+              ? `${customizingItem.id}-${details.join('-').replace(/\s+/g, '')}` 
+              : customizingItem.id;
+
+            dispatch(addToCart({
+              ...customizingItem,
+              id: finalId,
+              name: finalName,
+              price: currentPrice
+            }));
+            
+            addToast({ message: `${finalName} sepete eklendi!`, type: 'success' });
+            setCustomizingItem(null);
+          };
+
+          return (
+            <div className="space-y-6 text-left">
+              {/* Product Info Description */}
+              <div className="border-b border-stone-100 pb-4">
+                <p className="text-xs text-stone-500 leading-relaxed font-semibold">{customizingItem.description}</p>
+              </div>
+
+              {/* Wrap Option (Çiğköfte only) */}
+              {isCigkofta && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">Lavaş Tercihi</h4>
+                  <div className="flex gap-3">
+                    {['Tek lavaş', 'İki lavaş'].map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setWrapOption(opt)}
+                        className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          wrapOption === opt
+                            ? 'border-primary bg-rose-50/20 text-primary'
+                            : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Drink Option (Menus only) */}
+              {isMenu && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">İçecek Tercihi</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Kola', 'Gazoz', 'Ice Tea', 'Ayran', 'Su'].map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setDrinkOption(opt)}
+                        className={`py-3 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          drinkOption === opt
+                            ? 'border-primary bg-rose-50/20 text-primary'
+                            : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Meat Weight Option (Burgers only) */}
+              {isBurger && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">Köfte Gramajı Tercihi</h4>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { label: '90gr (Varsayılan)', value: '90gr', extra: 0 },
+                      { label: '120gr (+100 TL)', value: '120gr', extra: 100 },
+                      { label: '150gr (+200 TL)', value: '150gr', extra: 200 }
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setGrammageOption(opt.value)}
+                        className={`flex justify-between items-center py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          grammageOption === opt.value
+                            ? 'border-primary bg-rose-50/20 text-primary'
+                            : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {opt.extra > 0 && <span className="font-extrabold text-primary">+{opt.extra} ₺</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sauce Option (All items) */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">Ekstra Sos Tercihi</h4>
+                <div className="flex flex-col gap-2">
+                  {[
+                    { label: 'İstemiyorum (Ücretsiz)', value: 'İstemiyorum', extra: 0 },
+                    { label: 'Ketçap (+20 TL)', value: 'Ketçap', extra: 20 },
+                    { label: 'Mayonez (+20 TL)', value: 'Mayonez', extra: 20 }
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setSauceOption(opt.value)}
+                      className={`flex justify-between items-center py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        sauceOption === opt.value
+                          ? 'border-primary bg-rose-50/20 text-primary'
+                          : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {opt.extra > 0 && <span className="font-extrabold text-primary">+{opt.extra} ₺</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer pricing CTA */}
+              <div className="border-t border-stone-100 pt-4 flex items-center justify-between mt-6">
+                <div>
+                  <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Toplam Fiyat</p>
+                  <p className="text-xl font-black text-primary">₺{currentPrice}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleConfirmAdd}
+                  className="brand-gradient-bg text-white font-extrabold text-xs px-8 py-3.5 rounded-xl hover:scale-102 active:scale-98 transition-all cursor-pointer border-none shadow-md shadow-rose-900/10"
+                >
+                  Sepete Ekle
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
     </div>
   );
 }

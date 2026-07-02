@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { GOURMET_MENU } from '../data.jsx';
+import { useToast } from '../common/components/Toast.jsx';
 
 export default function MenuView({ onAddToCart, currentCartItems = [] }) {
+  const addToast = useToast();
   const [selectedSection, setSelectedSection] = useState('Popüler');
   const [menuSearch, setMenuSearch] = useState('');
 
@@ -76,7 +78,7 @@ export default function MenuView({ onAddToCart, currentCartItems = [] }) {
               Sadece bugüne özel siparişlerde geçerlidir!
             </p>
             <button 
-              onClick={() => alert("Menü fırsatı seçildi! Lütfen dilediğiniz burgerleri sepete ekleyin.")}
+              onClick={() => addToast({ message: 'Menü fırsatı seçildi! Lütfen dilediğiniz burgerleri sepete ekleyin.', type: 'info' })}
               className="mt-4 px-6 py-2.5 bg-white hover:bg-rose-50 text-primary font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
             >
               Şimdi Sipariş Ver
@@ -101,7 +103,7 @@ export default function MenuView({ onAddToCart, currentCartItems = [] }) {
             <button 
               onClick={() => {
                 setSelectedSection('Popüler');
-                alert("Pizza ve popüler lezzetler filtrelendi!");
+                addToast({ message: 'Pizza ve popüler lezzetler filtrelendi!', type: 'info' });
               }}
               className="mt-4 px-6 py-2.5 bg-white hover:bg-sky-50 text-tertiary font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
             >

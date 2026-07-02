@@ -7,9 +7,18 @@ const authSlice = createSlice({
     userProfile: INITIAL_USER,
     addresses: INITIAL_ADDRESSES,
     savedCards: INITIAL_CARDS,
+    favorites: ['gourmet-burger'], // Initial favorite to show
     isAuthenticated: true,
   },
   reducers: {
+    toggleFavorite: (state, action) => {
+      const id = action.payload;
+      if (state.favorites.includes(id)) {
+        state.favorites = state.favorites.filter(favId => favId !== id);
+      } else {
+        state.favorites.push(id);
+      }
+    },
     updateProfile: (state, action) => {
       state.userProfile = { ...state.userProfile, ...action.payload };
     },
@@ -18,7 +27,7 @@ const authSlice = createSlice({
     },
     addAddress: (state, action) => {
       state.addresses.push({
-        id: Date.now(),
+        id: action.payload.id || Date.now(),
         ...action.payload,
       });
     },
@@ -38,6 +47,7 @@ const authSlice = createSlice({
 });
 
 export const {
+  toggleFavorite,
   updateProfile,
   changeAvatar,
   addAddress,
