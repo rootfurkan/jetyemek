@@ -7,6 +7,9 @@ const menuSlice = createSlice({
     items: GOURMET_MENU,
   },
   reducers: {
+    setMenuItems: (state, action) => {
+      state.items = action.payload;
+    },
     addMenuItem: (state, action) => {
       state.items.push({
         id: 'item-' + Date.now(),
@@ -25,6 +28,6 @@ const menuSlice = createSlice({
   },
 });
 
-export const { addMenuItem, deleteMenuItem, updateMenuItem } = menuSlice.actions;
+export const { setMenuItems, addMenuItem, deleteMenuItem, updateMenuItem } = menuSlice.actions;
 
 export default menuSlice.reducer;
