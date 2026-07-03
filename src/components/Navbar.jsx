@@ -1,4 +1,7 @@
 import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '../features/auth/authSlice.js';
 
 export default function Navbar({ 
   currentTab, 
@@ -10,6 +13,25 @@ export default function Navbar({
   onEnterAdmin,
   onEnterSuperAdmin
 }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isAuthenticated, currentUser } = useSelector((state) => state.auth);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
+
+  const getGreetingText = () => {
+    if (!currentUser) return "Merhaba";
+    if (currentUser.type === 'admin') {
+      return `Merhaba, ${currentUser.name} (Admin)`;
+    }
+    if (currentUser.type === 'restaurant') {
+      return `Merhaba, ${currentUser.name} (Restoran)`;
+    }
+    return `Merhaba, ${currentUser.name}`;
+  };
   return (
     <header className="sticky top-0 z-50 flex justify-between items-center px-4 md:px-8 lg:px-12 w-full h-16 bg-white shadow-sm border-b border-rose-100/10">
       <div className="flex items-center gap-8 w-full max-w-7xl mx-auto justify-between">
@@ -82,21 +104,25 @@ export default function Navbar({
         {/* Right actions */}
         <div className="flex items-center gap-3">
           {/* Admin Panel Quick switch button */}
-          <button 
-            onClick={onEnterAdmin} 
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 border border-stone-200 shadow-sm whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-[15px] text-stone-500">storefront</span>
-            Restoran Paneli
-          </button>
+          {isAuthenticated && currentUser?.type === 'restaurant' && (
+            <button 
+              onClick={onEnterAdmin} 
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 border border-stone-200 shadow-sm whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[15px] text-stone-500">storefront</span>
+              Restoran Paneli
+            </button>
+          )}
 
-          <button 
-            onClick={onEnterSuperAdmin} 
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white hover:bg-primary-container rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 shadow-sm shadow-primary/10 whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-[15px]">admin_panel_settings</span>
-            Admin Paneli
-          </button>
+          {isAuthenticated && currentUser?.type === 'admin' && (
+            <button 
+              onClick={onEnterSuperAdmin} 
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white hover:bg-primary-container rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 shadow-sm shadow-primary/10 whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[15px]">admin_panel_settings</span>
+              Admin Paneli
+            </button>
+          )}
 
           <button 
             onClick={() => setCurrentTab('favorites')}
@@ -131,22 +157,43 @@ export default function Navbar({
 
           <div className="h-6 w-[1px] bg-stone-200 hidden sm:block"></div>
 
-          {/* Profile Quick Toggle */}
-          <div 
-            onClick={() => setCurrentTab('account')}
-            className="flex items-center gap-2 cursor-pointer group select-none active:scale-95 transition-all"
-          >
-            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary transition-colors">
-              <img 
-                className="w-full h-full object-cover" 
-                alt="Account" 
-                src={userProfile?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"} 
-              />
+          {/* Profile / Login Switcher */}
+          {!isAuthenticated ? (
+            <button 
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-primary hover:bg-primary-container text-white rounded-full text-xs font-bold transition-all active:scale-95 shadow-md shadow-primary/10 cursor-pointer border-none"
+            >
+              <span className="material-symbols-outlined text-[16px]">login</span>
+              Giriş Yap
+            </button>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div 
+                onClick={() => setCurrentTab('account')}
+                className="flex items-center gap-2 cursor-pointer group select-none active:scale-95 transition-all"
+              >
+                <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary transition-colors">
+                  <img 
+                    className="w-full h-full object-cover" 
+                    alt="Account" 
+                    src={currentUser?.avatar || userProfile?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"} 
+                  />
+                </div>
+                <span className="hidden md:inline font-semibold text-xs text-stone-700 group-hover:text-primary transition-colors">
+                  {getGreetingText()}
+                </span>
+              </div>
+
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-1 px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-primary rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 border border-rose-200"
+                title="Çıkış Yap"
+              >
+                <span className="material-symbols-outlined text-[15px]">logout</span>
+                Çıkış Yap
+              </button>
             </div>
-            <span className="hidden md:inline font-semibold text-xs text-stone-700 group-hover:text-primary transition-colors">
-              {userProfile?.name || "Hesabım"}
-            </span>
-          </div>
+          )}
         </div>
       </div>
     </header>

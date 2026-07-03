@@ -1,59 +1,73 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { SPONSOR_RESTAURANTS, RESTAURANT_GRID } from '../../data.jsx';
 
-// Combining existing restaurants from PlatformAdminDashboard too
-const INITIAL_RESTAURANTS = [
-  { id: 'gourmet-burger', name: 'Gourmet Burger House', category: 'Hamburger & Pizza', commission: 15.0, status: 'Aktif', city: 'Beşiktaş, İstanbul', rating: 4.9, img: SPONSOR_RESTAURANTS[0].image, isOpen: true },
-  { id: 'lezzet-sofrasi', name: 'Lezzet Sofrası', category: 'Ev Yemekleri', commission: 12.0, status: 'Aktif', city: 'Kadıköy, İstanbul', rating: 4.8, img: SPONSOR_RESTAURANTS[1].image, isOpen: true },
-  { id: 'sushi-art', name: 'Sushi Art', category: 'Asya Mutfağı', commission: 18.0, status: 'Aktif', city: 'Şişli, İstanbul', rating: 4.9, img: SPONSOR_RESTAURANTS[2].image, isOpen: true },
-  { id: 'pizza-house', name: 'Pizza House', category: 'Pizza', commission: 10.0, status: 'Aktif', city: 'Fatih, İstanbul', rating: 4.7, img: SPONSOR_RESTAURANTS[3].image, isOpen: true },
-  { id: 'burger-empire', name: 'Burger Empire', category: 'Fast Food', commission: 12.5, status: 'Aktif', city: 'Beşiktaş, İstanbul', rating: 4.7, img: RESTAURANT_GRID[0].image, isOpen: true },
-  { id: 'pasta-amore', name: 'Pasta Amore', category: 'İtalyan', commission: 14.0, status: 'Pasif', city: 'Kadıköy, İstanbul', rating: 4.6, img: RESTAURANT_GRID[1].image, isOpen: false },
-  { id: 'donerci-vedat', name: 'Dönerci Vedat', category: 'Kebap & Izgara', commission: 10.0, status: 'Aktif', city: 'Fatih, İstanbul', rating: 4.9, img: RESTAURANT_GRID[2].image, isOpen: true },
+// Tüm restoranları birleştir: sponsorlar + grid (tekrarları ID'ye göre kaldır)
+const ALL_RESTAURANTS = [
+  ...SPONSOR_RESTAURANTS.map(r => ({ ...r, isSponsor: true, isOpen: r.isOpen ?? true, commission: r.commission ?? 12, status: 'Aktif' })),
+  ...RESTAURANT_GRID.filter(r => !SPONSOR_RESTAURANTS.find(s => s.id === r.id)).map(r => ({
+    ...r, isSponsor: false, commission: r.commission ?? 12, status: r.isOpen === false ? 'Pasif' : 'Aktif'
+  })),
 ];
 
 const restaurantsSlice = createSlice({
   name: 'restaurants',
   initialState: {
-    list: INITIAL_RESTAURANTS,
+    list: ALL_RESTAURANTS,
     sponsorList: SPONSOR_RESTAURANTS,
-    gridList: RESTAURANT_GRID,
+    gridList: ALL_RESTAURANTS,
     selectedRestaurantId: null,
   },
   reducers: {
     setRestaurants: (state, action) => {
       state.list = action.payload;
-      state.sponsorList = action.payload.filter(restaurant => restaurant.isSponsor);
+      state.sponsorList = action.payload.filter(r => r.isSponsor);
       state.gridList = action.payload;
     },
     setSelectedRestaurantId: (state, action) => {
       state.selectedRestaurantId = action.payload;
     },
     toggleRestaurantStatus: (state, action) => {
-      const rest = state.list.find(r => r.id === action.payload);
-      if (rest) {
-        rest.status = rest.status === 'Aktif' ? 'Pasif' : 'Aktif';
-        rest.isOpen = rest.status === 'Aktif';
-      }
+      const updateItem = (arr, id) => {
+        const r = arr.find(r => r.id === id);
+        if (r) {
+          r.status = r.status === 'Aktif' ? 'Pasif' : 'Aktif';
+          r.isOpen = r.status === 'Aktif';
+        }
+      };
+      updateItem(state.list, action.payload);
+      updateItem(state.gridList, action.payload);
     },
     updateRestaurantCommission: (state, action) => {
       const { id, commission } = action.payload;
-      const rest = state.list.find(r => r.id === id);
-      if (rest) {
-        rest.commission = parseFloat(commission);
-      }
+      const update = arr => {
+        const r = arr.find(r => r.id === id);
+        if (r) r.commission = parseFloat(commission);
+      };
+      update(state.list);
+      update(state.gridList);
     },
     addRestaurant: (state, action) => {
-      state.list.push({
-        id: 'rest-' + Date.now(),
-        rating: 5.0,
+      const newRest = {
+        id: action.payload.id || 'rest-' + Date.now(),
+        rating: '5.0',
         status: 'Aktif',
         isOpen: true,
+        isSponsor: false,
+        commission: 12,
+        minOrder: '100 TL',
+        time: '30-40 dk',
+        deliveryFee: 'Ücretsiz',
+        tag: 'evyemekleri',
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U',
         ...action.payload,
-      });
+      };
+      state.list.push(newRest);
+      state.gridList.push(newRest);
     },
     deleteRestaurant: (state, action) => {
       state.list = state.list.filter(r => r.id !== action.payload);
+      state.gridList = state.gridList.filter(r => r.id !== action.payload);
+      state.sponsorList = state.sponsorList.filter(r => r.id !== action.payload);
     },
   },
 });

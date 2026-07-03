@@ -1,10 +1,19 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../features/auth/authSlice.js';
 import { ToastProvider } from '../common/components/Toast.jsx';
 
 export default function RestaurantLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state) => state.auth.currentUser);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login', { replace: true });
+  };
 
   const activePath = location.pathname;
 
@@ -57,12 +66,23 @@ export default function RestaurantLayout() {
 
         {/* Footer actions inside Sidebar */}
         <div className="pt-4 border-t border-stone-100 flex flex-col gap-2">
-          <button 
-            onClick={() => navigate('/')}
-            className="w-full flex items-center gap-3 px-4 h-11 rounded-xl text-xs font-extrabold text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-all cursor-pointer"
+          {currentUser && (
+            <div className="flex items-center gap-3 px-4 py-2 mb-1">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-stone-200 flex-shrink-0">
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-stone-800 truncate">{currentUser.name}</p>
+                <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wide">Restoran</p>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 h-11 rounded-xl text-xs font-extrabold text-stone-500 hover:bg-red-50 hover:text-red-500 transition-all cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">logout</span>
-            Müşteri Arayüzü
+            Çıkış Yap
           </button>
         </div>
       </aside>
@@ -71,7 +91,9 @@ export default function RestaurantLayout() {
       <div className="flex-1 pl-72 flex flex-col min-h-screen">
         <header className="h-16 border-b border-stone-100/80 bg-white flex items-center justify-between px-8 sticky top-0 z-30">
           <div>
-            <h2 className="text-sm font-extrabold text-stone-800 uppercase tracking-wider">Gourmet Burger House</h2>
+            <h2 className="text-sm font-extrabold text-stone-800 uppercase tracking-wider">
+              {currentUser?.name || 'Restoran Paneli'}
+            </h2>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-[11px] font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">● Açık</span>

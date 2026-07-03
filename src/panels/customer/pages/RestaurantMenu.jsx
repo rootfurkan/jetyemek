@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { addToCart } from '../../../features/cart/cartSlice.js';
 import { useToast } from '../../../common/components/Toast.jsx';
 import Modal from '../../../common/components/Modal.jsx';
@@ -7,11 +8,27 @@ import Modal from '../../../common/components/Modal.jsx';
 export default function RestaurantMenu() {
   const dispatch = useDispatch();
   const addToast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id: restaurantId } = useParams();
 
-  // Load menu from menuSlice
-  const menuItems = useSelector((state) => state.menu.items);
+  // Redux'tan veri al
+  const allMenuItems = useSelector((state) => state.menu.items);
+  const restaurants = useSelector((state) => state.restaurants.list);
   const currentCartItems = useSelector((state) => state.cart.items);
   const reviews = useSelector((state) => state.reviews.list) || [];
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  // Bu restorana ait menü ürünlerini filtrele
+  const menuItems = allMenuItems.filter(item => item.restaurantId === restaurantId);
+
+  // Restoran bilgisini al
+  const restaurant = restaurants.find(r => r.id === restaurantId) || {
+    name: 'Restoran',
+    category: '',
+    rating: '5.0',
+    image: '',
+  };
 
   const [selectedSection, setSelectedSection] = useState('Popüler');
   const [menuSearch, setMenuSearch] = useState('');
@@ -26,7 +43,7 @@ export default function RestaurantMenu() {
   const [grammageOption, setGrammageOption] = useState('90gr');
   const [sauceOption, setSauceOption] = useState('İstemiyorum');
 
-  const sections = ['Popüler', 'Burgerler', 'Yan Ürünler', 'İçecekler', 'Tatlılar'];
+  const sections = ['Popüler', ...new Set(menuItems.map(i => i.category).filter(c => c && c !== 'Popüler'))];
 
   // Filter items based on active section and live search input
   let displayedItems = menuItems.filter(item => {
@@ -37,6 +54,11 @@ export default function RestaurantMenu() {
   });
 
   const handleAddClick = (item) => {
+    if (!isAuthenticated) {
+      addToast({ message: 'Sipariş vermek ve sepetinizi yönetmek için lütfen giriş yapın.', type: 'warning' });
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
     setWrapOption('Tek lavaş');
     setDrinkOption('Kola');
     setGrammageOption('90gr');
@@ -70,11 +92,11 @@ export default function RestaurantMenu() {
             />
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 tracking-tight select-none">
-            Gourmet Burger House
+            {restaurant.name}
           </h1>
           <div className="flex flex-wrap items-center justify-center gap-3 mt-1 text-white/95">
             <span className="text-xs font-bold bg-white/20 px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/25">
-              Hamburger & Pizza
+              {restaurant.category || 'Restoran'}
             </span>
             <button 
               onClick={() => setShowReviewsModal(true)}

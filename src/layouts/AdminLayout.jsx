@@ -1,10 +1,19 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../features/auth/authSlice.js';
 import { ToastProvider } from '../common/components/Toast.jsx';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state) => state.auth.currentUser);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login', { replace: true });
+  };
 
   const activePath = location.pathname;
 
@@ -57,14 +66,25 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        {/* Log Out / Exit */}
+        {/* Kullanıcı Bilgisi & Çıkış */}
         <div className="pt-4 border-t border-stone-800 flex flex-col gap-2">
-          <button 
-            onClick={() => navigate('/')}
-            className="w-full flex items-center gap-3 px-4 h-11 rounded-xl text-xs font-bold text-stone-400 hover:bg-[#1a2026] hover:text-white transition-all cursor-pointer"
+          {currentUser && (
+            <div className="flex items-center gap-3 px-4 py-2 mb-1">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-stone-700 flex-shrink-0">
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-wide">Super Admin</p>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 h-11 rounded-xl text-xs font-bold text-stone-400 hover:bg-red-950/40 hover:text-red-400 transition-all cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">logout</span>
-            Müşteri Ön Yüzü
+            Çıkış Yap
           </button>
         </div>
       </aside>

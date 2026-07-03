@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { addRestaurant, deleteRestaurant, toggleRestaurantStatus, updateRestaurantCommission } from '../../features/restaurants/restaurantsSlice.js';
+import { addAccount } from '../../features/auth/authSlice.js';
 import { useToast } from '../../common/components/Toast.jsx';
 
 export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hideSidebar }) {
   const addToast = useToast();
+  const dispatch = useDispatch();
   // Navigation tabs for Super Admin
   const [localActiveTab, setLocalActiveTab] = useState('overview'); // 'overview' | 'restaurants' | 'users' | 'orders' | 'couriers' | 'campaigns' | 'finance' | 'settings'
   const activeTab = propActiveTab || localActiveTab;
   const setActiveTab = propActiveTab ? () => {} : setLocalActiveTab;
+
+  // Redux'tan restoranları al
+  const reduxRestaurants = useSelector((state) => state.restaurants.list);
 
   // Search queries for various tabs
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,53 +71,66 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     { time: '15:15:00', type: 'SYSTEM', msg: 'Platform genel komisyon oranı %12 olarak güncellendi.' }
   ];
 
-  // 1. Restaurant Management Tab State
-  const [restaurants, setRestaurants] = useState([
-    { id: 1, name: 'Napoli Antica', category: 'Pizza & İtalyan', commission: 15.0, status: 'Aktif', city: 'Beşiktaş, İstanbul', rating: 4.8, img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7zWBBMufQtSpaMEz8D06b8l4T5Gi05AyXs-xvuKMdDHrM_pdw42R-7NF5HnQaevC8Zc-SclIWNV9_wSpHsNpJ7xWIE8Ff4DLDOXyyoj9T3lh8vG9WvJO2bnBJbFdRpg3YcMgEN9aFYB_E6U7JUxxc9k_RiCgLzdFzAaA6zv6JhObKw0feev656JZ5okaoaGq_K3MEy0xeYIcIR1UFm4Jhf8mUTm3WQ3zr0kx5wPm6irR5JHWRoLmjNWoy3bXapdDT_a041pzWhWo' },
-    { id: 2, name: 'Burger Haven', category: 'Fast Food', commission: 12.5, status: 'Pasif', city: 'Kadıköy, İstanbul', rating: 4.5, img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBQH88xnztbPOmbloVUtIqiXfBd3FN4lIFIG7xlZu24cARD3kO5Kdr2nS7JEzlTWgM_r4wOdjHOjHGdq7jGjJAaAMmvVxFBWjWsiCPvkd2eQx650PZ8WjQjZbkMoPwZwn_RpravWb_5YCx_V62eVqV2z5ELGG3noQ0meYA0YPo3e7mil23W8lqg2lz2bBlGdJrekYk1sL4BB2H_BiJ9fWvTv7vXzvcEy5je5VUm6bIED1dX8AAJvRoljFQ0nHVtjgrUtIkEl18oEVk' },
-    { id: 3, name: 'Sakura Sushi', category: 'Asya Mutfağı', commission: 18.0, status: 'Aktif', city: 'Şişli, İstanbul', rating: 4.9, img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkcgXPtXOpr80fsz_OeTwB-lG4sZ3dftBfA_P88nAtaOOCro5smvPAFk_NfRHO3fet0_78rBBO5a7I7sm6JsrvbYblkwMDzTmossCV45pkqv00Gx2Iy83ETB5yZyIegp4GOzKsRm0aJk9n4Jj_CYJ4qEEBq5l7rjfs76qd5dHz1GxmYDlR7NwCBe1PGAzHCpw0BOXf_ABIcdXcN6iJdJfFEYOBOG-VsGMlxBf_7PTVrt1IaGe0webW_TRQ2o2KXxsEatHA4RcBpBg' },
-    { id: 4, name: 'Ziyafet Ocakbaşı', category: 'Kebap & Izgara', commission: 10.0, status: 'Aktif', city: 'Fatih, İstanbul', rating: 4.7, img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBV-mC68IQPtAHI3cmzMWbFULc_smMbKmm5LjqEABKZn_zYmRLrxc1CSoYzfF01MhgRcbD8cICx5qEMZNzFEPAtfq7iSuQ25VY2bS155fSoTt1QcNRt9alhlDiXz0NIBn3bsouVaMJuZKgVWMip0LxoI3PtuWun84cpoYuq8--ajXKgchh1vF_UesMHKCO2aLv8OK0lMKEqCL_tUGYWfXELnrhHmV15O9hcWw6gHOMt98UjQ53Sg_QYf60rgUYJS05T0PkaNJRVHes' }
-  ]);
-
+  // 1. Restaurant Management Tab State — Redux'a bağlı
+  const restaurants = reduxRestaurants; // Redux'tan geliyor
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [showAddRestaurant, setShowAddRestaurant] = useState(false);
   const [newRestName, setNewRestName] = useState('');
   const [newRestCategory, setNewRestCategory] = useState('Fast Food');
   const [newRestComm, setNewRestCommission] = useState('12');
   const [newRestCity, setNewRestCity] = useState('Kadıköy, İstanbul');
+  const [newRestEmail, setNewRestEmail] = useState('');
+  const [newRestPassword, setNewRestPassword] = useState('');
 
   const handleToggleRestStatus = (id) => {
-    setRestaurants(prev => prev.map(r => r.id === id ? { ...r, status: r.status === 'Aktif' ? 'Pasif' : 'Aktif' } : r));
+    dispatch(toggleRestaurantStatus(id));
   };
 
   const handleUpdateCommission = (id, currentComm) => {
-    const newVal = prompt("Yeni komisyon oranını giriniz (%):", currentComm);
+    const newVal = prompt('Yeni komisyon oranını giriniz (%):', currentComm);
     if (newVal && !isNaN(newVal)) {
-      setRestaurants(prev => prev.map(r => r.id === id ? { ...r, commission: parseFloat(newVal) } : r));
+      dispatch(updateRestaurantCommission({ id, commission: newVal }));
+      addToast({ message: 'Komisyon oranı güncellendi.', type: 'success' });
     }
   };
 
   const handleDeleteRestaurant = (id) => {
-    if (confirm("Bu restoran ortağını platformdan kalıcı olarak silmek istediğinize emin misiniz?")) {
-      setRestaurants(prev => prev.filter(r => r.id !== id));
+    if (window.confirm('Bu restoran ortağını platformdan kalıcı olarak silmek istediğinize emin misiniz?')) {
+      dispatch(deleteRestaurant(id));
+      addToast({ message: 'Restoran platformdan kaldırıldı.', type: 'success' });
     }
   };
 
   const handleAddRestaurantSubmit = (e) => {
     e.preventDefault();
     if (!newRestName.trim()) return;
-    const newRest = {
-      id: Date.now(),
+    // Slug ID üret
+    const restId = 'rest-' + newRestName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+    // Redux'a restoran ekle
+    dispatch(addRestaurant({
+      id: restId,
       name: newRestName,
       category: newRestCategory,
       commission: parseFloat(newRestComm) || 12,
       status: 'Aktif',
       city: newRestCity,
-      rating: 5.0,
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7zWBBMufQtSpaMEz8D06b8l4T5Gi05AyXs-xvuKMdDHrM_pdw42R-7NF5HnQaevC8Zc-SclIWNV9_wSpHsNpJ7xWIE8Ff4DLDOXyyoj9T3lh8vG9WvJO2bnBJbFdRpg3YcMgEN9aFYB_E6U7JUxxc9k_RiCgLzdFzAaA6zv6JhObKw0feev656JZ5okaoaGq_K3MEy0xeYIcIR1UFm4Jhf8mUTm3WQ3zr0kx5wPm6irR5JHWRoLmjNWoy3bXapdDT_a041pzWhWo'
-    };
-    setRestaurants(prev => [...prev, newRest]);
+      rating: '5.0',
+    }));
+    // Eğer e-posta girilmişse login hesabı da oluştur
+    if (newRestEmail.trim()) {
+      dispatch(addAccount({
+        type: 'restaurant',
+        email: newRestEmail.trim(),
+        password: newRestPassword || 'rest123',
+        restaurantId: restId,
+        name: newRestName,
+        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U',
+      }));
+    }
+    addToast({ message: `"${newRestName}" restoranı platforma eklendi ve müşteri paneline yansıdı!`, type: 'success' });
     setNewRestName('');
+    setNewRestEmail('');
+    setNewRestPassword('');
     setShowAddRestaurant(false);
   };
 
@@ -229,9 +249,9 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   };
 
   // Helper filters
-  const filteredRestaurants = restaurants.filter(r => 
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.category.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRestaurants = restaurants.filter(r =>
+    (r.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (r.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredUsers = users.filter(u => 
@@ -651,12 +671,17 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
             {/* Add Restaurant Modal Inline overlay */}
             {showAddRestaurant && (
-              <form onSubmit={handleAddRestaurantSubmit} className="bg-stone-50 p-6 rounded-[24px] border border-stone-200/50 space-y-4 shadow-sm max-w-xl animate-fade-in">
-                <h4 className="text-sm font-black text-stone-800 uppercase tracking-wider">Yeni Restoran Kaydı Tanımla</h4>
+              <form onSubmit={handleAddRestaurantSubmit} className="bg-gradient-to-br from-stone-50 to-rose-50/30 p-6 rounded-[24px] border border-stone-200/50 space-y-4 shadow-sm max-w-2xl animate-fade-in">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="material-symbols-outlined text-primary text-xl">storefront</span>
+                  <h4 className="text-sm font-black text-stone-800 uppercase tracking-wider">Yeni Restoran Kaydı Tanımla</h4>
+                </div>
+                <p className="text-xs text-stone-500">Eklenen restoran anında müşteri paneline ve giriş sistemine yansıyacak.</p>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Restoran Adı</label>
-                    <input 
+                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Restoran Adı *</label>
+                    <input
                       type="text"
                       required
                       placeholder="Örn: Lezzet Sofrası"
@@ -667,7 +692,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Kategori / Mutfak</label>
-                    <select 
+                    <select
                       value={newRestCategory}
                       onChange={(e) => setNewRestCategory(e.target.value)}
                       className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
@@ -677,12 +702,14 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                       <option>Ev Yemekleri</option>
                       <option>Kebap & Izgara</option>
                       <option>Tatlı & Kahve</option>
-                      <option>Asya Mutfagı</option>
+                      <option>Asya Mutfağı</option>
+                      <option>Pizza</option>
+                      <option>Vegan</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Komisyon Oranı (%)</label>
-                    <input 
+                    <input
                       type="number"
                       required
                       value={newRestComm}
@@ -692,7 +719,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Şehir / Bölge</label>
-                    <input 
+                    <input
                       type="text"
                       required
                       value={newRestCity}
@@ -701,19 +728,51 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                     />
                   </div>
                 </div>
+
+                {/* Giriş Bilgileri */}
+                <div className="border-t border-stone-200 pt-4">
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">key</span>
+                    Panel Giriş Bilgileri (Opsiyonel)
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Giriş E-postası</label>
+                      <input
+                        type="email"
+                        placeholder="ornek@jetyemek.com"
+                        value={newRestEmail}
+                        onChange={(e) => setNewRestEmail(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Giriş Şifresi</label>
+                      <input
+                        type="text"
+                        placeholder="Şifre (boş = rest123)"
+                        value={newRestPassword}
+                        onChange={(e) => setNewRestPassword(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowAddRestaurant(false)}
-                    className="px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-xl text-xs font-bold text-stone-600"
+                    className="px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-xl text-xs font-bold text-stone-600 cursor-pointer"
                   >
                     İptal
                   </button>
-                  <button 
+                  <button
                     type="submit"
-                    className="px-5 py-2 bg-primary hover:bg-primary-container text-white rounded-xl text-xs font-bold"
+                    className="px-5 py-2 bg-primary hover:bg-primary-container text-white rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
                   >
-                    Restoranı Kaydet
+                    <span className="material-symbols-outlined text-[16px]">add_business</span>
+                    Restoranı Kaydet & Yayınla
                   </button>
                 </div>
               </form>
@@ -746,7 +805,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                         <tr key={rest.id} className="hover:bg-stone-50/40 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <img src={rest.img} alt={rest.name} className="w-10 h-10 object-cover rounded-xl shadow-sm border border-stone-100" />
+                              <img src={rest.image || rest.img} alt={rest.name} className="w-10 h-10 object-cover rounded-xl shadow-sm border border-stone-100" />
                               <div>
                                 <p className="font-extrabold text-stone-800 text-xs">{rest.name}</p>
                                 <p className="text-[10px] text-stone-400 font-semibold">{rest.city}</p>
@@ -759,11 +818,13 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center font-extrabold text-stone-800">
-                            %{rest.commission.toFixed(1)}
+                            %{(parseFloat(rest.commission) || 0).toFixed(1)}
                           </td>
-                          <td className="px-4 py-4 text-center text-amber-500 font-black flex items-center justify-center gap-0.5">
+                          <td className="px-4 py-4 text-center text-amber-500 font-black">
+                            <div className="flex items-center justify-center gap-0.5">
                             <span className="material-symbols-outlined text-[14px]">star</span>
                             {rest.rating}
+                            </div>
                           </td>
                           <td className="px-4 py-4">
                             <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide inline-block ${

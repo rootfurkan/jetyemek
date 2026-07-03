@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { removeFromCart, addToCart, clearCart } from '../../../features/cart/cartSlice.js';
 import { placeOrder } from '../../../features/orders/ordersSlice.js';
 import { addAddress } from '../../../features/auth/authSlice.js';
@@ -11,6 +11,7 @@ import Modal from '../../../common/components/Modal.jsx';
 export default function Cart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const addToast = useToast();
 
   // Redux states
@@ -18,6 +19,7 @@ export default function Cart() {
   const userProfile = useSelector((state) => state.auth.userProfile);
   const addresses = useSelector((state) => state.auth.addresses);
   const previousOrders = useSelector((state) => state.orders.previousOrders) || [];
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [deliveryType, setDeliveryType] = useState('kurye'); // 'kurye' or 'gelal'
   const [paymentType, setPaymentType] = useState('card'); // 'card' or 'door'
@@ -102,6 +104,12 @@ export default function Cart() {
   };
 
   const onSubmitCheckout = () => {
+    if (!isAuthenticated) {
+      addToast({ message: 'Sipariş vermek ve sepetinizi yönetmek için lütfen giriş yapın.', type: 'warning' });
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+
     if (cartItems.length === 0) {
       addToast({ message: 'Sepetinizde ürün bulunmamaktadır!', type: 'error' });
       return;
