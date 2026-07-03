@@ -39,12 +39,6 @@ export default function Sidebar({
                 encodeURIComponent((userProfile.name || 'U') + ' ' + (userProfile.surname || ''))
             }
           />
-          <button
-            onClick={onChangeAvatar}
-            className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-secondary hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-white"
-          >
-            <span className="material-symbols-outlined text-sm select-none">edit</span>
-          </button>
         </div>
         <h3 className="text-lg font-bold text-stone-800">
           {userProfile.name} {userProfile.surname}

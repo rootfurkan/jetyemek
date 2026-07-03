@@ -379,7 +379,9 @@ export default function RestaurantMenu() {
               ...customizingItem,
               id: finalId,
               name: finalName,
-              price: currentPrice
+              price: currentPrice,
+              restaurantId,
+              restaurantName: restaurant.name
             }));
             
             addToast({ message: `${finalName} sepete eklendi!`, type: 'success' });

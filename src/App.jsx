@@ -13,6 +13,7 @@ import {
   setPreviousOrders,
   setPlatformOrders,
 } from './features/orders/ordersSlice.js';
+import { ToastProvider } from './common/components/Toast.jsx';
 
 function AppDataLoader() {
   const dispatch = useDispatch();
@@ -91,9 +92,11 @@ function AppDataLoader() {
 export default function App() {
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <AppDataLoader />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <AppDataLoader />
+        </BrowserRouter>
+      </ToastProvider>
     </Provider>
   );
 }

@@ -11,5 +11,10 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    server: {
+      watch: {
+        ignored: ['**/db.json'],
+      },
+    },
   };
 });

@@ -26,7 +26,25 @@ import ConfirmModal from '../../../common/components/ConfirmModal.jsx';
 import CreditCardForm, { validateCardForm } from '../../../common/components/CreditCardForm.jsx';
 
 // ─── Aktif Sipariş Takip Kartı ────────────────────────────────────────────────
-function ActiveOrderTracker({ order, onStatusUpdate }) {
+function getOrderItemNames(order) {
+  if (Array.isArray(order.items)) {
+    return order.items
+      .map((item) => `${item.name}${item.qty ? ` x${item.qty}` : ''}`)
+      .join(', ');
+  }
+
+  return order.itemsSummary || order.items || 'Urun bilgisi yok';
+}
+
+function getPreviousOrderStatusText(order) {
+  if (order.deliveryStatus === 'cancelled' || order.status === 'Iptal Edildi' || order.status === 'İptal Edildi') {
+    return 'İptal Edildi';
+  }
+
+  return 'Sipariş Tamamlandı';
+}
+
+function ActiveOrderTracker({ order, restaurantName, onStatusUpdate }) {
   const statusSteps = [
     { key: 'Hazırlanıyor', label: 'Hazırlanıyor', icon: 'restaurant', progress: 25 },
     { key: 'Kurye Yola Çıktı', label: 'Kurye Yola Çıktı', icon: 'delivery_dining', progress: 65 },
@@ -54,7 +72,7 @@ function ActiveOrderTracker({ order, onStatusUpdate }) {
           </div>
           <div>
             <p className="text-white font-extrabold text-sm">Aktif Sipariş</p>
-            <p className="text-rose-100 text-[11px] font-medium">{order.restaurant}</p>
+            <p className="text-rose-100 text-[11px] font-medium">{restaurantName}</p>
           </div>
         </div>
         <motion.div
@@ -73,12 +91,15 @@ function ActiveOrderTracker({ order, onStatusUpdate }) {
         <div className="flex items-center gap-4 mb-6">
           {order.image && (
             <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-stone-100">
-              <img className="w-full h-full object-cover" alt={order.restaurant} src={order.image} />
+              <img className="w-full h-full object-cover" alt={restaurantName} src={order.image} />
             </div>
           )}
           <div>
-            <h4 className="font-bold text-stone-800 text-base">{order.restaurant}</h4>
-            <p className="text-xs text-stone-500 mt-0.5">{order.itemsSummary || order.items}</p>
+            <h4 className="font-bold text-stone-800 text-base">{restaurantName}</h4>
+            <p className="text-xs text-stone-500 mt-0.5">
+              <span className="font-bold text-stone-600">Urunler: </span>
+              {getOrderItemNames(order)}
+            </p>
             <p className="text-primary font-extrabold text-sm mt-1">
               ₺{typeof order.total === 'number' ? order.total.toFixed(2) : order.total}
             </p>
@@ -180,6 +201,7 @@ export default function Profile() {
   const addresses = useSelector((state) => state.auth.addresses);
   const savedCards = useSelector((state) => state.auth.savedCards);
   const currentUser = useSelector((state) => state.auth.currentUser);
+  const restaurants = useSelector((state) => state.restaurants.list);
   const activeOrder = useSelector((state) => state.orders.activeOrder);
   const previousOrders = useSelector((state) => state.orders.previousOrders);
 
@@ -215,6 +237,11 @@ export default function Profile() {
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+
+  const getRestaurantName = (order) => {
+    const restaurant = restaurants.find((item) => item.id === order.restaurantId);
+    return restaurant?.name || order.restaurant || 'Restoran';
+  };
 
   // ─── Profil Açılınca Siparişleri DB'den Yükle ─────────────────────────────────
   useEffect(() => {
@@ -481,7 +508,7 @@ export default function Profile() {
                     />
                     AKTİF SİPARİŞLER
                   </h3>
-                  <ActiveOrderTracker order={activeOrder} />
+                  <ActiveOrderTracker order={activeOrder} restaurantName={getRestaurantName(activeOrder)} />
                 </div>
               )}
             </AnimatePresence>
@@ -519,7 +546,7 @@ export default function Profile() {
                     <div className="flex gap-4 items-center">
                       <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-stone-100 bg-stone-50">
                         {order.image ? (
-                          <img className="w-full h-full object-cover" alt={order.restaurant} src={order.image} />
+                          <img className="w-full h-full object-cover" alt={getRestaurantName(order)} src={order.image} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <span className="material-symbols-outlined text-stone-300 text-2xl">restaurant</span>
@@ -527,10 +554,14 @@ export default function Profile() {
                         )}
                       </div>
                       <div className="text-left">
-                        <h5 className="font-bold text-stone-800 text-sm">{order.restaurant}</h5>
+                        <h5 className="font-bold text-stone-800 text-sm">
+                          <span className="text-stone-500">Restoran: </span>
+                          {getRestaurantName(order)}
+                        </h5>
                         <p className="text-[10px] text-stone-400 font-semibold mt-0.5">{order.date}</p>
                         <p className="text-[11px] text-stone-500 font-medium line-clamp-1 mt-1">
-                          {order.itemsSummary || order.items}
+                          <span className="font-bold text-stone-600">Urunler: </span>
+                          {getOrderItemNames(order)}
                         </p>
                       </div>
                     </div>
@@ -542,7 +573,7 @@ export default function Profile() {
                         </span>
                         <div className="flex items-center gap-1 text-[9px] text-green-600 font-extrabold uppercase mt-0.5">
                           <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                          {order.status || 'Teslim Edildi'}
+                          {getPreviousOrderStatusText(order)}
                         </div>
                       </div>
                       <button

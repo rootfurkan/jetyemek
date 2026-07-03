@@ -50,7 +50,8 @@ export default function LoginPage() {
         dispatch(setLoginError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.'));
       }
     } catch (err) {
-      dispatch(setLoginError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.'));
+      console.error('Login server error:', err);
+      dispatch(setLoginError('Sunucuya bağlanılamadı. JSON Server çalışıyor mu? Terminalde npm run server komutunu çalıştırın.'));
     } finally {
       setIsLoading(false);
     }

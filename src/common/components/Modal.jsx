@@ -27,6 +27,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
             <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
               <h3 className="text-sm font-black text-stone-800 uppercase tracking-wider">{title}</h3>
               <button 
+                type="button"
                 onClick={onClose}
                 className="w-8 h-8 rounded-full bg-stone-50 hover:bg-stone-100 flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors cursor-pointer"
               >
