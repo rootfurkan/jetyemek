@@ -1,33 +1,89 @@
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import store from './app/store.js';
 import AppRouter from './routes/AppRouter.jsx';
-import { getMenuItems, getRestaurants } from './services/api.js';
+import { getMenuItems, getRestaurants, getAddresses, getOrders } from './services/api.js';
 import { setMenuItems } from './features/menu/menuSlice.js';
 import { setRestaurants } from './features/restaurants/restaurantsSlice.js';
+import { setAddresses } from './features/auth/authSlice.js';
+import {
+  setActiveOrder,
+  setPreviousOrders,
+  setPlatformOrders,
+} from './features/orders/ordersSlice.js';
 
 function AppDataLoader() {
   const dispatch = useDispatch();
+  const { isAuthenticated, currentUser, userRole } = useSelector((state) => state.auth);
 
+  // ─── İlk yükleme: Restoran + Menü verileri ────────────────────────────────
   useEffect(() => {
-    async function loadInitialData() {
+    async function loadPublicData() {
       try {
         const [restaurants, menuItems] = await Promise.all([
           getRestaurants(),
           getMenuItems(),
         ]);
-
         dispatch(setRestaurants(restaurants));
         dispatch(setMenuItems(menuItems));
       } catch (error) {
-        console.error('Veriler yuklenirken hata olustu:', error);
+        console.error('Veriler yüklenirken hata oluştu:', error);
+      }
+    }
+    loadPublicData();
+  }, [dispatch]);
+
+  // ─── Kullanıcı giriş yaptığında: adresler + siparişler ───────────────────
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.id) return;
+
+    async function loadUserData() {
+      try {
+        // Adresler (müşteri ise)
+        if (userRole === 'customer') {
+          const addresses = await getAddresses(currentUser.id);
+          dispatch(setAddresses(addresses));
+        }
+
+        // Siparişler
+        const orders = await getOrders(userRole === 'customer' ? currentUser.id : undefined);
+
+        if (userRole === 'customer') {
+          // Aktif sipariş: Hazırlanıyor veya Kurye Yola Çıktı
+          const activeStatuses = ['Hazırlanıyor', 'Kurye Yola Çıktı'];
+          const active = orders.find(
+            (o) =>
+              activeStatuses.includes(o.status) ||
+              (o.deliveryStatus && !['delivered', 'cancelled'].includes(o.deliveryStatus))
+          );
+
+          // Geçmiş siparişler: Teslim Edildi veya İptal Edildi
+          const previous = orders.filter(
+            (o) =>
+              o.deliveryStatus === 'delivered' ||
+              o.status === 'Teslim Edildi' ||
+              o.status === 'İptal Edildi'
+          );
+
+          // Aktif siparişi state'e yükle (sayfa yenilenince kaybolmasın)
+          if (active) {
+            dispatch(setActiveOrder(active));
+          }
+
+          dispatch(setPreviousOrders(previous));
+        } else {
+          // Admin/Restoran için tüm siparişler
+          dispatch(setPlatformOrders(orders));
+        }
+      } catch (error) {
+        console.error('Kullanıcı verileri yüklenirken hata:', error);
       }
     }
 
-    loadInitialData();
-  }, [dispatch]);
+    loadUserData();
+  }, [isAuthenticated, currentUser?.id, userRole, dispatch]);
 
   return <AppRouter />;
 }

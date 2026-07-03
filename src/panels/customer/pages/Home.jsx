@@ -13,6 +13,7 @@ export default function Home() {
   const addToast = useToast();
   const [couponModalOpen, setCouponModalOpen] = useState(false);
   const favoritedIds = useSelector((state) => state.auth.favorites) || [];
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [activeSlide, setActiveSlide] = useState(0);
 
   const slides = [
@@ -104,6 +105,12 @@ export default function Home() {
 
   const handleToggleFavorite = (rest, e) => {
     e.stopPropagation();
+    // Auth koruması
+    if (!isAuthenticated) {
+      addToast({ message: 'Favorilere eklemek için giriş yapmalısınız.', type: 'warning' });
+      navigate('/login');
+      return;
+    }
     const isFav = favoritedIds.includes(rest.id);
     dispatch(toggleFavorite(rest.id));
     if (isFav) {

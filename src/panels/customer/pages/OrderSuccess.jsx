@@ -111,20 +111,24 @@ export default function OrderSuccess() {
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.7, type: "spring", damping: 20 }}
-        className="flex flex-col sm:flex-row gap-3 mt-10 w-full max-w-sm"
+        className="flex flex-col gap-3 mt-10 w-full max-w-sm"
       >
+        {/* Birincil CTA — Siparişlerim */}
         <button
-          onClick={() => navigate('/profile')}
-          className="flex-1 py-3.5 bg-primary hover:bg-secondary text-white font-extrabold text-xs rounded-full shadow-md active:scale-95 transition-all cursor-pointer border-none"
+          onClick={() => navigate('/profile', { state: { section: 'orders' } })}
+          className="w-full py-4 bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-500 hover:to-red-400 text-white font-extrabold text-sm rounded-full shadow-lg shadow-rose-300/40 active:scale-95 transition-all cursor-pointer border-none flex items-center justify-center gap-2.5 hover:-translate-y-px"
         >
-          Siparişlerime Git
+          <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>receipt_long</span>
+          Siparişlerinizi Görüntülemek İçin Tıklayınız
         </button>
-        <button
-          onClick={() => navigate('/')}
-          className="flex-1 py-3.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-extrabold text-xs rounded-full active:scale-95 transition-all cursor-pointer border border-stone-200/20"
-        >
-          Ana Sayfaya Dön
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="flex-1 py-3.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-extrabold text-xs rounded-full active:scale-95 transition-all cursor-pointer border border-stone-200/20"
+          >
+            Ana Sayfaya Dön
+          </button>
+        </div>
       </motion.div>
     </div>
   );

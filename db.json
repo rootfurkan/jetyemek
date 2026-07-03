@@ -1,40 +1,83 @@
 {
   "users": [
     {
-      "id": 1,
+      "id": "admin-1",
+      "email": "admin@jetyemek.com",
+      "password": "admin123",
+      "name": "Platform Admin",
+      "role": "admin",
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ"
+    },
+    {
+      "id": "restaurant-gourmet",
+      "email": "gourmet@jetyemek.com",
+      "password": "rest123",
+      "name": "Gourmet Burger House",
+      "role": "restaurant",
+      "restaurantId": "gourmet-burger",
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA"
+    },
+    {
+      "id": "1",
       "name": "Ahmet",
       "surname": "Yılmaz",
       "email": "ahmet.yilmaz@gmail.com",
+      "password": "musteri123",
       "phone": "0532 123 45 67",
       "birthdate": "15.05.1988",
+      "role": "customer",
       "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ"
     }
   ],
   "addresses": [
     {
-      "id": 1,
+      "id": "1",
       "userId": 1,
       "title": "Ev",
       "details": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
       "icon": "home"
     },
     {
-      "id": 2,
+      "id": "2",
       "userId": 1,
       "title": "İş",
       "details": "Levent Mah. Büyükdere Cad. No:193 K:12 Beşiktaş, İstanbul",
       "icon": "work"
+    },
+    {
+      "userId": "1",
+      "title": "softito",
+      "details": "dtm",
+      "icon": "place",
+      "id": "hf7rUPTH7VU"
+    },
+    {
+      "userId": "1",
+      "title": "s",
+      "details": "s",
+      "icon": "place",
+      "id": "9ZL_rUdooLA"
     }
   ],
   "cards": [
     {
-      "id": 1,
+      "id": "1",
       "userId": 1,
       "name": "Maaş Kartım",
       "type": "Mastercard",
       "number": "4291",
       "expiry": "08/26",
       "isDefault": true
+    },
+    {
+      "userId": "1",
+      "name": "ad",
+      "type": "Visa",
+      "number": "2222",
+      "expiry": "12/33",
+      "isDefault": false,
+      "logo": "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
+      "id": "3KePrTNy7Bg"
     }
   ],
   "restaurants": [
@@ -178,52 +221,180 @@
       "category": "Burgerler"
     }
   ],
-  "orders": [],
+  "orders": [
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "signature-truffle-burger-90gr",
+          "name": "Signature Truffle Burger (90gr)",
+          "qty": 2,
+          "price": 245
+        }
+      ],
+      "itemsSummary": "2 Ürün",
+      "total": 440,
+      "address": "Levent Mah. Büyükdere Cad. No:193 K:12 Beşiktaş, İstanbul",
+      "paymentMethod": "Kredi Kartı",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "3 Temmuz 2026",
+      "createdAt": "2026-07-03T19:35:01.599Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "id": "tHwmPuIqTPM"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "texas-bbq-burger-90gr",
+          "name": "Texas BBQ Burger (90gr)",
+          "qty": 1,
+          "price": 230
+        },
+        {
+          "id": "sweet-potato-fries",
+          "name": "Sweet Potato Fries",
+          "qty": 1,
+          "price": 95
+        }
+      ],
+      "itemsSummary": "2 Ürün",
+      "total": 275,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Kredi Kartı",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "3 Temmuz 2026",
+      "createdAt": "2026-07-03T19:39:28.849Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuD-xY1ESozbcRunXRdcckHoR3xD-Ddu2NmbZnRZh1LXYHQhhg8KyuJs9kxM2kTfBbrP6THsaLo69_0NlNFJgVMB2sXjosshOXxz3uLDHpl39kNZKqIP3b1cuR-HYPqPInfMc8ZCnqM9giyt7npX_np_CUkxcJUDjR7lf6SvzNUapeb5VjkaDWR6DfXPgJub9ZdM_tTZG65G03FAyonv1ebKfQg7LBi2NUg-hta336lmD-JqkhD4OSzmtt_4QbgpD7idFt3LrQvA2n0",
+      "id": "jnoByMWdEZE"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "signature-truffle-burger-90gr",
+          "name": "Signature Truffle Burger (90gr)",
+          "qty": 1,
+          "price": 245
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 245,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Kredi Kartı",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "3 Temmuz 2026",
+      "createdAt": "2026-07-03T20:34:41.254Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "id": "h8_Dh5OdZhM"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "spicy-buffalo-chicken-90gr-Mayonez",
+          "name": "Spicy Buffalo Chicken (90gr, Mayonez)",
+          "qty": 1,
+          "price": 215
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 215,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "3 Temmuz 2026",
+      "createdAt": "2026-07-03T20:38:16.811Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCveDd8xl1NPHpO7PdcB_ynpQjNK3kv4zRuRY24dCM4GIuY2OmZ5oD1X43y30BSx-MobK3PV04Vqen6zecdvT7zeyyqJtngrkdTz9NEyDqAcvDOpr05t24ZMld7amUISurNtO0Zle_4I1r9t983N3I7Y-RYrCgoEEJ6Vh1Mg8vkacKnmxoBeigVsoC1IEjqhyD7bWb6WRfzoVjNzVQNTE-iN6yLcSf2nT3BPPIOYYrdncPn230rNA3h-Y4n1mVf_8_k088QIDxl1yI",
+      "id": "gC0IhVZZfsE"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "signature-truffle-burger-150gr-Mayonez",
+          "name": "Signature Truffle Burger (150gr, Mayonez)",
+          "qty": 1,
+          "price": 465
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 415,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "3 Temmuz 2026",
+      "createdAt": "2026-07-03T20:41:42.238Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "id": "mtZkCjGW3ZU"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "signature-truffle-burger-90gr",
+          "name": "Signature Truffle Burger (90gr)",
+          "qty": 1,
+          "price": 245
+        },
+        {
+          "id": "classic-margherita",
+          "name": "Classic Margherita",
+          "qty": 1,
+          "price": 180
+        }
+      ],
+      "itemsSummary": "2 Ürün",
+      "total": 375,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "3 Temmuz 2026",
+      "createdAt": "2026-07-03T20:47:04.582Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "id": "s1GPor1YU3w"
+    }
+  ],
   "reviews": [],
   "couriers": [],
   "campaigns": [],
   "financeLogs": [],
   "settings": [
     {
-      "id": 1,
+      "id": "1",
       "baseCommission": 12,
       "baseDeliveryFee": 24.9
     }
   ],
-  "accounts": [
-    {
-      "id": 1,
-      "type": "admin",
-      "email": "admin@jetyemek.com",
-      "password": "admin123",
-      "name": "Platform Admin",
-      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ"
-    },
-    {
-      "id": 2,
-      "type": "restaurant",
-      "email": "gourmet@jetyemek.com",
-      "password": "rest123",
-      "restaurantId": "gourmet-burger",
-      "name": "Gourmet Burger House",
-      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA"
-    },
-    {
-      "id": 3,
-      "type": "restaurant",
-      "email": "lezzet@jetyemek.com",
-      "password": "rest123",
-      "restaurantId": "lezzet-sofrasi",
-      "name": "Lezzet Sofrası",
-      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U"
-    },
-    {
-      "id": 4,
-      "type": "customer",
-      "email": "musteri@jetyemek.com",
-      "password": "musteri123",
-      "name": "Demo Müşteri",
-      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ"
-    }
-  ]
+  "$schema": "./node_modules/json-server/schema.json"
 }

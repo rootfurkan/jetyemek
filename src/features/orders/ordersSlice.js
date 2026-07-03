@@ -1,93 +1,116 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { INITIAL_ACTIVE_ORDER, PREVIOUS_ORDERS } from '../../data.jsx';
-
-const INITIAL_PLATFORM_ORDERS = [
-  { id: 'VH-9421', customer: 'Mehmet Aydın', restaurant: 'Napoli Antica', total: 485.00, status: 'Teslim Edildi', time: 'Şimdi' },
-  { id: 'VH-9420', customer: 'Elif Sönmez', restaurant: 'Burger Haven', total: 320.50, status: 'Yolda', time: '4 dk önce' },
-  { id: 'VH-9419', customer: 'Burak Kaya', restaurant: 'Pizza Roma', total: 610.00, status: 'Hazırlanıyor', time: '12 dk önce' },
-  { id: 'VH-9418', customer: 'Ahmet Yılmaz', restaurant: 'Döner Dünyası', total: 145.00, status: 'İptal Edildi', time: '25 dk önce' }
-];
 
 const ordersSlice = createSlice({
   name: 'orders',
   initialState: {
-    activeOrder: INITIAL_ACTIVE_ORDER,
-    previousOrders: PREVIOUS_ORDERS,
-    platformOrders: INITIAL_PLATFORM_ORDERS,
+    // Müşterinin anlık aktif siparişi (null = sipariş yok)
+    activeOrder: null,
+
+    // Müşterinin geçmiş siparişleri (db'den çekilir)
+    previousOrders: [],
+
+    // Admin/Restoran panel sipariş listesi (db'den çekilir)
+    platformOrders: [],
+
+    // Yükleniyor durumları
+    isLoading: false,
   },
   reducers: {
-    placeOrder: (state, action) => {
-      const { restaurant, items, total, image } = action.payload;
-      const date = new Date();
-      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-      const formattedDate = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-
-      const newOrder = {
-        id: Date.now(),
-        restaurant,
-        items,
-        total: `₺${total}`,
-        status: 'Teslim Edildi',
-        date: formattedDate,
-        image: image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBygBpUWwh8OtaJC8RU2J-A3XvmOOJca3DQs7kGCsbTxO3fcb4wn7A_YykulSKHii-Y-aMMYDY2BDj27jevbX3OcLGAiQfHaJV5bnGn78U5EzoK7T-jD81IcSCQbdncrCQoJ8FagaFgoTzAsGi94d3yC7alslg07ls9QDj09SQ1AUqY2Y6owNH8TjCL_VUVJ2wPzZ1xo0cf7e8ZqdmqB_y-GLeXkZZDQ8TMB5d22qQAqqQGz-Kh9C8NXjLlbUn5oQMiZZ85v5_zA6U',
-      };
-      
-      // Save in user order history
-      state.previousOrders.unshift(newOrder);
-
-      // Set as active order
-      state.activeOrder = {
-        ...newOrder,
-        status: 'Sipariş Alındı',
-        progress: 25
-      };
-
-      // Add to platform orders
-      state.platformOrders.unshift({
-        id: 'VH-' + (Math.floor(Math.random() * 9000) + 1000),
-        customer: 'Ahmet Yılmaz',
-        restaurant,
-        total,
-        status: 'Sipariş Alındı',
-        time: 'Şimdi',
-      });
+    // ─── Aktif Sipariş ────────────────────────────────────────────────────────
+    setActiveOrder: (state, action) => {
+      state.activeOrder = action.payload;
     },
+
     updateActiveOrderProgress: (state, action) => {
       if (state.activeOrder) {
         state.activeOrder.progress = action.payload;
       }
     },
+
     updateActiveOrderStatus: (state, action) => {
       if (state.activeOrder) {
         state.activeOrder.status = action.payload;
       }
     },
-    cancelActiveOrder: (state) => {
+
+    // Aktif siparişi teslim edildi olarak işaretle → geçmişe taşı
+    deliverActiveOrder: (state) => {
       if (state.activeOrder) {
-        state.activeOrder.status = 'İptal Edildi';
-        state.activeOrder.progress = 0;
+        const delivered = {
+          ...state.activeOrder,
+          status: 'Teslim Edildi',
+          deliveryStatus: 'delivered',
+          progress: 100,
+        };
+        state.previousOrders.unshift(delivered);
+        // Platform orders'da da güncelle
+        const platformOrder = state.platformOrders.find(
+          (o) => o.id === state.activeOrder.id
+        );
+        if (platformOrder) {
+          platformOrder.status = 'Teslim Edildi';
+        }
+        state.activeOrder = null;
       }
     },
+
+    cancelActiveOrder: (state) => {
+      if (state.activeOrder) {
+        const cancelled = {
+          ...state.activeOrder,
+          status: 'İptal Edildi',
+          deliveryStatus: 'cancelled',
+        };
+        state.previousOrders.unshift(cancelled);
+        state.activeOrder = null;
+      }
+    },
+
+    // ─── Geçmiş Siparişler ────────────────────────────────────────────────────
+    setPreviousOrders: (state, action) => {
+      state.previousOrders = action.payload;
+    },
+
+    addPreviousOrder: (state, action) => {
+      state.previousOrders.unshift(action.payload);
+    },
+
+    // ─── Platform Siparişleri (Admin / Restoran) ──────────────────────────────
+    setPlatformOrders: (state, action) => {
+      state.platformOrders = action.payload;
+    },
+
+    addPlatformOrder: (state, action) => {
+      state.platformOrders.unshift(action.payload);
+    },
+
     updatePlatformOrderStatus: (state, action) => {
       const { id, status } = action.payload;
-      const order = state.platformOrders.find(o => o.id === id);
+      const order = state.platformOrders.find((o) => o.id === id);
       if (order) {
         order.status = status;
       }
     },
-    addPreviousOrder: (state, action) => {
-      state.previousOrders.unshift(action.payload);
-    }
+
+    // ─── Loading ──────────────────────────────────────────────────────────────
+    setOrdersLoading: (state, action) => {
+      state.isLoading = action.payload;
+    },
   },
 });
 
 export const {
-  placeOrder,
+  setActiveOrder,
   updateActiveOrderProgress,
   updateActiveOrderStatus,
+  deliverActiveOrder,
   cancelActiveOrder,
-  updatePlatformOrderStatus,
+  setPreviousOrders,
   addPreviousOrder,
+  setPlatformOrders,
+  addPlatformOrder,
+  updatePlatformOrderStatus,
+  setOrdersLoading,
 } = ordersSlice.actions;
 
 export default ordersSlice.reducer;

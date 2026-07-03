@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addRestaurant, deleteRestaurant, toggleRestaurantStatus, updateRestaurantCommission } from '../../features/restaurants/restaurantsSlice.js';
-import { addAccount } from '../../features/auth/authSlice.js';
+import api from '../../services/api.js';
 import { useToast } from '../../common/components/Toast.jsx';
 
 export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hideSidebar }) {
@@ -101,7 +101,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     }
   };
 
-  const handleAddRestaurantSubmit = (e) => {
+  const handleAddRestaurantSubmit = async (e) => {
     e.preventDefault();
     if (!newRestName.trim()) return;
     // Slug ID üret
@@ -116,16 +116,19 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
       city: newRestCity,
       rating: '5.0',
     }));
-    // Eğer e-posta girilmişse login hesabı da oluştur
+    // Eğer e-posta girilmişse db'ye kullanıcı hesabı da oluştur
     if (newRestEmail.trim()) {
-      dispatch(addAccount({
-        type: 'restaurant',
-        email: newRestEmail.trim(),
-        password: newRestPassword || 'rest123',
-        restaurantId: restId,
-        name: newRestName,
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U',
-      }));
+      try {
+        await api.post('/users', {
+          id: restId + '-user',
+          role: 'restaurant',
+          email: newRestEmail.trim(),
+          password: newRestPassword || 'rest123',
+          restaurantId: restId,
+          name: newRestName,
+          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U',
+        });
+      } catch (_) { /* Kullanıcı kaydı başarısız olsa da devam et */ }
     }
     addToast({ message: `"${newRestName}" restoranı platforma eklendi ve müşteri paneline yansıdı!`, type: 'success' });
     setNewRestName('');
