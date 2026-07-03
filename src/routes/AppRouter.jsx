@@ -8,6 +8,7 @@ import { RestaurantRoutes } from './RestaurantRoutes.jsx';
 import { AdminRoutes } from './AdminRoutes.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import LoginPage from '../panels/auth/LoginPage.jsx';
+import RegisterPage from '../panels/auth/RegisterPage.jsx';
 
 export default function AppRouter() {
   const routes = useRoutes([
@@ -15,6 +16,11 @@ export default function AppRouter() {
     {
       path: '/login',
       element: <LoginPage />,
+    },
+    // Register Sayfası — herkese açık
+    {
+      path: '/register',
+      element: <RegisterPage />,
     },
     // Müşteri Paneli — 'customer' rolü gerektirir
     {

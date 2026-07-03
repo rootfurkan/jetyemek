@@ -7,11 +7,11 @@ import { ToastProvider } from '../common/components/Toast.jsx';
 
 export default function CustomerLayout() {
   const navigate = useNavigate();
-  
-  // Get cart info & profile from Redux
+
   const cartItems = useSelector((state) => state.cart.items);
   const cartTotal = useSelector((state) => state.cart.cartTotal);
   const userProfile = useSelector((state) => state.auth.userProfile);
+  const { isAuthenticated, userRole } = useSelector((state) => state.auth);
 
   const cartCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
 
@@ -28,9 +28,7 @@ export default function CustomerLayout() {
           }}
           cartCount={cartCount}
           cartTotal={cartTotal}
-          onSearch={(query) => {
-            // We can set search parameters in navigation or redux if needed
-          }}
+          onSearch={(query) => {}}
           userProfile={userProfile}
           onEnterAdmin={() => navigate('/restaurant')}
           onEnterSuperAdmin={() => navigate('/admin')}

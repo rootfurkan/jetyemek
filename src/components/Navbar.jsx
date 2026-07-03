@@ -24,10 +24,10 @@ export default function Navbar({
 
   const getGreetingText = () => {
     if (!currentUser) return "Merhaba";
-    if (currentUser.type === 'admin') {
+    if (currentUser.role === 'admin') {
       return `Merhaba, ${currentUser.name} (Admin)`;
     }
-    if (currentUser.type === 'restaurant') {
+    if (currentUser.role === 'restaurant') {
       return `Merhaba, ${currentUser.name} (Restoran)`;
     }
     return `Merhaba, ${currentUser.name}`;
@@ -40,14 +40,9 @@ export default function Navbar({
           onClick={() => setCurrentTab('home')} 
           className="flex items-center gap-2 flex-shrink-0 cursor-pointer group active:scale-95 transition-all"
         >
-          <img 
-            alt="CraveDash" 
-            className="h-9 w-9 object-contain group-hover:rotate-12 transition-transform duration-300" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCunmBa2Z-w7wmi2EaRd2bMI_kcEtLye08ui8Jcne9IWLdSWtvdm4qgwBNp7FK6ePYgO1GmFkGUQzPfMGKqA_DSqd3As4QQgCPjdova7gSMHy9h_14We2VGn3pwlJO5_BhLo0Dv1QRZqPf0IC1W9XZM3UKX_4Oqu8VBcOMHcZt-tghg5UYwBVjO4v5-J2Q4f9AWW9ceRqZYUfPsxbzm7wnqe9UWFJKWBZ5KmNCp9-Q6p1d9gM9NxdPH7YkiIWNyUAZNkS2sGpIV8Mo" 
-            referrerPolicy="no-referrer"
-          />
+          <span className="material-symbols-outlined text-primary text-3xl select-none" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
           <span className="text-xl font-extrabold tracking-tight text-primary font-sans select-none">
-            CraveDash
+            JetYemek
           </span>
         </div>
 
@@ -104,7 +99,7 @@ export default function Navbar({
         {/* Right actions */}
         <div className="flex items-center gap-3">
           {/* Admin Panel Quick switch button */}
-          {isAuthenticated && currentUser?.type === 'restaurant' && (
+          {isAuthenticated && currentUser?.role === 'restaurant' && (
             <button 
               onClick={onEnterAdmin} 
               className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 border border-stone-200 shadow-sm whitespace-nowrap"
@@ -114,7 +109,7 @@ export default function Navbar({
             </button>
           )}
 
-          {isAuthenticated && currentUser?.type === 'admin' && (
+          {isAuthenticated && currentUser?.role === 'admin' && (
             <button 
               onClick={onEnterSuperAdmin} 
               className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white hover:bg-primary-container rounded-full text-[11px] font-black uppercase tracking-wide cursor-pointer transition-all active:scale-95 shadow-sm shadow-primary/10 whitespace-nowrap"
