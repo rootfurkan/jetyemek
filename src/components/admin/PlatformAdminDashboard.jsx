@@ -1,12 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { addRestaurant, deleteRestaurant, toggleRestaurantStatus, updateRestaurantCommission } from '../../features/restaurants/restaurantsSlice.js';
 import api from '../../services/api.js';
 import { useToast } from '../../common/components/Toast.jsx';
 
+function formatCurrency(value) {
+  return `${Number(value || 0).toLocaleString('tr-TR')} ₺`;
+}
+
+function getOrderDate(order) {
+  return new Date(order.createdAt || order.date || 0);
+}
+
+function isCancelled(order) {
+  return order.deliveryStatus === 'cancelled' || order.status === 'İptal Edildi' || order.status === 'Iptal Edildi';
+}
+
+function getOrderStatusText(order) {
+  if (isCancelled(order)) return 'İptal Edildi';
+  if (order.deliveryStatus === 'delivered') return 'Teslim Edildi';
+  if (order.deliveryStatus === 'on_the_way') return 'Yolda';
+  if (order.deliveryStatus === 'ready') return 'Hazır';
+  return order.status || 'Hazırlanıyor';
+}
+
 export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hideSidebar }) {
   const addToast = useToast();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   // Navigation tabs for Super Admin
   const [localActiveTab, setLocalActiveTab] = useState('overview'); // 'overview' | 'restaurants' | 'users' | 'orders' | 'couriers' | 'campaigns' | 'finance' | 'settings'
   const activeTab = propActiveTab || localActiveTab;
@@ -14,6 +36,8 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
   // Redux'tan restoranları al
   const reduxRestaurants = useSelector((state) => state.restaurants.list);
+  const platformOrders = useSelector((state) => state.orders.platformOrders);
+  const restaurants = reduxRestaurants;
 
   // Search queries for various tabs
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,42 +46,116 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   const [platformLoad, setPlatformLoad] = useState(38);
   const [showLogs, setShowLogs] = useState(false);
 
+  const paidOrders = platformOrders.filter((order) => !isCancelled(order));
+  const totalRevenue = paidOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+  const deliveredOrders = platformOrders.filter((order) => order.deliveryStatus === 'delivered').length;
+  const successRate = platformOrders.length ? ((deliveredOrders / platformOrders.length) * 100).toFixed(1) : '0.0';
+  const uniqueCustomers = new Set(platformOrders.map((order) => order.userId).filter(Boolean)).size;
+  const commissionRevenue = paidOrders.reduce((sum, order) => {
+    const restaurant = restaurants.find((item) => item.id === order.restaurantId);
+    const commission = Number(restaurant?.commission ?? 12);
+    return sum + ((Number(order.total) || 0) * commission / 100);
+  }, 0);
+
+  const orders = useMemo(() => (
+    [...platformOrders]
+      .sort((a, b) => getOrderDate(b) - getOrderDate(a))
+      .map((order) => ({
+        id: order.id,
+        customer: order.customerName || 'Müşteri',
+        restaurant: restaurants.find((item) => item.id === order.restaurantId)?.name || order.restaurant || 'Restoran',
+        total: Number(order.total) || 0,
+        status: getOrderStatusText(order),
+        time: getOrderDate(order).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      }))
+  ), [platformOrders, restaurants]);
+
+  const topRestaurants = useMemo(() => {
+    const salesByRestaurant = {};
+
+    paidOrders.forEach((order) => {
+      const id = order.restaurantId || 'unknown';
+      if (!salesByRestaurant[id]) {
+        const restaurant = restaurants.find((item) => item.id === id);
+        salesByRestaurant[id] = {
+          id,
+          name: restaurant?.name || order.restaurant || 'Restoran',
+          image: restaurant?.image || '',
+          revenue: 0,
+          orderCount: 0,
+        };
+      }
+
+      salesByRestaurant[id].revenue += Number(order.total) || 0;
+      salesByRestaurant[id].orderCount += 1;
+    });
+
+    return Object.values(salesByRestaurant)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 4);
+  }, [paidOrders, restaurants]);
+
+  const maxRestaurantRevenue = Math.max(...topRestaurants.map((item) => item.revenue), 1);
+  const monthlyOrderBars = useMemo(() => {
+    const today = new Date();
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(today.getFullYear(), today.getMonth() - (11 - index), 1);
+      const monthOrders = paidOrders.filter((order) => {
+        const orderDate = getOrderDate(order);
+        return orderDate.getFullYear() === date.getFullYear() && orderDate.getMonth() === date.getMonth();
+      });
+      const revenue = monthOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+
+      return {
+        label: date.toLocaleDateString('tr-TR', { month: 'short' }),
+        orderCount: monthOrders.length,
+        revenue,
+      };
+    });
+    const maxRevenue = Math.max(...months.map((month) => month.revenue), 1);
+
+    return months.map((month) => ({
+      ...month,
+      height: Math.max(8, (month.revenue / maxRevenue) * 100),
+    }));
+  }, [paidOrders]);
+
   // Core Platform Metrics
   const coreStats = [
     {
       title: 'Toplam Platform Cirosu (GMV)',
-      value: '2.482.900 ₺',
-      change: '+12%',
+      value: formatCurrency(totalRevenue),
+      change: `${paidOrders.length} sipariş`,
       isPositive: true,
       icon: 'payments',
-      desc: 'Son 30 günün brüt işlem hacmi',
+      desc: 'Kayıtlı siparişlerden hesaplanan brüt işlem hacmi',
       color: 'primary'
     },
     {
       title: 'Aktif Platform Kullanıcısı',
-      value: '124.582',
-      change: '+8%',
+      value: String(uniqueCustomers),
+      change: 'Gerçek veri',
       isPositive: true,
       icon: 'group',
-      desc: 'Bu ay sipariş veren tekil üyeler',
+      desc: 'Sipariş veren tekil müşteri sayısı',
       color: 'tertiary'
     },
     {
       title: 'Platform Komisyon Geliri',
-      value: '312.400 ₺',
-      change: '-2%',
-      isPositive: false,
+      value: formatCurrency(commissionRevenue),
+      change: 'Komisyon',
+      isPositive: true,
       icon: 'account_balance_wallet',
-      desc: 'Platform hizmet bedeli kazancı',
+      desc: 'Restoran komisyon oranlarına göre hesaplandı',
       color: 'secondary'
     },
     {
       title: 'Sipariş Başarı Oranı',
-      value: '%99.4',
-      change: '+0.2%',
+      value: `%${successRate}`,
+      change: `${deliveredOrders} teslim`,
       isPositive: true,
       icon: 'bolt',
-      desc: 'Başarıyla teslim edilen siparişler',
+      desc: 'Teslim edilen siparişlerin toplam siparişe oranı',
       color: 'amber'
     }
   ];
@@ -72,7 +170,6 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   ];
 
   // 1. Restaurant Management Tab State — Redux'a bağlı
-  const restaurants = reduxRestaurants; // Redux'tan geliyor
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [showAddRestaurant, setShowAddRestaurant] = useState(false);
   const [newRestName, setNewRestName] = useState('');
@@ -158,34 +255,38 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   };
 
 
-  // 3. Platform Live Orders State
-  const [orders, setOrders] = useState([
-    { id: 'VH-9421', customer: 'Mehmet Aydın', restaurant: 'Napoli Antica', total: 485.00, status: 'Teslim Edildi', time: 'Şimdi' },
-    { id: 'VH-9420', customer: 'Elif Sönmez', restaurant: 'Burger Haven', total: 320.50, status: 'Yolda', time: '4 dk önce' },
-    { id: 'VH-9419', customer: 'Burak Kaya', restaurant: 'Pizza Roma', total: 610.00, status: 'Hazırlanıyor', time: '12 dk önce' },
-    { id: 'VH-9418', customer: 'Ahmet Yılmaz', restaurant: 'Döner Dünyası', total: 145.00, status: 'İptal Edildi', time: '25 dk önce' }
-  ]);
-
   const handleUpdateOrderStatus = (id, newStatus) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    addToast({ message: `Sipariş ${newStatus.toLowerCase()} olarak işaretlendi.`, type: 'success' });
   };
 
 
   // 4. Courier Management State
-  const [couriers, setCouriers] = useState([
-    { id: 1, name: 'Ahmet Yılmaz', vehicle: 'Motosiklet', zone: 'Beşiktaş', status: 'Teslimatta', ordersDelivered: 14 },
-    { id: 2, name: 'Mehmet Tan', vehicle: 'Elektrikli Bisiklet', zone: 'Kadıköy', status: 'Müsait', ordersDelivered: 8 },
-    { id: 3, name: 'Caner Bakır', vehicle: 'Otomobil', zone: 'Şişli', status: 'Çevrimdışı', ordersDelivered: 12 }
-  ]);
+  const [couriers, setCouriers] = useState([]);
+
+  useEffect(() => {
+    async function loadCouriers() {
+      try {
+        const response = await api.get('/couriers');
+        setCouriers(response.data || []);
+      } catch (error) {
+        setCouriers([]);
+      }
+    }
+
+    loadCouriers();
+  }, []);
 
   const [selectedOrderToAssign, setSelectedOrderToAssign] = useState('VH-9420');
-  const [selectedCourierToAssign, setSelectedCourierToAssign] = useState(2);
+  const [selectedCourierToAssign, setSelectedCourierToAssign] = useState('courier-2');
+
+  const activeCouriers = couriers.filter((courier) => courier.status !== 'Çevrimdışı');
+  const deliveryCouriers = couriers.filter((courier) => courier.status === 'Teslimatta');
+  const availableCouriers = couriers.filter((courier) => courier.status === 'Müsait' || courier.status === 'Beklemede');
 
   const handleAssignOrder = () => {
-    addToast({ message: `Sipariş #${selectedOrderToAssign}, kurye ${couriers.find(c => c.id === Number(selectedCourierToAssign))?.name} üzerine başarıyla atandı!`, type: 'success' });
+    addToast({ message: `Sipariş #${selectedOrderToAssign}, kurye ${couriers.find(c => String(c.id) === String(selectedCourierToAssign))?.name} üzerine başarıyla atandı!`, type: 'success' });
     // update status
-    setCouriers(prev => prev.map(c => c.id === Number(selectedCourierToAssign) ? { ...c, status: 'Teslimatta' } : c));
-    setOrders(prev => prev.map(o => o.id === selectedOrderToAssign ? { ...o, status: 'Yolda' } : o));
+    setCouriers(prev => prev.map(c => String(c.id) === String(selectedCourierToAssign) ? { ...c, status: 'Teslimatta' } : c));
   };
 
 
@@ -263,7 +364,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   );
 
   return (
-    <div className={hideSidebar ? "w-full text-[#b0b8c4] bg-[#0b0c0f]" : "min-h-screen bg-stone-50/40 flex text-stone-800 font-sans antialiased"}>
+    <div className={hideSidebar ? "w-full text-stone-800 bg-stone-50/40" : "min-h-screen bg-stone-50/40 flex text-stone-800 font-sans antialiased"}>
       
       {/* SIDEBAR NAVIGATION */}
       {!hideSidebar && (
@@ -393,7 +494,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
             </div>
             <button 
               onClick={() => setShowLogs(true)}
-              className="mt-3 w-full py-1.5 bg-stone-900 hover:bg-black text-white rounded-xl text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-colors"
+              className="mt-3 w-full py-1.5 bg-primary hover:bg-primary-container text-white rounded-xl text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-colors"
             >
               Canlı Sistem Logları
             </button>
@@ -494,55 +595,65 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
                 {/* Simulated Growth Chart Bars */}
                 <div className="h-56 flex items-end justify-between gap-3 px-2 pt-4">
-                  {[35, 45, 40, 58, 50, 75, 68, 85, 95, 80, 88, 100].map((val, idx) => (
+                  {monthlyOrderBars.map((month, idx) => (
                     <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                      <div className="w-full bg-rose-50/70 hover:bg-primary-container hover:scale-x-105 transition-all rounded-t-lg relative" style={{ height: `${val}%` }}>
+                      <div className="w-full bg-primary hover:bg-primary-container hover:scale-x-105 transition-all rounded-t-lg relative" style={{ height: `${month.height}%` }}>
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
-                          {val * 24} Sipariş
+                          {month.orderCount} Sipariş / {formatCurrency(month.revenue)}
                         </div>
                       </div>
                       <span className="text-[9px] font-bold text-stone-400 uppercase">
-                        {['Oc', 'Şu', 'Mr', 'Nis', 'My', 'Hz', 'Tem', 'Ağ', 'Ey', 'Ek', 'Kas', 'Ar'][idx]}
+                        {month.label}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Right Column: Top Categories */}
+              {/* Right Column: Top Restaurants */}
               <div className="bg-white p-6 rounded-[28px] shadow-soft border border-stone-100 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-base font-extrabold text-stone-800">En Popüler Kategoriler</h4>
-                  <p className="text-stone-400 text-xs font-semibold mb-6">Platform genelinde mutfak dağılımı</p>
+                  <h4 className="text-base font-extrabold text-stone-800">En Popüler Restoranlar</h4>
+                  <p className="text-stone-400 text-xs font-semibold mb-6">En çok satış yapan iş ortakları</p>
                 </div>
 
                 <div className="space-y-4">
-                  {[
-                    { name: 'Burger & Fast Food', icon: 'lunch_dining', val: 42, color: 'bg-primary' },
-                    { name: 'Pizza & İtalyan', icon: 'local_pizza', val: 28, color: 'bg-amber-500' },
-                    { name: 'Asya & Sushi', icon: 'ramen_dining', val: 18, color: 'bg-rose-500' },
-                    { name: 'Kebap & Izgara', icon: 'restaurant', val: 12, color: 'bg-stone-800' }
-                  ].map((cat, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-stone-50 border border-stone-100 rounded-xl flex items-center justify-center text-stone-600">
-                        <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between text-xs font-bold text-stone-700 mb-1">
-                          <span>{cat.name}</span>
-                          <span>%{cat.val}</span>
+                  {topRestaurants.length === 0 ? (
+                    <p className="text-sm text-stone-400 font-semibold">Henüz satış verisi yok.</p>
+                  ) : (
+                    topRestaurants.map((restaurant, idx) => (
+                      <div key={restaurant.id} className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-stone-50 border border-stone-100 rounded-xl overflow-hidden flex items-center justify-center text-stone-400">
+                          {restaurant.image ? (
+                            <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            <span className="material-symbols-outlined text-[20px]">storefront</span>
+                          )}
                         </div>
-                        <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                          <div className={`h-full ${cat.color} rounded-full`} style={{ width: `${cat.val}%` }}></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between gap-2 text-xs font-bold text-stone-700 mb-1">
+                            <span className="truncate">{idx + 1}. {restaurant.name}</span>
+                            <span>{formatCurrency(restaurant.revenue)}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${Math.max(8, (restaurant.revenue / maxRestaurantRevenue) * 100)}%` }}></div>
+                          </div>
+                          <p className="text-[10px] text-stone-400 font-bold mt-1">{restaurant.orderCount} sipariş</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 <div className="pt-4 border-t border-stone-100 mt-4 text-center">
                   <button 
-                    onClick={() => setActiveTab('restaurants')}
+                    onClick={() => {
+                      if (hideSidebar) {
+                        navigate('/admin/restaurants');
+                      } else {
+                        setActiveTab('restaurants');
+                      }
+                    }}
                     className="text-primary hover:text-primary-container text-xs font-bold hover:underline"
                   >
                     Tüm İş Ortaklarını Gör &rarr;
@@ -570,7 +681,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 </div>
 
                 <div className="space-y-3">
-                  {orders.map((ord, idx) => (
+                  {orders.slice(0, 4).map((ord, idx) => (
                     <div key={idx} className="bg-stone-50/50 hover:bg-stone-50 border border-stone-200/40 p-3.5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-primary rounded-xl flex items-center justify-center font-black text-xs shadow-sm">
@@ -618,18 +729,18 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 <div className="space-y-4 my-6">
                   <div className="flex justify-between items-center text-xs font-bold text-stone-600">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 bg-primary rounded-full inline-block"></span>Teslimatta</span>
-                    <span className="text-stone-800">18 Kurye (%75)</span>
+                    <span className="text-stone-800">{deliveryCouriers.length} Kurye</span>
                   </div>
                   <div className="flex justify-between items-center text-xs font-bold text-stone-600">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 bg-amber-500 rounded-full inline-block"></span>Müsait / Beklemede</span>
-                    <span className="text-stone-800">6 Kurye (%25)</span>
+                    <span className="text-stone-800">{availableCouriers.length} Kurye</span>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-stone-100">
                   <button 
                     onClick={() => setActiveTab('couriers')}
-                    className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-extrabold uppercase tracking-wide cursor-pointer transition-all"
+                    className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-extrabold uppercase tracking-wide cursor-pointer transition-all"
                   >
                     <span>Kurye Haritasını Aç</span>
                     <span className="material-symbols-outlined text-[15px]">map</span>
@@ -1072,7 +1183,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
                   <div>
                     <p className="text-stone-400 font-bold text-xs tracking-wide">Aktif Kuryeler</p>
-                    <h3 className="text-2xl font-black text-stone-800 mt-1">24</h3>
+                    <h3 className="text-2xl font-black text-stone-800 mt-1">{activeCouriers.length}</h3>
                   </div>
                   <div className="p-3 bg-rose-50 text-primary rounded-xl">
                     <span className="material-symbols-outlined">motorcycle</span>
@@ -1082,7 +1193,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
                   <div>
                     <p className="text-stone-400 font-bold text-xs tracking-wide">Teslimatta</p>
-                    <h3 className="text-2xl font-black text-stone-800 mt-1">18</h3>
+                    <h3 className="text-2xl font-black text-stone-800 mt-1">{deliveryCouriers.length}</h3>
                   </div>
                   <div className="p-3 bg-amber-50 text-amber-500 rounded-xl">
                     <span className="material-symbols-outlined">local_shipping</span>
@@ -1092,7 +1203,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
                   <div>
                     <p className="text-stone-400 font-bold text-xs tracking-wide">Müsait</p>
-                    <h3 className="text-2xl font-black text-stone-800 mt-1">6</h3>
+                    <h3 className="text-2xl font-black text-stone-800 mt-1">{availableCouriers.length}</h3>
                   </div>
                   <div className="p-3 bg-green-50 text-green-600 rounded-xl">
                     <span className="material-symbols-outlined">check_circle</span>
@@ -1354,7 +1465,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                   <div className="flex justify-end pt-2">
                     <button 
                       type="submit"
-                      className="px-6 py-3 bg-stone-900 hover:bg-black text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-sm transition-all"
+                      className="px-6 py-3 bg-primary hover:bg-primary-container text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-sm transition-all"
                     >
                       Yeni Kampanyayı Yayına Al
                     </button>
@@ -1480,7 +1591,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 <button 
                   onClick={handleDownloadPDF}
                   disabled={pdfLoading}
-                  className="px-5 py-2.5 bg-stone-900 hover:bg-black disabled:opacity-50 text-white font-black text-xs rounded-xl uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                  className="px-5 py-2.5 bg-primary hover:bg-primary-container disabled:opacity-50 text-white font-black text-xs rounded-xl uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                 >
                   <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
                   {pdfLoading ? 'Rapor Üretiliyor...' : 'PDF Finans Raporu Al'}
@@ -1692,15 +1803,15 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
       {/* CANLI SISTEM LOGLARI DRAWER / MODAL */}
       {showLogs && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-stone-900 text-stone-300 w-full max-w-2xl rounded-[28px] shadow-2xl overflow-hidden border border-stone-800 animate-scale-up font-mono text-xs">
-            <div className="p-5 border-b border-stone-800 bg-stone-950 flex justify-between items-center text-white">
+          <div className="bg-white text-stone-700 w-full max-w-2xl rounded-[28px] shadow-2xl overflow-hidden border border-stone-100 animate-scale-up font-mono text-xs">
+            <div className="p-5 border-b border-stone-100 bg-stone-50 flex justify-between items-center text-stone-800">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
                 <span className="font-extrabold">CraveDash Live System Logs</span>
               </div>
               <button 
                 onClick={() => setShowLogs(false)}
-                className="text-stone-400 hover:text-white p-1 hover:bg-stone-800 rounded-lg cursor-pointer"
+                className="text-stone-400 hover:text-stone-800 p-1 hover:bg-stone-100 rounded-lg cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
@@ -1708,7 +1819,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
             <div className="p-6 space-y-3.5 max-h-[360px] overflow-y-auto custom-scrollbar">
               {systemLogs.map((log, idx) => (
-                <div key={idx} className="flex gap-4 border-b border-stone-800/30 pb-2.5 last:border-0 last:pb-0">
+                <div key={idx} className="flex gap-4 border-b border-stone-100 pb-2.5 last:border-0 last:pb-0">
                   <span className="text-stone-500 shrink-0 font-bold">[{log.time}]</span>
                   <span className={`font-black shrink-0 ${
                     log.type === 'SUCCESS' ? 'text-green-400' :
@@ -1717,15 +1828,15 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                   }`}>
                     {log.type}
                   </span>
-                  <span className="text-stone-300">{log.msg}</span>
+                  <span className="text-stone-700">{log.msg}</span>
                 </div>
               ))}
             </div>
 
-            <div className="p-4 bg-stone-950/80 border-t border-stone-800 text-right">
+            <div className="p-4 bg-stone-50 border-t border-stone-100 text-right">
               <button 
                 onClick={() => setShowLogs(false)}
-                className="px-5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold cursor-pointer"
+                className="px-5 py-2 bg-primary hover:bg-primary-container text-white rounded-xl font-bold cursor-pointer"
               >
                 Kapat
               </button>

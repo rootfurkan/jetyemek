@@ -46,6 +46,16 @@ const restaurantsSlice = createSlice({
       update(state.list);
       update(state.gridList);
     },
+    updateRestaurant: (state, action) => {
+      const updatedRestaurant = action.payload;
+      const update = arr => {
+        const index = arr.findIndex(r => r.id === updatedRestaurant.id);
+        if (index !== -1) arr[index] = { ...arr[index], ...updatedRestaurant };
+      };
+      update(state.list);
+      update(state.gridList);
+      update(state.sponsorList);
+    },
     addRestaurant: (state, action) => {
       const newRest = {
         id: action.payload.id || 'rest-' + Date.now(),
@@ -77,6 +87,7 @@ export const {
   setSelectedRestaurantId,
   toggleRestaurantStatus,
   updateRestaurantCommission,
+  updateRestaurant,
   addRestaurant,
   deleteRestaurant,
 } = restaurantsSlice.actions;

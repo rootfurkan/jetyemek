@@ -4,6 +4,15 @@ import { addMenuItem, deleteMenuItem, updateMenuItem } from '../../features/menu
 import { useToast } from '../../common/components/Toast.jsx';
 import { createMenuItem, updateMenuItemApi } from '../../services/api.js';
 
+const formatProductTag = (tag) => {
+  if (tag === 'Hot') return 'Popüler';
+  if (tag === 'Bestseller') return 'En Çok Satan';
+  if (tag === 'Promo') return '%25 İndirim';
+  if (tag === '%25 Off') return '%25 İndirim';
+  if (tag === 'New') return 'Yeni';
+  return tag;
+};
+
 export default function AdminMenu() {
   const dispatch = useDispatch();
   const addToast = useToast();
@@ -17,6 +26,7 @@ export default function AdminMenu() {
   const products = allMenuItems.filter(item => item.restaurantId === restaurantId);
 
   const [selectedCategory, setSelectedCategory] = useState('Tümü');
+  const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState(null); // { id, value }
@@ -82,11 +92,19 @@ export default function AdminMenu() {
   };
 
   // Handle product toggle status — Redux
-  const handleToggleStatus = (prod) => {
-    dispatch(updateMenuItem({
-      id: prod.id,
-      status: prod.status === 'Active' ? 'Inactive' : 'Active',
-    }));
+  const handleToggleStatus = async (prod) => {
+    const nextStatus = prod.status === 'Active' ? 'Inactive' : 'Active';
+
+    try {
+      const updatedMenuItem = await updateMenuItemApi(prod.id, { status: nextStatus });
+      dispatch(updateMenuItem(updatedMenuItem));
+      addToast({
+        message: nextStatus === 'Active' ? 'Ürün satışa açıldı.' : 'Ürün satışa kapatıldı.',
+        type: 'success',
+      });
+    } catch (error) {
+      addToast({ message: 'Ürün durumu güncellenirken bir sorun oluştu.', type: 'error' });
+    }
   };
 
   // Handle product deletion — Redux
@@ -216,6 +234,13 @@ export default function AdminMenu() {
   const filteredProducts = selectedCategory === 'Tümü'
     ? products
     : products.filter(p => p.category === selectedCategory);
+  const productsPerPage = 12;
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / productsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = filteredProducts.slice(
+    (safePage - 1) * productsPerPage,
+    safePage * productsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -252,7 +277,10 @@ export default function AdminMenu() {
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setSelectedCategory(cat)}
+            onClick={() => {
+              setSelectedCategory(cat);
+              setCurrentPage(1);
+            }}
             className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
               selectedCategory === cat
                 ? 'text-primary border-primary font-extrabold'
@@ -293,7 +321,7 @@ export default function AdminMenu() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((prod) => (
+          {paginatedProducts.map((prod) => (
             <div
               key={prod.id}
               className={`bg-white rounded-[24px] overflow-hidden shadow-soft border-2 transition-all flex flex-col justify-between group ${
@@ -321,7 +349,7 @@ export default function AdminMenu() {
 
                   {prod.tag && (
                     <span className="bg-primary text-white px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm text-center">
-                      {prod.tag}
+                      {formatProductTag(prod.tag)}
                     </span>
                   )}
                 </div>
@@ -408,24 +436,50 @@ export default function AdminMenu() {
         </div>
       )}
 
-      {/* Category Drag Details Box */}
-      <div className="p-6 bg-stone-100 rounded-3xl border-2 border-dashed border-stone-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h4 className="font-extrabold text-stone-800 text-sm">Kategori Sıralama ve Yönetim Paneli</h4>
-          <p className="text-stone-500 text-xs mt-0.5">Sürükle-bırak sıralama, müşteri menüsünde hangi sırayla listeleneceğini belirler.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {categories.slice(0, 3).map((c, idx) => (
-            <div key={idx} className="bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-sm flex items-center gap-2 text-xs font-bold text-stone-700">
-              <span className="material-symbols-outlined text-[14px] text-stone-400 select-none">drag_indicator</span>
-              {c}
-            </div>
-          ))}
-          <div className="bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200 border-dashed text-xs font-bold text-stone-400 flex items-center gap-1">
-            + Daha Fazla
+      {filteredProducts.length > productsPerPage && (
+        <div className="bg-white border border-stone-100 rounded-2xl px-4 py-3 shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs font-bold text-stone-500">
+            {(safePage - 1) * productsPerPage + 1}-{Math.min(safePage * productsPerPage, filteredProducts.length)} / {filteredProducts.length} ürün gösteriliyor
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={safePage === 1}
+              className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center"
+              title="Önceki sayfa"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`w-9 h-9 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                  safePage === page
+                    ? 'bg-primary text-white border-primary shadow-md shadow-primary/15'
+                    : 'bg-white text-stone-500 border-stone-200 hover:bg-stone-50 hover:text-primary'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={safePage === totalPages}
+              className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center"
+              title="Sonraki sayfa"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Add New Category Modal Screen */}
       {showCategoryModal && (
@@ -659,10 +713,10 @@ export default function AdminMenu() {
                     className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                   >
                     <option value="">Yok / Normal Ürün</option>
-                    <option value="Bestseller">Bestseller (En Çok Satan)</option>
-                    <option value="Hot">Hot (Popüler/Acı)</option>
+                    <option value="En Çok Satan">En Çok Satan</option>
+                    <option value="Popüler">Popüler</option>
                     <option value="Vegan">Vegan (Bitkisel)</option>
-                    <option value="Promo">%25 İndirim</option>
+                    <option value="%25 İndirim">%25 İndirim</option>
                   </select>
                 </div>
               </div>
