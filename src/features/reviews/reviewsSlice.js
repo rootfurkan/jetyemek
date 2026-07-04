@@ -1,30 +1,88 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getReviews, createReview, updateReview } from '../../services/api.js';
 
-const INITIAL_REVIEWS = [
-  { id: 1, user: 'Ahmet Y.', rating: 5, date: 'Bugün', comment: 'Sıcak ve lezzetli geldi, kurye arkadaş çok nazikti.' },
-  { id: 2, user: 'Selin K.', rating: 4, date: 'Dün', comment: 'Pizzanın malzemesi boldu ama biraz soğuktu.' },
-  { id: 3, user: 'Can D.', rating: 5, date: '2 gün önce', comment: 'Harika hamburgerler!' }
-];
+// Async Thunks
+export const fetchReviews = createAsyncThunk(
+  'reviews/fetchReviews',
+  async (restaurantId, { rejectWithValue }) => {
+    try {
+      const data = await getReviews(restaurantId);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Yorumlar yüklenemedi.');
+    }
+  }
+);
+
+export const addReview = createAsyncThunk(
+  'reviews/addReview',
+  async (reviewData, { rejectWithValue }) => {
+    try {
+      const data = await createReview(reviewData);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Yorum eklenemedi.');
+    }
+  }
+);
+
+export const replyToReview = createAsyncThunk(
+  'reviews/replyToReview',
+  async ({ id, reply }, { rejectWithValue }) => {
+    try {
+      const data = await updateReview(id, { reply });
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Yanıt gönderilemedi.');
+    }
+  }
+);
 
 const reviewsSlice = createSlice({
   name: 'reviews',
   initialState: {
-    list: INITIAL_REVIEWS,
+    list: [],
+    loading: false,
+    error: null,
   },
   reducers: {
-    setReviews: (state, action) => {
-      state.list = action.payload;
-    },
-    addReview: (state, action) => {
-      state.list.unshift({
-        id: Date.now(),
-        date: 'Bugün',
-        ...action.payload,
+    clearReviews: (state) => {
+      state.list = [];
+      state.error = null;
+    }
+  },
+  extraReducers: (builder) => {
+    // Fetch Reviews
+    builder
+      .addCase(fetchReviews.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchReviews.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload;
+      })
+      .addCase(fetchReviews.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
-    },
+
+    // Add Review
+    builder
+      .addCase(addReview.fulfilled, (state, action) => {
+        state.list.unshift(action.payload); // Add to the beginning
+      });
+
+    // Reply to Review
+    builder
+      .addCase(replyToReview.fulfilled, (state, action) => {
+        const index = state.list.findIndex(r => r.id === action.payload.id);
+        if (index !== -1) {
+          state.list[index] = action.payload;
+        }
+      });
   },
 });
 
-export const { setReviews, addReview } = reviewsSlice.actions;
-
+export const { clearReviews } = reviewsSlice.actions;
 export default reviewsSlice.reducer;

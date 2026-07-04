@@ -1,75 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '../../common/components/Toast.jsx';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchReviews, replyToReview } from '../../features/reviews/reviewsSlice.js';
 
 export default function AdminReviews() {
   const addToast = useToast();
+  const dispatch = useDispatch();
+
   const [filter, setFilter] = useState('All'); // 'All' | 'Unreplied' | 'Negative' | 'WithImages'
   const [sortBy, setSortBy] = useState('Recent'); // 'Recent' | 'Highest' | 'Lowest'
   const [replyTextMap, setReplyTextMap] = useState({});
   const [activeReplyId, setActiveReplyId] = useState(null);
 
-  // High fidelity reviews mock dataset
-  const [reviews, setReviews] = useState([
-    {
-      id: 'rev-1',
-      author: 'Ahmet Özkan',
-      initials: 'AÖ',
-      date: '24 Ekim 2024 • 12:45',
-      rating: 5,
-      items: 'Bacon Deluxe Burger, Truffle Fries, Cola Zero',
-      text: 'Yemekler sıcacıık geldi ve burgerin ekmeği efsaneydi! Sosları bol koyduğunuz için teşekkürler. Servis hızı da beklediğimden çok daha iyiydi. Kesinlikle favorim oldu artık burası.',
-      reply: null,
-      hasImage: true
-    },
-    {
-      id: 'rev-2',
-      author: 'Selda Demir',
-      initials: 'SD',
-      date: '22 Ekim 2024 • 20:12',
-      rating: 3,
-      items: 'Classic Cheeseburger',
-      text: 'Burger biraz soğuk geldi ama lezzeti yerindeydi. Bir dahaki sefere daha özenli olmanızı bekliyorum.',
-      reply: 'Geri bildiriminiz için teşekkürler Selda Hanım. Yaşanan aksaklık için özür dileriz. Bir sonraki siparişinizde size özel bir ikramımız olacak, lütfen bizimle iletişime geçin.',
-      hasImage: false
-    },
-    {
-      id: 'rev-3',
-      author: 'Murat Kaya',
-      initials: 'MK',
-      date: '20 Ekim 2024 • 13:20',
-      rating: 4,
-      items: 'Mushroom Swiss Burger',
-      text: 'Gayet başarılı, malzemeler kaliteli belli oluyor. Ellerinize sağlık, soslar da çok lezzetliydi.',
-      reply: null,
-      hasImage: false
-    },
-    {
-      id: 'rev-4',
-      author: 'Eda Şahin',
-      initials: 'EŞ',
-      date: '18 Ekim 2024 • 19:30',
-      rating: 1,
-      items: 'Texas BBQ Burger, Onion Rings',
-      text: 'Sipariş tam 1 saatte geldi, patatesler buz gibi olmuştu ve soğan halkaları aşırı yağ çekmişti. Eskiden çok daha iyiydiniz yakışmadı.',
-      reply: null,
-      hasImage: false
+  const currentUser = useSelector(state => state.auth.currentUser);
+  const allReviews = useSelector(state => state.reviews.list) || [];
+  
+  const restaurantId = currentUser?.restaurantId;
+  const reviews = allReviews.filter(r => r.restaurantId === restaurantId);
+
+  useEffect(() => {
+    if (restaurantId) {
+      dispatch(fetchReviews());
     }
-  ]);
+  }, [dispatch, restaurantId]);
 
   const handleToggleReplySection = (id) => {
     setActiveReplyId(activeReplyId === id ? null : id);
   };
 
-  const handleSendReply = (id) => {
+  const handleSendReply = async (id) => {
     const text = replyTextMap[id];
     if (!text || text.trim() === '') {
       addToast({ message: 'Lütfen bir yanıt metni yazınız.', type: 'error' });
       return;
     }
 
-    setReviews(prev => prev.map(r => r.id === id ? { ...r, reply: text } : r));
-    setReplyTextMap(prev => ({ ...prev, [id]: '' }));
-    setActiveReplyId(null);
+    try {
+      await dispatch(replyToReview({ id, reply: text })).unwrap();
+      addToast({ message: 'Yanıt başarıyla gönderildi.', type: 'success' });
+      setReplyTextMap(prev => ({ ...prev, [id]: '' }));
+      setActiveReplyId(null);
+    } catch (err) {
+      addToast({ message: 'Yanıt gönderilemedi.', type: 'error' });
+    }
   };
 
   // Filter & sort reviews
@@ -100,62 +73,35 @@ export default function AdminReviews() {
         <div className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft flex flex-col items-center justify-center text-center">
           <p className="text-stone-400 font-bold text-xs uppercase tracking-wider">Genel Ortalama</p>
           <div className="flex items-baseline gap-1 mt-3">
-            <span className="text-6xl font-black text-primary leading-none">4.8</span>
+            <span className="text-6xl font-black text-primary leading-none">
+              {reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0'}
+            </span>
             <span className="text-stone-400 font-bold text-lg">/5</span>
           </div>
           
           <div className="flex text-amber-500 mt-2">
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+            {[...Array(5)].map((_, i) => (
+              <span key={i} className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: i < (reviews.length > 0 ? Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 0) ? "'FILL' 1" : "'FILL' 0" }}>star</span>
+            ))}
           </div>
-          <p className="mt-4 text-stone-500 text-xs font-semibold">1,248 toplam yorum baz alınmıştır</p>
+          <p className="mt-4 text-stone-500 text-xs font-semibold">{reviews.length} toplam yorum baz alınmıştır</p>
         </div>
 
         {/* Right Side: Detailed star distribution progress */}
         <div className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft md:col-span-2 flex flex-col justify-between space-y-2.5">
-          {/* 5 stars */}
-          <div className="flex items-center gap-4 text-xs font-bold text-stone-700">
-            <span className="w-12 text-stone-600">5 Yıldız</span>
-            <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '82%' }}></div>
-            </div>
-            <span className="w-8 text-right text-stone-400">82%</span>
-          </div>
-          {/* 4 stars */}
-          <div className="flex items-center gap-4 text-xs font-bold text-stone-700">
-            <span className="w-12 text-stone-600">4 Yıldız</span>
-            <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '12%' }}></div>
-            </div>
-            <span className="w-8 text-right text-stone-400">12%</span>
-          </div>
-          {/* 3 stars */}
-          <div className="flex items-center gap-4 text-xs font-bold text-stone-700">
-            <span className="w-12 text-stone-600">3 Yıldız</span>
-            <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '4%' }}></div>
-            </div>
-            <span className="w-8 text-right text-stone-400">4%</span>
-          </div>
-          {/* 2 stars */}
-          <div className="flex items-center gap-4 text-xs font-bold text-stone-700">
-            <span className="w-12 text-stone-600">2 Yıldız</span>
-            <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '1%' }}></div>
-            </div>
-            <span className="w-8 text-right text-stone-400">1%</span>
-          </div>
-          {/* 1 star */}
-          <div className="flex items-center gap-4 text-xs font-bold text-stone-700">
-            <span className="w-12 text-stone-600">1 Yıldız</span>
-            <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '1%' }}></div>
-            </div>
-            <span className="w-8 text-right text-stone-400">1%</span>
-          </div>
+          {[5, 4, 3, 2, 1].map((star) => {
+            const count = reviews.filter(r => r.rating === star).length;
+            const percentage = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
+            return (
+              <div key={star} className="flex items-center gap-4 text-xs font-bold text-stone-700">
+                <span className="w-12 text-stone-600">{star} Yıldız</span>
+                <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: `${percentage}%` }}></div>
+                </div>
+                <span className="w-8 text-right text-stone-400">{percentage}%</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -239,10 +185,10 @@ export default function AdminReviews() {
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shadow-sm">
-                    {rev.initials}
+                    {rev.user ? rev.user.slice(0, 2).toUpperCase() : 'AÖ'}
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-stone-800 text-sm leading-snug">{rev.author}</h4>
+                    <h4 className="font-extrabold text-stone-800 text-sm leading-snug">{rev.user || rev.author || 'İsimsiz Kullanıcı'}</h4>
                     <p className="text-stone-400 text-[10px] font-bold mt-0.5">{rev.date}</p>
                   </div>
                 </div>
@@ -262,10 +208,12 @@ export default function AdminReviews() {
 
               {/* Items tag */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-bold bg-stone-50 border border-stone-200/50 text-primary px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[13px]">shopping_basket</span>
-                  {rev.items}
-                </span>
+                {rev.items && (
+                  <span className="text-[10px] font-bold bg-stone-50 border border-stone-200/50 text-primary px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[13px]">shopping_basket</span>
+                    {rev.items}
+                  </span>
+                )}
                 {rev.hasImage && (
                   <span className="text-[10px] font-bold bg-stone-50 border border-stone-200/50 text-stone-600 px-2.5 py-1 rounded-lg flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px]">image</span>
@@ -275,7 +223,7 @@ export default function AdminReviews() {
               </div>
 
               {/* Comment text */}
-              <p className="text-stone-700 text-sm font-medium leading-relaxed">{rev.text}</p>
+              <p className="text-stone-700 text-sm font-medium leading-relaxed">{rev.comment || rev.text}</p>
 
               {/* Reply box if existing */}
               {rev.reply ? (

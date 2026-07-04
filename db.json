@@ -414,9 +414,9 @@
       "total": 415,
       "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
       "paymentMethod": "Mastercard **** 4291",
-      "status": "Hazırlanıyor",
-      "deliveryStatus": "preparing",
-      "progress": 0,
+      "status": "Kurye Yola Çıktı",
+      "deliveryStatus": "on_the_way",
+      "progress": 55,
       "date": "3 Temmuz 2026",
       "createdAt": "2026-07-03T20:41:42.238Z",
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
@@ -470,9 +470,9 @@
       "total": 75,
       "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
       "paymentMethod": "Kredi Kartı",
-      "status": "Kurye Yola Çıktı",
-      "deliveryStatus": "on_the_way",
-      "progress": 55,
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
       "date": "4 Temmuz 2026",
       "createdAt": "2026-07-03T21:23:49.032Z",
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U",
@@ -552,6 +552,37 @@
       "createdAt": "2026-07-03T23:00:06.444Z",
       "image": "https://image.hurimg.com/i/hurriyet/90/0x0/5eb5162c7152d818e4c60fea.jpg",
       "id": "1m_np6OTltI"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Gourmet Burger House",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "signature-truffle-burger",
+          "name": "Signature Truffle Burger",
+          "qty": 1,
+          "price": 245
+        },
+        {
+          "id": "yeZCgiqvw74-ÇilekSosu",
+          "name": "Limonlu Cheesecake (Çilek Sosu)",
+          "qty": 1,
+          "price": 280
+        }
+      ],
+      "itemsSummary": "2 Ürün",
+      "total": 525,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
+      "date": "4 Temmuz 2026",
+      "createdAt": "2026-07-04T10:17:34.277Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "id": "j9Wc935LXu0"
     }
   ],
   "reviews": [
@@ -581,6 +612,18 @@
       "rating": 5,
       "date": "4 Temmuz 2026",
       "comment": "Corba lezzetliydi, porsiyon yeterliydi."
+    },
+    {
+      "orderId": "j9Wc935LXu0",
+      "restaurantId": "gourmet-burger",
+      "userId": "1",
+      "user": "Ahmet Y.",
+      "rating": 5,
+      "comment": "Çok lezzetliydi\n",
+      "date": "4 Temmuz 2026",
+      "reply": "Afiyet olsun efendim. Beğenmenize çok sevindik. Yine bekleriz :)",
+      "hasImage": false,
+      "id": "RIAVtTDBzGE"
     }
   ],
   "couriers": [],

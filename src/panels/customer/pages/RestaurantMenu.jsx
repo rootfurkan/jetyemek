@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { addToCart } from '../../../features/cart/cartSlice.js';
+import { fetchReviews } from '../../../features/reviews/reviewsSlice.js';
 import { useToast } from '../../../common/components/Toast.jsx';
 import Modal from '../../../common/components/Modal.jsx';
 
@@ -16,11 +17,18 @@ export default function RestaurantMenu() {
   const allMenuItems = useSelector((state) => state.menu.items);
   const restaurants = useSelector((state) => state.restaurants.list);
   const currentCartItems = useSelector((state) => state.cart.items);
-  const reviews = useSelector((state) => state.reviews.list) || [];
+  const allReviews = useSelector((state) => state.reviews.list) || [];
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   // Bu restorana ait menü ürünlerini filtrele
   const menuItems = allMenuItems.filter(item => item.restaurantId === restaurantId);
+  const restaurantReviews = allReviews.filter(r => r.restaurantId === restaurantId);
+
+  React.useEffect(() => {
+    if (restaurantId) {
+      dispatch(fetchReviews(restaurantId));
+    }
+  }, [dispatch, restaurantId]);
 
   // Restoran bilgisini al
   const restaurant = restaurants.find(r => r.id === restaurantId) || {
@@ -116,8 +124,8 @@ export default function RestaurantMenu() {
               className="flex items-center gap-1 text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-4.5 py-1.5 rounded-full border border-amber-500/30 hover:scale-102 active:scale-95 transition-all cursor-pointer shadow-sm select-none"
             >
               <span className="material-symbols-outlined text-[15px] text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-              <span>4.8</span>
-              <span className="opacity-80 font-medium">(2k+ değerlendirme • Yorumları Gör)</span>
+              <span>{restaurantReviews.length > 0 ? (restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length).toFixed(1) : '0.0'}</span>
+              <span className="opacity-80 font-medium">({restaurantReviews.length} değerlendirme • Yorumları Gör)</span>
             </button>
           </div>
         </div>
@@ -305,20 +313,26 @@ export default function RestaurantMenu() {
         <div className="space-y-4 text-left">
           <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/50 mb-6 flex justify-between items-center">
             <div>
-              <p className="text-2xl font-black text-stone-800">4.8</p>
+              <p className="text-2xl font-black text-stone-800">
+                {restaurantReviews.length > 0 ? (restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length).toFixed(1) : '0.0'}
+              </p>
               <div className="flex gap-0.5 text-amber-500 mt-1">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: i < (restaurantReviews.length > 0 ? Math.round(restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length) : 0) ? "'FILL' 1" : "'FILL' 0" }}>star</span>
                 ))}
               </div>
             </div>
             <div className="text-right text-xs text-stone-500 font-semibold">
-              <p>2.420 Toplam Puanlama</p>
-              <p className="text-[10px] text-stone-400 mt-0.5">%96 Olumlu Geri Dönüş</p>
+              <p>{restaurantReviews.length} Toplam Puanlama</p>
+              <p className="text-[10px] text-stone-400 mt-0.5">
+                %{restaurantReviews.length > 0 ? Math.round((restaurantReviews.filter(r => r.rating >= 4).length / restaurantReviews.length) * 100) : 0} Olumlu Geri Dönüş
+              </p>
             </div>
           </div>
           <div className="divide-y divide-stone-100 max-h-[350px] overflow-y-auto pr-1">
-            {reviews.map(review => (
+            {restaurantReviews.length === 0 ? (
+              <p className="text-center text-xs text-stone-500 py-4 font-semibold">Henüz hiç değerlendirme yapılmamış.</p>
+            ) : restaurantReviews.map(review => (
               <div key={review.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex justify-between items-start mb-1">
                   <div>
@@ -337,7 +351,21 @@ export default function RestaurantMenu() {
                   </div>
                   <span className="text-[10px] text-stone-400 font-semibold">{review.date}</span>
                 </div>
+                {review.items && (
+                  <span className="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded inline-block mt-1">
+                    {review.items}
+                  </span>
+                )}
                 <p className="text-xs text-stone-600 leading-relaxed font-medium mt-1.5">{review.comment}</p>
+                {review.reply && (
+                  <div className="mt-2 bg-stone-50 p-2.5 rounded-lg border-l-2 border-primary">
+                    <div className="flex items-center gap-1 mb-0.5 text-primary">
+                      <span className="material-symbols-outlined text-[12px]">storefront</span>
+                      <span className="font-extrabold text-[9px] uppercase">İşletme Yanıtı</span>
+                    </div>
+                    <p className="text-stone-500 text-[11px] font-medium italic">{review.reply}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
