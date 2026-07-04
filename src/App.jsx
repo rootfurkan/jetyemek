@@ -4,10 +4,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import store from './app/store.js';
 import AppRouter from './routes/AppRouter.jsx';
-import { getMenuItems, getRestaurants, getAddresses, getOrders } from './services/api.js';
+import { getMenuItems, getRestaurants, getAddresses, getOrders, getReviews } from './services/api.js';
 import { setMenuItems } from './features/menu/menuSlice.js';
 import { setRestaurants } from './features/restaurants/restaurantsSlice.js';
 import { setAddresses } from './features/auth/authSlice.js';
+import { setReviews } from './features/reviews/reviewsSlice.js';
 import {
   setActiveOrder,
   setPreviousOrders,
@@ -23,12 +24,14 @@ function AppDataLoader() {
   useEffect(() => {
     async function loadPublicData() {
       try {
-        const [restaurants, menuItems] = await Promise.all([
+        const [restaurants, menuItems, reviews] = await Promise.all([
           getRestaurants(),
           getMenuItems(),
+          getReviews(),
         ]);
         dispatch(setRestaurants(restaurants));
         dispatch(setMenuItems(menuItems));
+        dispatch(setReviews(reviews));
       } catch (error) {
         console.error('Veriler yüklenirken hata oluştu:', error);
       }

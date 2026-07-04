@@ -85,10 +85,12 @@ const ordersSlice = createSlice({
     },
 
     updatePlatformOrderStatus: (state, action) => {
-      const { id, status } = action.payload;
+      const { id, status, deliveryStatus, progress } = action.payload;
       const order = state.platformOrders.find((o) => o.id === id);
       if (order) {
         order.status = status;
+        if (deliveryStatus) order.deliveryStatus = deliveryStatus;
+        if (progress !== undefined) order.progress = progress;
       }
     },
 

@@ -28,6 +28,16 @@ export async function getMenuItems(restaurantId) {
   return response.data;
 }
 
+export async function createMenuItem(menuItem) {
+  const response = await api.post('/menuItems', menuItem);
+  return response.data;
+}
+
+export async function updateMenuItemApi(id, menuItem) {
+  const response = await api.patch(`/menuItems/${id}`, menuItem);
+  return response.data;
+}
+
 export async function getAddresses(userId) {
   const response = await api.get(`/addresses?userId=${userId}`);
   return response.data;
@@ -70,6 +80,11 @@ export async function getOrders(userId) {
     const dateB = new Date(b.createdAt || 0);
     return dateB - dateA;
   });
+}
+
+export async function getReviews() {
+  const response = await api.get('/reviews');
+  return response.data;
 }
 
 export async function createOrder(order) {

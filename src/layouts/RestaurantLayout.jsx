@@ -53,7 +53,7 @@ export default function RestaurantLayout() {
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3.5 px-4 h-11 rounded-xl text-xs font-extrabold tracking-wide uppercase transition-all cursor-pointer ${
                   isActive 
-                    ? 'bg-primary-container text-white shadow-md shadow-primary/10' 
+                    ? 'bg-rose-50 text-primary border border-rose-100 shadow-sm' 
                     : 'text-stone-500 hover:bg-stone-50 hover:text-stone-800'
                 }`}
               >

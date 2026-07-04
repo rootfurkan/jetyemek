@@ -12,6 +12,9 @@ const reviewsSlice = createSlice({
     list: INITIAL_REVIEWS,
   },
   reducers: {
+    setReviews: (state, action) => {
+      state.list = action.payload;
+    },
     addReview: (state, action) => {
       state.list.unshift({
         id: Date.now(),
@@ -22,6 +25,6 @@ const reviewsSlice = createSlice({
   },
 });
 
-export const { addReview } = reviewsSlice.actions;
+export const { setReviews, addReview } = reviewsSlice.actions;
 
 export default reviewsSlice.reducer;

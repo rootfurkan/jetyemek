@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '../../features/menu/menuSlice.js';
 import { useToast } from '../../common/components/Toast.jsx';
+import { createMenuItem, updateMenuItemApi } from '../../services/api.js';
 
 export default function AdminMenu() {
   const dispatch = useDispatch();
@@ -17,12 +18,15 @@ export default function AdminMenu() {
 
   const [selectedCategory, setSelectedCategory] = useState('Tümü');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState(null); // { id, value }
+  const [editingProduct, setEditingProduct] = useState(null);
 
   // Kategorileri ürünlerden dinamik türet
   const dynamicCategories = ['Tümü', ...new Set(products.map(p => p.category).filter(Boolean))];
   const [extraCategories, setExtraCategories] = useState([]);
   const categories = [...new Set([...dynamicCategories, ...extraCategories])];
+  const categoryOptions = categories.filter(c => c !== dynamicCategories[0]);
 
   // Form states for new product
   const [newProductName, setNewProductName] = useState('');
@@ -31,6 +35,51 @@ export default function AdminMenu() {
   const [newProductCat, setNewProductCat] = useState('Popüler');
   const [newProductImg, setNewProductImg] = useState('');
   const [newProductTag, setNewProductTag] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [hasExtraOptions, setHasExtraOptions] = useState(false);
+  const [extraOptionTitle, setExtraOptionTitle] = useState('');
+  const [extraOptions, setExtraOptions] = useState([
+    { name: '', price: '' },
+  ]);
+
+  const resetProductForm = () => {
+    setEditingProduct(null);
+    setNewProductName('');
+    setNewProductPrice('');
+    setNewProductDesc('');
+    setNewProductCat(categoryOptions[0] || 'Popüler');
+    setNewProductImg('');
+    setNewProductTag('');
+    setHasExtraOptions(false);
+    setExtraOptionTitle('');
+    setExtraOptions([{ name: '', price: '' }]);
+  };
+
+  const openAddProductModal = () => {
+    resetProductForm();
+    setShowAddModal(true);
+  };
+
+  const openEditProductModal = (product) => {
+    setEditingProduct(product);
+    setNewProductName(product.name || '');
+    setNewProductPrice(product.price?.toString() || '');
+    setNewProductDesc(product.description || '');
+    setNewProductCat(product.category || categoryOptions[0] || '');
+    setNewProductImg(product.image || '');
+    setNewProductTag(product.tag || '');
+    setHasExtraOptions(!!product.extraOptions);
+    setExtraOptionTitle(product.extraOptions?.title || '');
+    setExtraOptions(
+      product.extraOptions?.options?.length
+        ? product.extraOptions.options.map((option) => ({
+            name: option.name || '',
+            price: option.price?.toString() || '',
+          }))
+        : [{ name: '', price: '' }]
+    );
+    setShowAddModal(true);
+  };
 
   // Handle product toggle status — Redux
   const handleToggleStatus = (prod) => {
@@ -62,7 +111,7 @@ export default function AdminMenu() {
   };
 
   // Add new product submit handler — Redux
-  const handleAddProductSubmit = (e) => {
+  const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     if (!newProductName || !newProductPrice) {
       addToast({ message: 'Lütfen en az ürün adı ve fiyatını doldurunuz.', type: 'error' });
@@ -70,25 +119,62 @@ export default function AdminMenu() {
     }
 
     const defaultImg = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80';
+    const cleanExtraOptions = extraOptions
+      .map((option) => ({
+        name: option.name.trim(),
+        price: Number(option.price) || 0,
+      }))
+      .filter((option) => option.name);
 
-    dispatch(addMenuItem({
+    const menuItemPayload = {
       name: newProductName,
       price: parseFloat(newProductPrice),
       description: newProductDesc || 'Özenle hazırlanan gurme lezzetler.',
       category: newProductCat,
       image: newProductImg || defaultImg,
-      status: 'Active',
+      status: editingProduct?.status || 'Active',
       tag: newProductTag || null,
       restaurantId,
-    }));
+    };
 
-    setNewProductName('');
-    setNewProductPrice('');
-    setNewProductDesc('');
-    setNewProductImg('');
-    setNewProductTag('');
+    if (hasExtraOptions) {
+      if (!extraOptionTitle.trim() || cleanExtraOptions.length === 0) {
+        addToast({ message: 'Ek seçenek başlığı ve en az bir seçenek giriniz.', type: 'error' });
+        return;
+      }
+
+      menuItemPayload.extraOptions = {
+        title: extraOptionTitle.trim(),
+        options: cleanExtraOptions,
+      };
+    } else if (editingProduct?.extraOptions) {
+      menuItemPayload.extraOptions = null;
+    }
+
+    try {
+      if (editingProduct) {
+        const updatedMenuItem = await updateMenuItemApi(editingProduct.id, menuItemPayload);
+        dispatch(updateMenuItem(updatedMenuItem));
+      } else {
+        const savedMenuItem = await createMenuItem(menuItemPayload);
+        dispatch(addMenuItem(savedMenuItem));
+      }
+    } catch (error) {
+      console.error('Urun kaydedilirken hata:', error);
+      addToast({ message: 'Urun db.json dosyasina kaydedilemedi.', type: 'error' });
+      return;
+    }
+
+    const productName = newProductName;
+    const wasEditing = !!editingProduct;
+    resetProductForm();
     setShowAddModal(false);
-    addToast({ message: `"${newProductName}" menüye eklendi ve müşteri paneline yansıdı!`, type: 'success' });
+    addToast({
+      message: wasEditing
+        ? `"${productName}" urunu guncellendi.`
+        : `"${productName}" menüye eklendi ve müşteri paneline yansıdı!`,
+      type: 'success'
+    });
   };
 
   // Handle add custom category
@@ -102,6 +188,29 @@ export default function AdminMenu() {
       }
       setExtraCategories(prev => [...prev, catName.trim()]);
     }
+  };
+
+  const handleAddCategorySubmit = (e) => {
+    e.preventDefault();
+    const catName = newCategoryName.trim();
+
+    if (!catName) {
+      addToast({ message: 'Lutfen kategori adi giriniz.', type: 'error' });
+      return;
+    }
+
+    const exists = categories.find(c => c.toLowerCase() === catName.toLowerCase());
+    if (exists) {
+      addToast({ message: 'Bu kategori zaten mevcut!', type: 'error' });
+      return;
+    }
+
+    setExtraCategories(prev => [...prev, catName]);
+    setSelectedCategory(catName);
+    setNewProductCat(catName);
+    setNewCategoryName('');
+    setShowCategoryModal(false);
+    addToast({ message: `"${catName}" kategorisi eklendi.`, type: 'success' });
   };
 
   const filteredProducts = selectedCategory === 'Tümü'
@@ -122,7 +231,7 @@ export default function AdminMenu() {
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={openAddProductModal}
           className="bg-primary hover:bg-primary-container text-white px-5 py-3 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-primary/10 hover:scale-102 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
         >
           <span className="material-symbols-outlined text-[20px] font-bold">add</span>
@@ -157,7 +266,7 @@ export default function AdminMenu() {
         <div className="flex-1"></div>
 
         <button
-          onClick={handleAddCategory}
+          onClick={() => setShowCategoryModal(true)}
           className="flex items-center gap-1 text-primary hover:text-primary-container font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[16px]">category</span>
@@ -176,7 +285,7 @@ export default function AdminMenu() {
             "{selectedCategory}" kategorisinde henüz tanımlanmış ürün bulunmamaktadır. Sağ üstteki butonla yeni bir tane ekleyebilirsiniz.
           </p>
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={openAddProductModal}
             className="mt-4 bg-primary text-white px-5 py-2.5 rounded-full text-xs font-bold cursor-pointer"
           >
             İlk Ürünü Ekle
@@ -276,13 +385,22 @@ export default function AdminMenu() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => handleDeleteProduct(prod.id)}
-                    className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                    title="Sil"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditProductModal(prod)}
+                      className="p-1.5 text-stone-400 hover:text-primary hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                      title="Düzenle"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(prod.id)}
+                      className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                      title="Sil"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -309,6 +427,64 @@ export default function AdminMenu() {
         </div>
       </div>
 
+      {/* Add New Category Modal Screen */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleAddCategorySubmit}
+            className="bg-white rounded-[28px] p-6 max-w-md w-full shadow-2xl relative border border-stone-100 space-y-5"
+          >
+            <div className="flex justify-between items-center border-b border-stone-100 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-stone-800">Yeni Kategori Ekle</h3>
+                <p className="text-xs text-stone-400 mt-0.5">Kategori eklendikten sonra yeni urun formunda secilebilir.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCategoryModal(false);
+                  setNewCategoryName('');
+                }}
+                className="p-1 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Kategori Adi</label>
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Orn: Corbalar"
+                className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-stone-100 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCategoryModal(false);
+                  setNewCategoryName('');
+                }}
+                className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 rounded-full font-bold text-xs text-stone-600 transition-all cursor-pointer"
+              >
+                Iptal
+              </button>
+              <button
+                type="submit"
+                className="px-7 py-2.5 bg-primary hover:bg-primary-container text-white rounded-full font-bold text-xs transition-all cursor-pointer shadow-md"
+              >
+                Kategoriyi Ekle
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Add New Product Modal Screen */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -318,12 +494,19 @@ export default function AdminMenu() {
           >
             <div className="flex justify-between items-center border-b border-stone-100 pb-3">
               <div>
-                <h3 className="text-lg font-black text-stone-800">Menüye Yeni Lezzet Ekle</h3>
-                <p className="text-xs text-stone-400 mt-0.5">Bu ürün anında müşteri menüsüne yansıyacak.</p>
+                <h3 className="text-lg font-black text-stone-800">
+                  {editingProduct ? 'Ürünü Düzenle' : 'Menüye Yeni Lezzet Ekle'}
+                </h3>
+                <p className="text-xs text-stone-400 mt-0.5">
+                  {editingProduct ? 'Değişiklikler db.json içine kaydedilecek.' : 'Bu ürün anında müşteri menüsüne yansıyacak.'}
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  resetProductForm();
+                }}
                 className="p-1 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined">close</span>
@@ -364,16 +547,9 @@ export default function AdminMenu() {
                     onChange={(e) => setNewProductCat(e.target.value)}
                     className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                   >
-                    {categories.filter(c => c !== 'Tümü').map((c) => (
+                    {categoryOptions.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
-                    <option value="Popüler">Popüler</option>
-                    <option value="Burgerler">Burgerler</option>
-                    <option value="Pizza">Pizza</option>
-                    <option value="Ana Yemekler">Ana Yemekler</option>
-                    <option value="Yan Ürünler">Yan Ürünler</option>
-                    <option value="İçecekler">İçecekler</option>
-                    <option value="Tatlılar">Tatlılar</option>
                   </select>
                 </div>
               </div>
@@ -387,6 +563,80 @@ export default function AdminMenu() {
                   onChange={(e) => setNewProductDesc(e.target.value)}
                   className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                 />
+              </div>
+
+              <div className="rounded-2xl border border-stone-200 bg-stone-50/60 p-4 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-xs font-black text-stone-700 uppercase tracking-wider">Ek Secenek</h4>
+                    <p className="text-[11px] text-stone-400 font-semibold mt-0.5">Kapaliysa musteri urunu direkt sepete ekler.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasExtraOptions}
+                      onChange={(e) => setHasExtraOptions(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-stone-300 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[3px] after:start-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
+                  </label>
+                </div>
+
+                {hasExtraOptions && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Secenek Basligi</label>
+                      <input
+                        type="text"
+                        value={extraOptionTitle}
+                        onChange={(e) => setExtraOptionTitle(e.target.value)}
+                        placeholder="Orn: Ekstra Sos Tercihi"
+                        className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                      />
+                    </div>
+
+                    {extraOptions.map((option, index) => (
+                      <div key={index} className="grid grid-cols-[1fr_110px_36px] gap-2 items-center">
+                        <input
+                          type="text"
+                          value={option.name}
+                          onChange={(e) => setExtraOptions(prev => prev.map((item, itemIndex) => (
+                            itemIndex === index ? { ...item, name: e.target.value } : item
+                          )))}
+                          placeholder="Orn: Ketcap"
+                          className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={option.price}
+                          onChange={(e) => setExtraOptions(prev => prev.map((item, itemIndex) => (
+                            itemIndex === index ? { ...item, price: e.target.value } : item
+                          )))}
+                          placeholder="TL"
+                          className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setExtraOptions(prev => prev.length === 1 ? [{ name: '', price: '' }] : prev.filter((_, itemIndex) => itemIndex !== index))}
+                          className="h-10 rounded-xl bg-white border border-stone-200 text-stone-400 hover:text-red-500 hover:bg-red-50 cursor-pointer"
+                          title="Secenegi sil"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setExtraOptions(prev => [...prev, { name: '', price: '' }])}
+                      className="w-full border border-dashed border-primary/40 text-primary bg-white hover:bg-rose-50 rounded-xl py-2.5 text-xs font-black cursor-pointer"
+                    >
+                      + Secenek Ekle
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -421,7 +671,10 @@ export default function AdminMenu() {
             <div className="flex gap-3 pt-4 border-t border-stone-100 justify-end">
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  resetProductForm();
+                }}
                 className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 rounded-full font-bold text-xs text-stone-600 transition-all cursor-pointer"
               >
                 İptal Et
@@ -430,7 +683,7 @@ export default function AdminMenu() {
                 type="submit"
                 className="px-7 py-2.5 bg-primary hover:bg-primary-container text-white rounded-full font-bold text-xs transition-all cursor-pointer shadow-md"
               >
-                Kaydet ve Menüye Ekle
+                {editingProduct ? 'Degisiklikleri Kaydet' : 'Kaydet ve Menüye Ekle'}
               </button>
             </div>
           </form>

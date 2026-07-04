@@ -36,6 +36,7 @@ export default function RestaurantMenu() {
   // Modals state
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [customizingItem, setCustomizingItem] = useState(null);
+  const [selectedExtraOption, setSelectedExtraOption] = useState(null);
 
   // Customize options
   const [wrapOption, setWrapOption] = useState('Tek lavaş');
@@ -59,10 +60,22 @@ export default function RestaurantMenu() {
       navigate('/login', { state: { from: location.pathname } });
       return;
     }
+    const itemOptions = item.extraOptions?.options || [];
+    if (itemOptions.length === 0) {
+      dispatch(addToCart({
+        ...item,
+        restaurantId,
+        restaurantName: restaurant.name
+      }));
+      addToast({ message: `${item.name} sepete eklendi!`, type: 'success' });
+      return;
+    }
+
     setWrapOption('Tek lavaş');
     setDrinkOption('Kola');
     setGrammageOption('90gr');
     setSauceOption('İstemiyorum');
+    setSelectedExtraOption(itemOptions[0]);
     setCustomizingItem(item);
   };
 
@@ -334,10 +347,89 @@ export default function RestaurantMenu() {
       {/* Customize Options Modal */}
       <Modal
         isOpen={!!customizingItem}
-        onClose={() => setCustomizingItem(null)}
+        onClose={() => {
+          setCustomizingItem(null);
+          setSelectedExtraOption(null);
+        }}
         title={customizingItem ? `${customizingItem.name} Seçenekleri` : "Ürün Seçenekleri"}
       >
         {customizingItem && (() => {
+          const customOptions = customizingItem.extraOptions?.options || [];
+          if (customOptions.length > 0) {
+            const selectedOption = selectedExtraOption || customOptions[0];
+            const optionPrice = Number(selectedOption?.price) || 0;
+            const currentPrice = Number(customizingItem.price) + optionPrice;
+
+            const handleConfirmAdd = () => {
+              const finalName = selectedOption?.name
+                ? `${customizingItem.name} (${selectedOption.name})`
+                : customizingItem.name;
+              const finalId = selectedOption?.name
+                ? `${customizingItem.id}-${selectedOption.name.replace(/\s+/g, '')}`
+                : customizingItem.id;
+
+              dispatch(addToCart({
+                ...customizingItem,
+                id: finalId,
+                name: finalName,
+                price: currentPrice,
+                restaurantId,
+                restaurantName: restaurant.name
+              }));
+
+              addToast({ message: `${finalName} sepete eklendi!`, type: 'success' });
+              setCustomizingItem(null);
+              setSelectedExtraOption(null);
+            };
+
+            return (
+              <div className="space-y-6 text-left">
+                <div className="border-b border-stone-100 pb-4">
+                  <p className="text-xs text-stone-500 leading-relaxed font-semibold">{customizingItem.description}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">
+                    {customizingItem.extraOptions.title || 'Ek Secenek'}
+                  </h4>
+                  <div className="flex flex-col gap-2">
+                    {customOptions.map((option) => (
+                      <button
+                        key={option.name}
+                        type="button"
+                        onClick={() => setSelectedExtraOption(option)}
+                        className={`flex justify-between items-center py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          selectedOption?.name === option.name
+                            ? 'border-primary bg-rose-50/20 text-primary'
+                            : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        <span>{option.name}</span>
+                        <span className="font-extrabold text-primary">
+                          {Number(option.price) > 0 ? `+${Number(option.price)} TL` : 'Ucretsiz'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-stone-100 pt-4 flex items-center justify-between mt-6">
+                  <div>
+                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Toplam Fiyat</p>
+                    <p className="text-xl font-black text-primary">₺{currentPrice}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConfirmAdd}
+                    className="brand-gradient-bg text-white font-extrabold text-xs px-8 py-3.5 rounded-xl hover:scale-102 active:scale-98 transition-all cursor-pointer border-none shadow-md shadow-rose-900/10"
+                  >
+                    Sepete Ekle
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
           const isCigkofta = customizingItem.category === 'Çiğ Köfte' || 
                              customizingItem.category === 'Dürümler' || 
                              customizingItem.name.toLowerCase().includes('çiğ') || 

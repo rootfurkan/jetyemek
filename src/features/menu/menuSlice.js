@@ -50,9 +50,7 @@ const menuSlice = createSlice({
         restaurantId: item.restaurantId || 'gourmet-burger',
       }));
       // Mevcut eklenen itemleri koru, sadece API kayıtlarını güncelle
-      const apiIds = new Set(apiItems.map(i => i.id));
-      const preserved = state.items.filter(i => !apiIds.has(i.id));
-      state.items = [...apiItems, ...preserved];
+      state.items = apiItems;
     },
     addMenuItem: (state, action) => {
       state.items.unshift({
