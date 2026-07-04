@@ -5,6 +5,15 @@ import { addToCart } from '../../../features/cart/cartSlice.js';
 import { useToast } from '../../../common/components/Toast.jsx';
 import Modal from '../../../common/components/Modal.jsx';
 
+const formatProductTag = (tag) => {
+  if (tag === 'Hot') return 'Popüler';
+  if (tag === 'Bestseller') return 'En Çok Satan';
+  if (tag === 'Promo') return '%25 İndirim';
+  if (tag === '%25 Off') return '%25 İndirim';
+  if (tag === 'New') return 'Yeni';
+  return tag;
+};
+
 export default function RestaurantMenu() {
   const dispatch = useDispatch();
   const addToast = useToast();
@@ -20,7 +29,10 @@ export default function RestaurantMenu() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   // Bu restorana ait menü ürünlerini filtrele
-  const menuItems = allMenuItems.filter(item => item.restaurantId === restaurantId);
+  const menuItems = allMenuItems.filter(item => (
+    item.restaurantId === restaurantId &&
+    item.status !== 'Inactive'
+  ));
 
   // Restoran bilgisini al
   const restaurant = restaurants.find(r => r.id === restaurantId) || {
@@ -242,7 +254,7 @@ export default function RestaurantMenu() {
                         <span className={`text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-widest text-white shadow-sm ${
                           item.tag.includes('%') ? 'bg-secondary' : 'bg-primary'
                         }`}>
-                          {item.tag}
+                          {formatProductTag(item.tag)}
                         </span>
                       </div>
                     )}

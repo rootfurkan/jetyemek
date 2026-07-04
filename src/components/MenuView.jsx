@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { GOURMET_MENU } from '../data.jsx';
 import { useToast } from '../common/components/Toast.jsx';
 
+const formatProductTag = (tag) => {
+  if (tag === 'Hot') return 'Popüler';
+  if (tag === 'Bestseller') return 'En Çok Satan';
+  if (tag === 'Promo') return '%25 İndirim';
+  if (tag === '%25 Off') return '%25 İndirim';
+  if (tag === 'New') return 'Yeni';
+  return tag;
+};
+
 export default function MenuView({ onAddToCart, currentCartItems = [] }) {
   const addToast = useToast();
   const [selectedSection, setSelectedSection] = useState('Popüler');
@@ -184,7 +193,7 @@ export default function MenuView({ onAddToCart, currentCartItems = [] }) {
                         <span className={`text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-widest text-white shadow-sm ${
                           item.tag.includes('%') ? 'bg-secondary' : 'bg-primary'
                         }`}>
-                          {item.tag}
+                          {formatProductTag(item.tag)}
                         </span>
                       </div>
                     )}

@@ -8,6 +8,7 @@ function getPanelStatus(order) {
   if (order.deliveryStatus === 'new' || order.deliveryStatus === 'pending') return 'New';
   if (order.deliveryStatus === 'ready') return 'Ready';
   if (order.deliveryStatus === 'on_the_way') return 'OnTheWay';
+  if (order.deliveryStatus === 'delivered') return 'Delivered';
   if (order.status === 'Sipariş Hazır') return 'Ready';
   if (order.status === 'Kurye Yola Çıktı') return 'OnTheWay';
   return 'Preparing';
@@ -17,6 +18,7 @@ function getStatusLabel(status) {
   if (status === 'New') return 'Yeni Sipariş';
   if (status === 'Ready') return 'Teslimata Hazır';
   if (status === 'OnTheWay') return 'Kurye Yolda';
+  if (status === 'Delivered') return 'Teslim Edildi';
   return 'Hazırlanıyor';
 }
 
@@ -49,9 +51,7 @@ export default function AdminOrders() {
         const belongsToRestaurant =
           userRole !== 'restaurant' || !restaurantId || order.restaurantId === restaurantId;
         const isLive =
-          order.deliveryStatus !== 'delivered' &&
           order.deliveryStatus !== 'cancelled' &&
-          order.status !== 'Teslim Edildi' &&
           order.status !== 'İptal Edildi';
 
         return belongsToRestaurant && isLive;
@@ -117,11 +117,20 @@ export default function AdminOrders() {
     );
   };
 
+  const handleDeliveredOrder = (orderId) => {
+    updateStatus(
+      orderId,
+      { status: 'Teslim Edildi', deliveryStatus: 'delivered', progress: 100 },
+      'Sipariş teslim edildi olarak işaretlendi.'
+    );
+  };
+
   const stats = {
     all: orders.length,
     new: orders.filter((order) => order.status === 'New').length,
     preparing: orders.filter((order) => order.status === 'Preparing').length,
     ready: orders.filter((order) => order.status === 'Ready' || order.status === 'OnTheWay').length,
+    delivered: orders.filter((order) => order.status === 'Delivered').length,
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -135,6 +144,7 @@ export default function AdminOrders() {
     { id: 'New', label: 'Yeni', count: stats.new },
     { id: 'Preparing', label: 'Hazırlanıyor', count: stats.preparing },
     { id: 'Ready', label: 'Hazır', count: stats.ready },
+    { id: 'Delivered', label: 'Teslim', count: stats.delivered },
   ];
 
   return (
@@ -334,8 +344,17 @@ export default function AdminOrders() {
                     )}
 
                     {order.status === 'OnTheWay' && (
-                      <div className="w-full bg-blue-50 text-blue-700 text-xs font-extrabold h-10 rounded-xl flex items-center justify-center uppercase">
-                        Kurye yolda
+                      <button
+                        onClick={() => handleDeliveredOrder(order.id)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold h-10 rounded-xl transition-all shadow-sm uppercase cursor-pointer"
+                      >
+                        Teslim Edildi
+                      </button>
+                    )}
+
+                    {order.status === 'Delivered' && (
+                      <div className="w-full bg-emerald-50 text-emerald-700 text-xs font-extrabold h-10 rounded-xl flex items-center justify-center uppercase">
+                        Teslim Edildi
                       </div>
                     )}
                   </div>

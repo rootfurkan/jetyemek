@@ -204,7 +204,7 @@ export const GOURMET_MENU = [
     time: "20-25 dk",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
     category: "Popüler",
-    tag: "Hot"
+    tag: "Popüler"
   },
   {
     id: "classic-margherita",
@@ -214,7 +214,7 @@ export const GOURMET_MENU = [
     time: "15-20 dk",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBygBpUWwh8OtaJC8RU2J-A3XvmOOJca3DQs7kGCsbTxO3fcb4wn7A_YykulSKHii-Y-aMMYDY2BDj27jevbX3OcLGAiQfHaJV5bnGn78U5EzoK7T-jD81IcSCQbdncrCQoJ8FagaFgoTzAsGi94d3yC7alslg07ls9QDj09SQ1AUqY2Y6owNH8TjCL_VUVJ2wPzZ1xo0cf7e8ZqdmqB_y-GLeXkZZDQ8TMB5d22qQAqqQGz-Kh9C8NXjLlbUn5oQMiZZ85v5_zA6U",
     category: "Popüler",
-    tag: "%25 Off"
+    tag: "%25 İndirim"
   },
   {
     id: "sweet-potato-fries",

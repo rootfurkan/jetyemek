@@ -1,62 +1,163 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../common/components/Toast.jsx';
+import { updateRestaurant as updateRestaurantState } from '../../features/restaurants/restaurantsSlice.js';
+import { updateRestaurant } from '../../services/api.js';
+
+const defaultWorkingHours = [
+  { day: 'Pazartesi', start: '09:00', end: '22:00', closed: false },
+  { day: 'Salı', start: '09:00', end: '22:00', closed: false },
+  { day: 'Çarşamba', start: '09:00', end: '22:00', closed: false },
+  { day: 'Perşembe', start: '09:00', end: '22:00', closed: false },
+  { day: 'Cuma', start: '09:00', end: '23:00', closed: false },
+  { day: 'Cumartesi', start: '10:00', end: '23:00', closed: false },
+  { day: 'Pazar', start: '10:00', end: '21:00', closed: true },
+];
+
+function getNumber(value, fallback = '') {
+  const match = String(value || '').match(/\d+/);
+  return match ? match[0] : fallback;
+}
+
+function buildMapUrl(address) {
+  const query = encodeURIComponent(address || 'İstanbul');
+  return `https://www.google.com/maps?q=${query}&output=embed`;
+}
 
 export default function AdminSettings() {
+  const dispatch = useDispatch();
   const addToast = useToast();
-  // Store details state
-  const [storeName, setStoreName] = useState('Hearty Delights');
-  const [cuisineType, setCuisineType] = useState('Burger & Fast Food');
-  const [description, setDescription] = useState('Şehrin en taze malzemeleriyle hazırlanan, sevgi dolu burgerler ve el yapımı özel soslar.');
-  const [minOrder, setMinOrder] = useState('150');
-  const [deliveryTime, setDeliveryTime] = useState('35');
-  const [deliveryZones, setDeliveryZones] = useState('Kadıköy, Moda, Fenerbahçe, Göztepe, Bostancı.');
-  const [phone, setPhone] = useState('0216 123 45 67');
-  const [email, setEmail] = useState('hello@heartydelights.com');
-  const [address, setAddress] = useState('Caferağa Mah. Dr. Esat Işık Cad. No:42, Kadıköy/İstanbul');
-  const [holidayMode, setHolidayMode] = useState(false);
-  const [holidayStart, setHolidayStart] = useState('');
-  const [holidayEnd, setHolidayEnd] = useState('');
 
-  // Weekly hours dataset
-  const [workingHours, setWorkingHours] = useState([
-    { day: 'Pazartesi', start: '09:00', end: '22:00', closed: false },
-    { day: 'Salı', start: '09:00', end: '22:00', closed: false },
-    { day: 'Çarşamba', start: '09:00', end: '22:00', closed: false },
-    { day: 'Perşembe', start: '09:00', end: '22:00', closed: false },
-    { day: 'Cuma', start: '09:00', end: '23:30', closed: false },
-    { day: 'Cumartesi', start: '10:00', end: '00:00', closed: false },
-    { day: 'Pazar', start: '11:00', end: '21:00', closed: true }
-  ]);
+  const currentUser = useSelector((state) => state.auth.currentUser);
+  const restaurants = useSelector((state) => state.restaurants.list);
+  const restaurant = restaurants.find((item) => item.id === currentUser?.restaurantId);
 
-  const handleToggleDayClosed = (dayIndex) => {
-    setWorkingHours(prev => prev.map((item, idx) => 
-      idx === dayIndex ? { ...item, closed: !item.closed } : item
-    ));
+  const [form, setForm] = useState({
+    name: '',
+    category: '',
+    description: '',
+    minOrderAmount: '',
+    deliveryTime: '',
+    deliveryZones: '',
+    phone: '',
+    email: '',
+    address: '',
+    image: '',
+    isOpen: true,
+    holidayMode: false,
+    holidayStart: '',
+    holidayEnd: '',
+    workingHours: defaultWorkingHours,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!restaurant) return;
+
+    setForm({
+      name: restaurant.name || '',
+      category: restaurant.category || '',
+      description: restaurant.description || '',
+      minOrderAmount: getNumber(restaurant.minOrder, '100'),
+      deliveryTime: getNumber(restaurant.time, '30'),
+      deliveryZones: restaurant.deliveryZones || restaurant.city || '',
+      phone: restaurant.phone || '',
+      email: restaurant.email || currentUser?.email || '',
+      address: restaurant.address || restaurant.city || '',
+      image: restaurant.image || '',
+      isOpen: restaurant.isOpen !== false,
+      holidayMode: Boolean(restaurant.holidayMode),
+      holidayStart: restaurant.holidayStart || '',
+      holidayEnd: restaurant.holidayEnd || '',
+      workingHours: restaurant.workingHours?.length ? restaurant.workingHours : defaultWorkingHours,
+    });
+  }, [restaurant, currentUser?.email]);
+
+  const mapUrl = useMemo(() => buildMapUrl(form.address), [form.address]);
+
+  const updateField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleHourChange = (dayIndex, field, value) => {
-    setWorkingHours(prev => prev.map((item, idx) => 
-      idx === dayIndex ? { ...item, [field]: value } : item
-    ));
+  const handleHourChange = (index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      workingHours: prev.workingHours.map((item, itemIndex) => (
+        itemIndex === index ? { ...item, [field]: value } : item
+      )),
+    }));
   };
 
-  const handleSaveChanges = () => {
-    addToast({ message: 'Mağaza ayarlarınız başarıyla kaydedildi! Değişiklikler canlı mağaza vitrininizde güncellendi.', type: 'success' });
+  const handleToggleDayClosed = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      workingHours: prev.workingHours.map((item, itemIndex) => (
+        itemIndex === index ? { ...item, closed: !item.closed } : item
+      )),
+    }));
   };
+
+  const handleSaveChanges = async () => {
+    if (!restaurant?.id) {
+      addToast({ message: 'Restoran bilgisi bulunamadı.', type: 'error' });
+      return;
+    }
+
+    if (!form.name.trim() || !form.category.trim()) {
+      addToast({ message: 'Restoran adı ve kategori alanı boş bırakılamaz.', type: 'error' });
+      return;
+    }
+
+    const deliveryTime = Number(form.deliveryTime || 0);
+    const payload = {
+      name: form.name.trim(),
+      category: form.category.trim(),
+      description: form.description.trim(),
+      minOrder: `${Number(form.minOrderAmount || 0)} TL`,
+      time: `${deliveryTime}-${deliveryTime + 10} dk`,
+      deliveryZones: form.deliveryZones.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      address: form.address.trim(),
+      city: form.address.trim() || form.deliveryZones.trim(),
+      image: form.image.trim(),
+      isOpen: form.isOpen && !form.holidayMode,
+      status: form.isOpen && !form.holidayMode ? 'Aktif' : 'Pasif',
+      holidayMode: form.holidayMode,
+      holidayStart: form.holidayStart,
+      holidayEnd: form.holidayEnd,
+      workingHours: form.workingHours,
+    };
+
+    try {
+      setIsSaving(true);
+      const savedRestaurant = await updateRestaurant(restaurant.id, payload);
+      dispatch(updateRestaurantState(savedRestaurant));
+      addToast({ message: 'Mağaza ayarları başarıyla kaydedildi.', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Ayarlar kaydedilirken bir sorun oluştu.', type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!restaurant) {
+    return (
+      <div className="bg-white rounded-[24px] border border-stone-100 shadow-soft p-8">
+        <h2 className="text-xl font-black text-stone-800">Restoran bulunamadı</h2>
+        <p className="text-sm text-stone-500 mt-2">Bu kullanıcıya bağlı restoran kaydı sistemde bulunmuyor.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Settings Header */}
       <div>
         <h2 className="text-3xl font-black text-stone-800 tracking-tight">Mağaza Ayarları</h2>
-        <p className="text-stone-500 text-sm mt-1">İşletmenizin profilini, operasyon saatlerini, tatil günlerini ve gönderim limitlerini buradan yönetin.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (Profile, Delivery, Map) */}
         <div className="lg:col-span-7 space-y-6">
-          
-          {/* Section 1: Business Profile */}
           <section className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft">
             <h3 className="text-base font-extrabold text-stone-800 flex items-center gap-2 mb-5">
               <span className="material-symbols-outlined text-primary">storefront</span>
@@ -65,63 +166,63 @@ export default function AdminSettings() {
 
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-5 items-start">
-                {/* Logo Uploader Visual */}
-                <div className="relative group self-center sm:self-start">
-                  <div className="w-24 h-24 rounded-2xl bg-stone-50 border-2 border-dashed border-stone-200 flex flex-col items-center justify-center overflow-hidden shadow-inner cursor-pointer">
-                    <img 
-                      className="w-full h-full object-contain p-2" 
-                      alt="Restaurant Logo" 
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_DxruAmthhSVm6cbiMSMePZCq8pshpuLZqi0pxpmGZDcAtw1DcIc8R695wtSkChbPEATpjj1ECyULabsJVAdRIyUfUg6E15ldvTiOXeEWxRpo0_EChBYm_69K0wxl8dgTCxBJ8812H6X3N2GbkVK7RHT-K8wtEvO_HX4WnIO9Z8jI4Br1IogRB_MIeSKs-ABN_wzKaSj4mZ1_gK7dyzu1-6HE95lR0NW7I0yAm4CfKXNtg2P5KHMAMNJc8El8bnv6-RcoSLpG9Ig" 
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="material-symbols-outlined text-white text-lg">photo_camera</span>
-                    </div>
+                <div className="relative self-center sm:self-start">
+                  <div className="w-24 h-24 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center overflow-hidden shadow-inner">
+                    {form.image ? (
+                      <img className="w-full h-full object-cover" alt={form.name} src={form.image} referrerPolicy="no-referrer" />
+                    ) : (
+                      <span className="material-symbols-outlined text-3xl text-stone-300">restaurant</span>
+                    )}
                   </div>
-                  <p className="text-center mt-1.5 text-[10px] font-bold text-stone-400 uppercase tracking-wide">Logoyu Düzenle</p>
+                  <p className="text-center mt-1.5 text-[10px] font-bold text-stone-400 uppercase tracking-wide">Logo</p>
                 </div>
 
                 <div className="flex-1 space-y-4 w-full">
                   <div>
                     <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Restoran Adı</label>
-                    <input 
+                    <input
                       type="text"
-                      value={storeName}
-                      onChange={(e) => setStoreName(e.target.value)}
-                      className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                      value={form.name}
+                      onChange={(event) => updateField('name', event.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Mutfak / İşletme Türü</label>
-                    <select 
-                      value={cuisineType}
-                      onChange={(e) => setCuisineType(e.target.value)}
-                      className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
-                    >
-                      <option>Burger & Fast Food</option>
-                      <option>İtalyan & Pizza</option>
-                      <option>Ev Yemekleri</option>
-                      <option>Kebap & Izgara</option>
-                      <option>Tatlı & Kahve</option>
-                    </select>
+                    <input
+                      type="text"
+                      value={form.category}
+                      onChange={(event) => updateField('category', event.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                      placeholder="Hamburger, Pizza, Ev Yemekleri..."
+                    />
                   </div>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Açıklama / Slogan</label>
-                <textarea 
+                <textarea
                   rows="3"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                  value={form.description}
+                  onChange={(event) => updateField('description', event.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Logo / Kapak Görseli URL</label>
+                <input
+                  type="url"
+                  value={form.image}
+                  onChange={(event) => updateField('image', event.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                 />
               </div>
             </div>
           </section>
 
-          {/* Section 2: Delivery Settings */}
           <section className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft">
             <h3 className="text-base font-extrabold text-stone-800 flex items-center gap-2 mb-5">
               <span className="material-symbols-outlined text-primary">delivery_dining</span>
@@ -130,39 +231,40 @@ export default function AdminSettings() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Minimum Sipariş Tutarı (₺)</label>
-                <input 
+                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Minimum Sipariş Tutarı (TL)</label>
+                <input
                   type="number"
-                  value={minOrder}
-                  onChange={(e) => setMinOrder(e.target.value)}
-                  className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                  min="0"
+                  value={form.minOrderAmount}
+                  onChange={(event) => updateField('minOrderAmount', event.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Ortalama Gönderim Süresi (dk)</label>
-                <input 
+                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Ortalama Teslimat Süresi (dk)</label>
+                <input
                   type="number"
-                  value={deliveryTime}
-                  onChange={(e) => setDeliveryTime(e.target.value)}
-                  className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                  min="0"
+                  value={form.deliveryTime}
+                  onChange={(event) => updateField('deliveryTime', event.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Teslimat Bölgeleri / Kapsama Alanı</label>
-                <textarea 
+                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Teslimat Bölgeleri</label>
+                <textarea
                   rows="2"
-                  value={deliveryZones}
-                  onChange={(e) => setDeliveryZones(e.target.value)}
-                  className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
-                  placeholder="Gönderim yaptığınız mahalle isimlerini aralarında virgül olacak şekilde girin..."
+                  value={form.deliveryZones}
+                  onChange={(event) => updateField('deliveryZones', event.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none resize-none"
+                  placeholder="Beşiktaş, Şişli, Kadıköy..."
                 />
               </div>
             </div>
           </section>
 
-          {/* Section 3: Contact Info & Map Pin */}
           <section className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft">
             <h3 className="text-base font-extrabold text-stone-800 flex items-center gap-2 mb-5">
               <span className="material-symbols-outlined text-primary">location_on</span>
@@ -173,106 +275,115 @@ export default function AdminSettings() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Telefon Numarası</label>
-                  <input 
+                  <input
                     type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                    value={form.phone}
+                    onChange={(event) => updateField('phone', event.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Kurumsal E-posta</label>
-                  <input 
+                  <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">E-posta</label>
+                  <input
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                    value={form.email}
+                    onChange={(event) => updateField('email', event.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Açık Adres</label>
-                  <textarea 
-                    rows="2.5"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                  <textarea
+                    rows="4"
+                    value={form.address}
+                    onChange={(event) => updateField('address', event.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none resize-none"
+                    placeholder="Mahalle, cadde, no, ilçe, il..."
                   />
                 </div>
               </div>
 
-              {/* Styled Mock map pin canvas */}
-              <div className="h-full min-h-[190px] rounded-2xl overflow-hidden border border-stone-100 relative group shadow-sm bg-stone-100">
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
-                  style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBCm1XgVa6eC8gn1l5b9_129wCo-bc3UGeqdo8jKT710YgN51A0KsS2G0dpQ8_AsGdr9IT7JQ69-yuepz1f9NneqSreFPoMgv7H2ZrBw1zSJdIt38AVN3ufDelvyPFej4M4JfrcRtkybKDhA3BVT6CUpzneuESd8IX5kljpSmy3JWIIT59IJGlhELYcxqpSmVzGp5H_sIWTXz6f6rqiYSw_f_ktElJOn8by8PRAauP5gtfw3I1eF0ct2cR1Uk4aQ0NtuQ5dubZDX70')" }}
-                ></div>
-                <div className="absolute inset-0 bg-black/5"></div>
-                <button 
-                  onClick={() => addToast({ message: 'Pin harita konumu düzenleyici yakında eklenecektir!', type: 'info' })}
-                  className="absolute bottom-3 right-3 bg-white hover:bg-stone-50 text-stone-700 px-3 py-1.5 rounded-full shadow-md text-[10px] font-extrabold uppercase tracking-wide flex items-center gap-1 cursor-pointer transition-transform duration-150 active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-xs">map</span>
-                  Konumu Düzenle
-                </button>
+              <div className="min-h-[260px] rounded-2xl overflow-hidden border border-stone-100 shadow-sm bg-stone-100">
+                <iframe
+                  title="Restoran konumu"
+                  src={mapUrl}
+                  className="w-full h-full min-h-[260px]"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               </div>
             </div>
           </section>
         </div>
 
-        {/* Right Column (Holiday Mode, Working Hours) */}
         <div className="lg:col-span-5 space-y-6">
-          
-          {/* Section 4: Holiday Mode (Stunning colored header card) */}
+          <section className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-extrabold text-stone-800 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">toggle_on</span>
+                  Mağaza Durumu
+                </h3>
+                <p className="text-xs text-stone-400 font-semibold mt-1">Kapalı yapıldığında müşteriler restoranınızdan sipariş veremez.</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => updateField('isOpen', !form.isOpen)}
+                className={`w-14 h-8 rounded-full p-1 transition-all ${form.isOpen ? 'bg-primary' : 'bg-stone-300'}`}
+              >
+                <span className={`block w-6 h-6 rounded-full bg-white shadow transition-all ${form.isOpen ? 'translate-x-6' : 'translate-x-0'}`}></span>
+              </button>
+            </div>
+          </section>
+
           <section className="bg-gradient-to-br from-primary to-secondary rounded-[24px] p-6 shadow-lg shadow-primary/10 border-2 border-primary/20 text-white">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-2xl">beach_access</span>
                 <h3 className="text-base font-extrabold">Tatil Modu</h3>
               </div>
-              
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={holidayMode}
-                  onChange={() => setHolidayMode(!holidayMode)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/45"></div>
-              </label>
+
+              <button
+                type="button"
+                onClick={() => updateField('holidayMode', !form.holidayMode)}
+                className={`w-14 h-8 rounded-full p-1 transition-all ${form.holidayMode ? 'bg-white/45' : 'bg-white/20'}`}
+              >
+                <span className={`block w-6 h-6 rounded-full bg-white shadow transition-all ${form.holidayMode ? 'translate-x-6' : 'translate-x-0'}`}></span>
+              </button>
             </div>
 
             <p className="text-white/80 text-xs font-semibold leading-relaxed mb-5">
-              Aktif edildiğinde, belirleyeceğiniz tarihler arasında restoranınız CraveDash uygulamasında otomatik olarak "Kapalı / Tatilde" olarak görünecektir.
+              Tatil modu aktifken restoranınız geçici olarak siparişe kapatılır.
             </p>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[9px] font-extrabold text-white/70 uppercase tracking-wider mb-1">Başlangıç Tarihi</label>
-                <input 
+                <label className="block text-[9px] font-extrabold text-white/70 uppercase tracking-wider mb-1">Başlangıç</label>
+                <input
                   type="date"
-                  disabled={!holidayMode}
-                  value={holidayStart}
-                  onChange={(e) => setHolidayStart(e.target.value)}
-                  className="w-full bg-white/15 hover:bg-white/20 border-none rounded-xl p-2 text-white placeholder-white/40 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-40 transition-all cursor-pointer"
+                  disabled={!form.holidayMode}
+                  value={form.holidayStart}
+                  onChange={(event) => updateField('holidayStart', event.target.value)}
+                  className="w-full bg-white/15 border-none rounded-xl p-2 text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-40"
                 />
               </div>
 
               <div>
-                <label className="block text-[9px] font-extrabold text-white/70 uppercase tracking-wider mb-1">Bitiş Tarihi</label>
-                <input 
+                <label className="block text-[9px] font-extrabold text-white/70 uppercase tracking-wider mb-1">Bitiş</label>
+                <input
                   type="date"
-                  disabled={!holidayMode}
-                  value={holidayEnd}
-                  onChange={(e) => setHolidayEnd(e.target.value)}
-                  className="w-full bg-white/15 hover:bg-white/20 border-none rounded-xl p-2 text-white placeholder-white/40 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-40 transition-all cursor-pointer"
+                  disabled={!form.holidayMode}
+                  value={form.holidayEnd}
+                  onChange={(event) => updateField('holidayEnd', event.target.value)}
+                  className="w-full bg-white/15 border-none rounded-xl p-2 text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-40"
                 />
               </div>
             </div>
           </section>
 
-          {/* Section 5: Working Hours list per day */}
           <section className="bg-white rounded-[24px] p-6 border border-stone-100 shadow-soft">
             <h3 className="text-base font-extrabold text-stone-800 flex items-center gap-2 mb-5">
               <span className="material-symbols-outlined text-primary">calendar_today</span>
@@ -280,49 +391,38 @@ export default function AdminSettings() {
             </h3>
 
             <div className="space-y-3.5">
-              {workingHours.map((item, idx) => (
-                <div 
+              {form.workingHours.map((item, index) => (
+                <div
                   key={item.day}
-                  className={`flex items-center justify-between py-2 border-b border-stone-50 last:border-0 ${
-                    item.closed ? 'opacity-55' : ''
-                  }`}
+                  className={`flex items-center justify-between py-2 border-b border-stone-50 last:border-0 gap-3 ${item.closed ? 'opacity-55' : ''}`}
                 >
                   <span className="w-20 font-bold text-xs text-stone-700">{item.day}</span>
-                  
+
                   <div className="flex items-center gap-1.5">
-                    <input 
+                    <input
                       type="time"
                       disabled={item.closed}
                       value={item.start}
-                      onChange={(e) => handleHourChange(idx, 'start', e.target.value)}
-                      className="bg-stone-50 hover:bg-stone-100/50 border border-stone-200/50 rounded-lg p-1 text-center text-xs font-bold w-16 disabled:opacity-45 focus:outline-none"
+                      onChange={(event) => handleHourChange(index, 'start', event.target.value)}
+                      className="bg-stone-50 border border-stone-200/50 rounded-lg p-1 text-center text-xs font-bold w-20 disabled:opacity-45 focus:outline-none"
                     />
                     <span className="text-stone-400 font-bold">-</span>
-                    <input 
+                    <input
                       type="time"
                       disabled={item.closed}
                       value={item.end}
-                      onChange={(e) => handleHourChange(idx, 'end', e.target.value)}
-                      className="bg-stone-50 hover:bg-stone-100/50 border border-stone-200/50 rounded-lg p-1 text-center text-xs font-bold w-16 disabled:opacity-45 focus:outline-none"
+                      onChange={(event) => handleHourChange(index, 'end', event.target.value)}
+                      className="bg-stone-50 border border-stone-200/50 rounded-lg p-1 text-center text-xs font-bold w-20 disabled:opacity-45 focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox"
-                        checked={item.closed}
-                        onChange={() => handleToggleDayClosed(idx)}
-                        className="sr-only"
-                      />
-                      <div className="w-9 h-5 bg-stone-200 rounded-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                    <span className={`text-[10px] font-black uppercase tracking-wider w-11 ${
-                      item.closed ? 'text-primary' : 'text-stone-400'
-                    }`}>
-                      {item.closed ? 'KAPALI' : 'AÇIK'}
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleDayClosed(index)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${item.closed ? 'bg-rose-50 text-primary' : 'bg-green-50 text-green-700'}`}
+                  >
+                    {item.closed ? 'KAPALI' : 'AÇIK'}
+                  </button>
                 </div>
               ))}
             </div>
@@ -330,28 +430,26 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* Sticky Bottom bar Save panel */}
       <div className="fixed bottom-6 left-0 right-0 z-40 px-4 md:px-8">
         <div className="max-w-7xl mx-auto bg-white/95 backdrop-blur-md rounded-[20px] p-4 shadow-2xl border border-stone-100 flex items-center justify-between gap-4">
-          <p className="hidden md:block text-stone-500 text-xs font-semibold italic">
-            * Kaydedilmeyen değişiklikler kaybolacaktır. Değişiklikler yapıldıktan sonra kaydetmeyi unutmayın.
-          </p>
+          <p className="hidden md:block text-stone-500 text-xs font-semibold">Yaptığınız güncellemeleri kaydetmeyi unutmayın.</p>
+
           <div className="flex gap-2 w-full md:w-auto justify-end ml-auto">
-            <button 
-              onClick={() => {
-                if (confirm('Değişiklikleri iptal edip sayfayı yenilemek istiyor musunuz?')) {
-                  window.location.reload();
-                }
-              }}
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
               className="px-5 py-3 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-xs rounded-full transition-all cursor-pointer whitespace-nowrap active:scale-95"
             >
               İptal Et
             </button>
-            <button 
+
+            <button
+              type="button"
               onClick={handleSaveChanges}
-              className="px-8 py-3 bg-gradient-to-r from-primary to-secondary hover:opacity-95 text-white font-black text-xs rounded-full transition-all cursor-pointer whitespace-nowrap shadow-md shadow-primary/20 active:scale-95"
+              disabled={isSaving}
+              className="px-8 py-3 bg-gradient-to-r from-primary to-secondary hover:opacity-95 text-white font-black text-xs rounded-full transition-all cursor-pointer whitespace-nowrap shadow-md shadow-primary/20 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Değişiklikleri Kaydet
+              {isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
             </button>
           </div>
         </div>

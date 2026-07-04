@@ -22,6 +22,11 @@ export async function getRestaurants() {
   return response.data;
 }
 
+export async function updateRestaurant(id, data) {
+  const response = await api.patch(`/restaurants/${id}`, data);
+  return response.data;
+}
+
 export async function getMenuItems(restaurantId) {
   const url = restaurantId ? `/menuItems?restaurantId=${restaurantId}` : '/menuItems';
   const response = await api.get(url);

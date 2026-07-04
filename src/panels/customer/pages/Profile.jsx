@@ -44,15 +44,30 @@ function getPreviousOrderStatusText(order) {
   return 'Sipariş Tamamlandı';
 }
 
+function getOrderTrackingStatus(order) {
+  if (order.deliveryStatus === 'ready') {
+    return { key: 'ready', label: 'Siparis Hazir', progress: order.progress ?? 40 };
+  }
+  if (order.deliveryStatus === 'on_the_way') {
+    return { key: 'on_the_way', label: 'Kurye Yola Cikti', progress: order.progress ?? 65 };
+  }
+  if (order.deliveryStatus === 'delivered') {
+    return { key: 'delivered', label: 'Teslim Edildi', progress: 100 };
+  }
+  return { key: 'preparing', label: 'Hazirlaniyor', progress: order.progress ?? 25 };
+}
+
 function ActiveOrderTracker({ order, restaurantName, onStatusUpdate }) {
   const statusSteps = [
-    { key: 'Hazırlanıyor', label: 'Hazırlanıyor', icon: 'restaurant', progress: 25 },
-    { key: 'Kurye Yola Çıktı', label: 'Kurye Yola Çıktı', icon: 'delivery_dining', progress: 65 },
-    { key: 'Teslim Edildi', label: 'Teslim Edildi', icon: 'check_circle', progress: 100 },
+    { key: 'preparing', label: 'Hazirlaniyor', icon: 'restaurant', progress: 25 },
+    { key: 'ready', label: 'Siparis Hazir', icon: 'inventory_2', progress: 40 },
+    { key: 'on_the_way', label: 'Kurye Yola Cikti', icon: 'delivery_dining', progress: 65 },
+    { key: 'delivered', label: 'Teslim Edildi', icon: 'check_circle', progress: 100 },
   ];
 
-  const currentStepIndex = statusSteps.findIndex((s) => s.key === order.status);
-  const progress = order.progress ?? (statusSteps[currentStepIndex]?.progress || 0);
+  const trackingStatus = getOrderTrackingStatus(order);
+  const currentStepIndex = Math.max(0, statusSteps.findIndex((s) => s.key === trackingStatus.key));
+  const progress = trackingStatus.progress;
 
   return (
     <motion.div
@@ -81,7 +96,7 @@ function ActiveOrderTracker({ order, restaurantName, onStatusUpdate }) {
           animate={{ scale: 1, opacity: 1 }}
           className="px-3 py-1.5 bg-white/20 rounded-full"
         >
-          <span className="text-white text-xs font-bold">{order.status}</span>
+          <span className="text-white text-xs font-bold">{trackingStatus.label}</span>
         </motion.div>
       </div>
 
@@ -173,11 +188,13 @@ function ActiveOrderTracker({ order, restaurantName, onStatusUpdate }) {
         <div className="mt-5 pt-4 border-t border-stone-100 flex items-center gap-2 text-xs text-stone-500">
           <span className="material-symbols-outlined text-[16px] text-primary">schedule</span>
           <span className="font-semibold">
-            {order.status === 'Hazırlanıyor'
-              ? 'Siparişiniz hazırlanıyor, lütfen bekleyiniz...'
-              : order.status === 'Kurye Yola Çıktı'
+            {order.deliveryStatus === 'ready'
+              ? 'Siparişiniz hazırlandı, kurye bekleniyor.'
+              : order.deliveryStatus === 'on_the_way'
               ? 'Kurye yolda! Yakında kapınızda olacak.'
-              : 'Siparişiniz teslim edildi. Afiyet olsun! 🎉'}
+              : order.deliveryStatus === 'delivered'
+              ? 'Siparişiniz teslim edildi. Afiyet olsun!'
+              : 'Siparişiniz hazırlanıyor, lütfen bekleyiniz...'}
           </span>
         </div>
       </div>
@@ -255,13 +272,12 @@ export default function Profile() {
       try {
         const orders = await getOrders(currentUser.id);
 
-        const activeStatuses = ['Hazırlanıyor', 'Kurye Yola Çıktı'];
+        const activeDeliveryStatuses = ['preparing', 'ready', 'on_the_way', 'delivered'];
 
         // En yeni aktif siparişi bul (sadece 1 tane aktif gösterilir)
         const active = orders.find(
           (o) =>
-            activeStatuses.includes(o.status) &&
-            o.deliveryStatus !== 'delivered' &&
+            activeDeliveryStatuses.includes(o.deliveryStatus) &&
             o.deliveryStatus !== 'cancelled'
         );
 
@@ -281,10 +297,13 @@ export default function Profile() {
     }
 
     fetchOrders();
+    const refreshInterval = setInterval(fetchOrders, 3000);
+    return () => clearInterval(refreshInterval);
   }, [currentUser?.id, dispatch]);
 
   // ─── Sipariş Takip Zamanlayıcısı ──────────────────────────────────────────────
   useEffect(() => {
+    return;
     if (!activeOrder || activeOrder.deliveryStatus === 'delivered') return;
     if (activeOrder.status === 'Teslim Edildi') return;
 
