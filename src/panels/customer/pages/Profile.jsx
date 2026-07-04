@@ -20,9 +20,11 @@ import {
 } from '../../../features/orders/ordersSlice.js';
 import { updateOrder, createAddress, getOrders } from '../../../services/api.js';
 import { addToCart } from '../../../features/cart/cartSlice.js';
+import { fetchReviews, addReview } from '../../../features/reviews/reviewsSlice.js';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { useToast } from '../../../common/components/Toast.jsx';
 import ConfirmModal from '../../../common/components/ConfirmModal.jsx';
+import Modal from '../../../common/components/Modal.jsx';
 import CreditCardForm, { validateCardForm } from '../../../common/components/CreditCardForm.jsx';
 
 // ─── Aktif Sipariş Takip Kartı ────────────────────────────────────────────────
@@ -221,6 +223,7 @@ export default function Profile() {
   const restaurants = useSelector((state) => state.restaurants.list);
   const activeOrder = useSelector((state) => state.orders.activeOrder);
   const previousOrders = useSelector((state) => state.orders.previousOrders);
+  const reviews = useSelector((state) => state.reviews.list);
 
   // Sayfa açılışında siparişler sekmesini seç (sepetten yönlendirme varsa)
   const defaultSection = location.state?.section || 'orders';
@@ -255,6 +258,12 @@ export default function Profile() {
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
+  // Değerlendirme Modalı State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewTargetOrder, setReviewTargetOrder] = useState(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+
   const getRestaurantName = (order) => {
     const restaurant = restaurants.find((item) => item.id === order.restaurantId);
     return restaurant?.name || order.restaurant || 'Restoran';
@@ -266,6 +275,8 @@ export default function Profile() {
       setOrdersLoading(false);
       return;
     }
+
+    dispatch(fetchReviews());
 
     async function fetchOrders() {
       setOrdersLoading(true);
@@ -464,6 +475,41 @@ export default function Profile() {
     setDeleteAccountModalOpen(false);
   };
 
+  // ─── Review Handlers ────────────────────────────────────────────────────────
+  const handleOpenReviewModal = (order) => {
+    setReviewTargetOrder(order);
+    setReviewRating(0);
+    setReviewComment('');
+    setShowReviewModal(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (reviewRating === 0) {
+      addToast({ message: 'Lütfen bir puan verin.', type: 'error' });
+      return;
+    }
+    const newReview = {
+      orderId: reviewTargetOrder.id,
+      restaurantId: reviewTargetOrder.restaurantId,
+      userId: currentUser.id,
+      user: currentUser.name + (currentUser.surname ? ' ' + currentUser.surname.charAt(0) + '.' : ''),
+      rating: reviewRating,
+      comment: reviewComment,
+      date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      reply: null,
+      hasImage: false
+    };
+
+    try {
+      await dispatch(addReview(newReview)).unwrap();
+      addToast({ message: 'Değerlendirmeniz başarıyla eklendi.', type: 'success' });
+      setShowReviewModal(false);
+      setReviewTargetOrder(null);
+    } catch (err) {
+      addToast({ message: 'Değerlendirme gönderilemedi.', type: 'error' });
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row w-full gap-8 items-start min-h-[calc(100vh-140px)] animate-fade-in text-left">
       {/* Kart Silme Onay Modalı */}
@@ -595,27 +641,97 @@ export default function Profile() {
                           {getPreviousOrderStatusText(order)}
                         </div>
                       </div>
-                      <button
-                        onClick={() => {
-                          dispatch(addToCart({
-                            id: String(order.id) + '-reorder',
-                            name: order.restaurant + ' Menüsü',
-                            price: typeof order.total === 'number' ? order.total : parseFloat(String(order.total).replace('₺', '')) || 250,
-                            image: order.image || '',
-                            category: 'Popüler',
-                            description: order.itemsSummary || order.items,
-                          }));
-                          addToast({ message: `${order.restaurant} siparişiniz sepetinize tekrar eklendi!`, type: 'success' });
-                          navigate('/cart');
-                        }}
-                        className="px-4 py-2 bg-stone-100 hover:bg-rose-50 hover:text-primary text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer border border-stone-100"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">replay</span>
-                        Siparişi Tekrarla
-                      </button>
+                      <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-0">
+                        {order.status === 'Teslim Edildi' && !reviews.some(r => r.orderId === order.id) && (
+                          <button
+                            onClick={() => handleOpenReviewModal(order)}
+                            className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-stone-200/50"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">star_rate</span>
+                            Değerlendir
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            dispatch(addToCart({
+                              id: String(order.id) + '-reorder',
+                              name: order.restaurant + ' Menüsü',
+                              price: typeof order.total === 'number' ? order.total : parseFloat(String(order.total).replace('₺', '')) || 250,
+                              image: order.image || '',
+                              category: 'Popüler',
+                              description: order.itemsSummary || order.items,
+                            }));
+                            addToast({ message: `${order.restaurant} siparişiniz sepetinize tekrar eklendi!`, type: 'success' });
+                            navigate('/cart');
+                          }}
+                          className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-primary font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-rose-100/50"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">replay</span>
+                          Tekrarla
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* DEĞERLENDİRMELERİM */}
+        {activeSubSection === 'reviews' && (
+          <section className="space-y-6">
+            <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border border-stone-100 text-left">
+              <div className="flex items-center gap-3 mb-6 text-primary">
+                <span className="material-symbols-outlined text-2xl select-none" style={{ fontVariationSettings: "'FILL' 1" }}>star_rate</span>
+                <h2 className="text-base font-extrabold text-stone-800">Değerlendirmelerim</h2>
+              </div>
+              <div className="space-y-4">
+                {reviews.filter(r => String(r.userId) === String(currentUser.id)).length === 0 ? (
+                  <div className="text-center py-12 bg-stone-50 rounded-2xl border border-stone-100">
+                    <span className="material-symbols-outlined text-5xl text-stone-300">rate_review</span>
+                    <p className="text-stone-500 text-sm font-semibold mt-3">Henüz bir değerlendirme yapmadınız.</p>
+                  </div>
+                ) : (
+                  reviews
+                    .filter(r => String(r.userId) === String(currentUser.id))
+                    .map((review) => (
+                      <motion.div
+                        key={review.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-stone-50 border border-stone-200/50 rounded-2xl p-5"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-stone-800 text-sm">
+                              {restaurants.find(res => res.id === review.restaurantId)?.name || 'Restoran'}
+                            </h4>
+                            <p className="text-[10px] text-stone-400 font-semibold mt-0.5">{review.date}</p>
+                          </div>
+                          <div className="flex text-amber-500">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: i < review.rating ? "'FILL' 1" : "'FILL' 0" }}>
+                                star
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-stone-600 text-xs font-medium leading-relaxed mt-2">{review.comment}</p>
+                        
+                        {/* Restaurant Reply */}
+                        {review.reply && (
+                          <div className="mt-4 bg-white p-4 rounded-xl border-l-4 border-primary shadow-sm">
+                            <div className="flex items-center gap-1.5 mb-1 text-primary">
+                              <span className="material-symbols-outlined text-[14px]">storefront</span>
+                              <span className="font-extrabold text-[10px] uppercase tracking-wider">İşletme Yanıtı</span>
+                            </div>
+                            <p className="text-stone-600 text-xs font-medium italic">{review.reply}</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))
+                )}
               </div>
             </div>
           </section>
@@ -904,6 +1020,73 @@ export default function Profile() {
           </section>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={deleteAccountModalOpen}
+        onClose={() => setDeleteAccountModalOpen(false)}
+        onConfirm={() => {
+          setDeleteAccountModalOpen(false);
+          addToast({ message: 'Hesabınız başarıyla silindi.', type: 'info' });
+          navigate('/');
+        }}
+        title="Hesabı Sil"
+        message="Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz (adresler, kartlar, sipariş geçmişi) kalıcı olarak silinir."
+        confirmText="Evet, Hesabımı Sil"
+        cancelText="Vazgeç"
+        confirmButtonClass="bg-red-500 hover:bg-red-600 focus:ring-red-500/20 text-white"
+      />
+
+      {/* Siparişi Değerlendir Modalı */}
+      <Modal isOpen={showReviewModal} onClose={() => setShowReviewModal(false)} title="Siparişi Değerlendir">
+        <div className="p-4 sm:p-6 text-center space-y-6">
+          <div>
+            <h3 className="font-extrabold text-stone-800 text-lg">{getRestaurantName(reviewTargetOrder || {})}</h3>
+            <p className="text-xs text-stone-500 font-medium mt-1">Siparişinizi nasıl buldunuz?</p>
+          </div>
+          
+          <div className="flex justify-center gap-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setReviewRating(star)}
+                className={`transition-all transform hover:scale-110 ${reviewRating >= star ? 'text-amber-500' : 'text-stone-300'} cursor-pointer`}
+              >
+                <span className="material-symbols-outlined text-[40px]" style={{ fontVariationSettings: reviewRating >= star ? "'FILL' 1" : "'FILL' 0" }}>
+                  star
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="text-left">
+            <label className="text-xs font-bold text-stone-500 ml-1">Yorumunuz</label>
+            <textarea
+              rows="4"
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              placeholder="Siparişinizle ilgili düşüncelerinizi paylaşın..."
+              className="mt-2 w-full bg-stone-50 border border-stone-200/60 rounded-2xl py-3 px-4 text-sm font-semibold focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setShowReviewModal(false)}
+              className="px-6 py-3 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-xs rounded-full transition-all cursor-pointer"
+            >
+              Vazgeç
+            </button>
+            <button
+              onClick={handleSubmitReview}
+              className="px-6 py-3 bg-primary hover:bg-primary-container text-white font-extrabold text-xs rounded-full shadow-md shadow-primary/20 hover:shadow-lg transition-all cursor-pointer"
+            >
+              Gönder
+            </button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }

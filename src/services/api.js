@@ -87,10 +87,7 @@ export async function getOrders(userId) {
   });
 }
 
-export async function getReviews() {
-  const response = await api.get('/reviews');
-  return response.data;
-}
+// Old getReviews removed
 
 export async function createOrder(order) {
   const response = await api.post('/orders', order);
@@ -99,6 +96,29 @@ export async function createOrder(order) {
 
 export async function updateOrder(id, data) {
   const response = await api.patch(`/orders/${id}`, data);
+  return response.data;
+}
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+export async function getReviews(restaurantId) {
+  const url = restaurantId ? `/reviews?restaurantId=${restaurantId}` : '/reviews';
+  const response = await api.get(url);
+  // Sort by date (newest first)
+  const reviews = response.data || [];
+  return reviews.sort((a, b) => {
+    const dateA = new Date(a.date || 0);
+    const dateB = new Date(b.date || 0);
+    return dateB - dateA;
+  });
+}
+
+export async function createReview(reviewData) {
+  const response = await api.post('/reviews', reviewData);
+  return response.data;
+}
+
+export async function updateReview(id, data) {
+  const response = await api.patch(`/reviews/${id}`, data);
   return response.data;
 }
 
