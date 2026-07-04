@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { addRestaurant, deleteRestaurant, toggleRestaurantStatus, updateRestaurantCommission } from '../../features/restaurants/restaurantsSlice.js';
+import { updatePlatformOrderStatus } from '../../features/orders/ordersSlice.js';
 import api from '../../services/api.js';
 import { useToast } from '../../common/components/Toast.jsx';
 
@@ -23,6 +24,83 @@ function getOrderStatusText(order) {
   if (order.deliveryStatus === 'on_the_way') return 'Yolda';
   if (order.deliveryStatus === 'ready') return 'Hazır';
   return order.status || 'Hazırlanıyor';
+}
+
+function getCustomerPlatformRole(orderCount) {
+  if (orderCount > 10) return 'VIP';
+  if (orderCount >= 10) return 'Elite';
+  if (orderCount >= 5) return 'Gold';
+  if (orderCount >= 3) return 'Silver';
+  return 'Yeni';
+}
+
+function formatJoinedDate(user) {
+  const dateValue = user.createdAt || user.joinedAt || user.registeredAt;
+  if (!dateValue) return '-';
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return date.toLocaleDateString('tr-TR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+const ORDER_STATUS_OPTIONS = [
+  { label: 'Hazırlanıyor', status: 'Hazırlanıyor', deliveryStatus: 'preparing', progress: 10, icon: 'restaurant' },
+  { label: 'Sipariş Hazır', status: 'Sipariş Hazır', deliveryStatus: 'ready', progress: 35, icon: 'inventory_2' },
+  { label: 'Kurye Yola Çıktı', status: 'Kurye Yola Çıktı', deliveryStatus: 'on_the_way', progress: 55, icon: 'local_shipping' },
+  { label: 'Teslim Edildi', status: 'Teslim Edildi', deliveryStatus: 'delivered', progress: 100, icon: 'check_circle' },
+  { label: 'İptal Edildi', status: 'İptal Edildi', deliveryStatus: 'cancelled', progress: 0, icon: 'cancel' },
+];
+
+const COURIER_MAP_ROUTES = [
+  { path: 'M 24 116 C 110 94, 168 92, 242 118 S 382 154, 500 112', duration: 24 },
+  { path: 'M 64 38 C 122 76, 158 126, 216 126 S 330 82, 456 46', duration: 22 },
+  { path: 'M 78 178 C 146 134, 218 146, 280 108 S 390 66, 520 78', duration: 27 },
+  { path: 'M 512 190 C 420 166, 364 156, 296 178 S 156 210, 42 172', duration: 26 },
+  { path: 'M 282 24 C 268 82, 286 128, 250 170 S 180 216, 102 206', duration: 23 },
+  { path: 'M 18 72 C 96 58, 158 54, 216 74 S 326 140, 536 142', duration: 29 },
+];
+
+function getCourierMapVisual(courier, index) {
+  const route = COURIER_MAP_ROUTES[index % COURIER_MAP_ROUTES.length];
+  const isBusy = courier.status === 'Teslimatta';
+  const isAvailable = courier.status === 'Müsait' || courier.status === 'Beklemede';
+
+  return {
+    ...route,
+    icon: courier.vehicle?.toLowerCase().includes('bisiklet') ? 'pedal_bike' : 'motorcycle',
+    colorClass: isBusy ? 'text-primary' : isAvailable ? 'text-green-600' : 'text-stone-400',
+    pulseClass: isAvailable ? 'animate-pulse' : '',
+    isMoving: courier.status !== 'Çevrimdışı',
+  };
+}
+
+function getCampaignTypeLabel(type) {
+  if (type === 'free_delivery') return 'Teslimat Kampanyası';
+  if (type === 'coupon_fixed') return 'Sabit Kupon';
+  if (type === 'coupon_percent') return 'Yüzde Kupon';
+  return 'Kampanya';
+}
+
+function getCampaignRateText(campaign) {
+  if (campaign.type === 'free_delivery') return `${Number(campaign.discountValue || 0)} TL teslimat`;
+  if (campaign.type === 'coupon_fixed') return `${Number(campaign.discountValue || 0)} TL`;
+  if (campaign.type === 'coupon_percent') return `%${Number(campaign.discountValue || 0)}`;
+  return '-';
+}
+
+function getCampaignUsageText(campaign) {
+  const usageCount = Number(campaign.usageCount || 0);
+  return campaign.usageLimit ? `${usageCount} / ${campaign.usageLimit}` : `${usageCount} / sınırsız`;
+}
+
+function getCampaignProgress(campaign) {
+  if (!campaign.usageLimit) return 0;
+  return Math.min(100, (Number(campaign.usageCount || 0) / Number(campaign.usageLimit)) * 100);
 }
 
 export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hideSidebar }) {
@@ -66,6 +144,8 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
         restaurant: restaurants.find((item) => item.id === order.restaurantId)?.name || order.restaurant || 'Restoran',
         total: Number(order.total) || 0,
         status: getOrderStatusText(order),
+        deliveryStatus: order.deliveryStatus,
+        progress: order.progress,
         time: getOrderDate(order).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
       }))
   ), [platformOrders, restaurants]);
@@ -178,55 +258,110 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
   const [newRestCity, setNewRestCity] = useState('Kadıköy, İstanbul');
   const [newRestEmail, setNewRestEmail] = useState('');
   const [newRestPassword, setNewRestPassword] = useState('');
+  const [commissionModal, setCommissionModal] = useState(null);
+  const [commissionValue, setCommissionValue] = useState('');
+  const [deleteModal, setDeleteModal] = useState(null);
 
   const handleToggleRestStatus = (id) => {
     dispatch(toggleRestaurantStatus(id));
   };
 
-  const handleUpdateCommission = (id, currentComm) => {
-    const newVal = prompt('Yeni komisyon oranını giriniz (%):', currentComm);
-    if (newVal && !isNaN(newVal)) {
-      dispatch(updateRestaurantCommission({ id, commission: newVal }));
-      addToast({ message: 'Komisyon oranı güncellendi.', type: 'success' });
-    }
+  const openCommissionModal = (restaurant) => {
+    setCommissionModal(restaurant);
+    setCommissionValue(String(restaurant.commission ?? 12));
   };
 
-  const handleDeleteRestaurant = (id) => {
-    if (window.confirm('Bu restoran ortağını platformdan kalıcı olarak silmek istediğinize emin misiniz?')) {
-      dispatch(deleteRestaurant(id));
-      addToast({ message: 'Restoran platformdan kaldırıldı.', type: 'success' });
+  const closeCommissionModal = () => {
+    setCommissionModal(null);
+    setCommissionValue('');
+  };
+
+  const handleUpdateCommission = (event) => {
+    event.preventDefault();
+    const commission = Number(commissionValue);
+
+    if (!commissionModal || Number.isNaN(commission) || commission < 0 || commission > 100) {
+      addToast({ message: 'Lütfen 0 ile 100 arasında geçerli bir komisyon oranı girin.', type: 'error' });
+      return;
     }
+
+    dispatch(updateRestaurantCommission({ id: commissionModal.id, commission }));
+    addToast({ message: 'Komisyon oranı güncellendi.', type: 'success' });
+    closeCommissionModal();
+  };
+
+  const openDeleteModal = (restaurant) => {
+    setDeleteModal(restaurant);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal(null);
+  };
+
+  const handleDeleteRestaurant = () => {
+    if (!deleteModal?.id) return;
+
+    dispatch(deleteRestaurant(deleteModal.id));
+    addToast({ message: 'Restoran platformdan kaldırıldı.', type: 'success' });
+    closeDeleteModal();
   };
 
   const handleAddRestaurantSubmit = async (e) => {
     e.preventDefault();
     if (!newRestName.trim()) return;
-    // Slug ID üret
-    const restId = 'rest-' + newRestName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
-    // Redux'a restoran ekle
-    dispatch(addRestaurant({
+
+    const restId = 'rest-' + newRestName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+    const defaultRestaurantImage = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U';
+    const restaurantPayload = {
       id: restId,
-      name: newRestName,
+      name: newRestName.trim(),
       category: newRestCategory,
       commission: parseFloat(newRestComm) || 12,
       status: 'Aktif',
+      isOpen: true,
+      isSponsor: false,
       city: newRestCity,
       rating: '5.0',
-    }));
-    // Eğer e-posta girilmişse db'ye kullanıcı hesabı da oluştur
-    if (newRestEmail.trim()) {
-      try {
+      time: '30-40 dk',
+      deliveryFee: 'Ücretsiz',
+      minOrder: '100 TL',
+      tag: 'restoran',
+      image: defaultRestaurantImage,
+      bannerImage: '',
+      description: '',
+      deliveryZones: newRestCity,
+      address: newRestCity,
+      phone: '',
+      email: newRestEmail.trim(),
+      holidayMode: false,
+      holidayStart: '',
+      holidayEnd: '',
+    };
+
+    try {
+      const savedRestaurantResponse = await api.post('/restaurants', restaurantPayload);
+      dispatch(addRestaurant(savedRestaurantResponse.data));
+
+      if (newRestEmail.trim()) {
         await api.post('/users', {
           id: restId + '-user',
           role: 'restaurant',
           email: newRestEmail.trim(),
           password: newRestPassword || 'rest123',
           restaurantId: restId,
-          name: newRestName,
-          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U',
+          name: newRestName.trim(),
+          avatar: defaultRestaurantImage,
         });
-      } catch (_) { /* Kullanıcı kaydı başarısız olsa da devam et */ }
+      }
+    } catch (_) {
+      addToast({ message: 'Restoran kaydedilirken bir sorun oluştu.', type: 'error' });
+      return;
     }
+
     addToast({ message: `"${newRestName}" restoranı platforma eklendi ve müşteri paneline yansıdı!`, type: 'success' });
     setNewRestName('');
     setNewRestEmail('');
@@ -236,27 +371,118 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
 
   // 2. User Management Tab State
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Selda Yılmaz', email: 'selda.yilmaz@mail.com', orders: 42, role: 'VIP', joined: '12 Mart 2023', status: 'Aktif', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAgM6BA-zn7U4XOdzmgjUl0KV0eZJC6sCEMc_Zu4WMh4bEX5lVB9sEuDStUJm_SL8p7tx02Oedz4NNymb_Tg9p2Rgb_T_cE8mFSW_1btCJMam5lPCleT0JQK40OU0Uwe8PE1GqT06BEX-MUVdWvk5qiVwWIIyvDHeaeTQ4QRYCfDXfUf3jHCW8Z1CDlN9JiKhr78YDtu10vqbGp9nz5DWQBtq8WfANmO9y9wYzR2Kb4OHIei1CKzJUhaTp1gdbpcbe96FSS447OpC0' },
-    { id: 2, name: 'Caner Akın', email: 'caner_akn@webmail.com', orders: 15, role: 'Standart', joined: '04 Ocak 2024', status: 'Aktif', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCMhru0Brp4SuzTY1qonVPXP2wZOwfGB5Nf4aui3MNO90aMmTb3Ver2b_4TBM2OKozdcQBhqIPiKUx0XqvZ27Tej51VsEnXpMLAQD95Lrqnk4-1j7RopXAtVkAL82RYtba-F9McjSpCWlahFEZqtXRMLAG52_04eqidpsgJswsgKRCXVF_JRHtps7CwuH_XTPQr9xm-drhUg8VV1Pj0uaS91Y_MIvcFo7UAuhQxHBPjeoMbrNLPSJ9EtyzoW4SCBQi6dKulKq3V8Bk' },
-    { id: 3, name: 'Meltem Erden', email: 'mel.erden@social.com', orders: 3, role: 'Yeni', joined: '22 Şubat 2024', status: 'İnaktif', avatar: null },
-    { id: 4, name: 'Burak Tandoğan', email: 'btandogan@cloud.net', orders: 122, role: 'ELITE', joined: '15 Ağustos 2022', status: 'Aktif', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA21gTLjCZWjCMbryPV9ZeFysTuJEPOfLBL9oovBEMcBVgJEx2qWrqpmU4Dc_HQ9nmfGKJM-yphQHTeLvJtL5DzAkj5wPN08cQfwERjDvObAygw_vy9Zcg0CmE6EhK3bfWbLl67zgY6qvKW06_gvKK-HlHHvwu9pyedHqztzhqeqjM344FSSW9Jo8_R2BZRpkcJ0oYAqM7G1-RkBwf_PnvmVia70qawF2_5ahcdSOipXeIm95snZHt2b0ysKzX-Rx10enttKjXLTWo' }
-  ]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [userDeleteModal, setUserDeleteModal] = useState(null);
 
-  const handleToggleUserStatus = (id) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: u.status === 'Aktif' ? 'İnaktif' : 'Aktif' } : u));
-  };
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        const response = await api.get('/users');
+        const customerUsers = (response.data || []).filter((user) => user.role === 'customer');
+        setUsers(customerUsers);
+      } catch (error) {
+        setUsers([]);
+      }
+    }
 
-  const handleDeleteUser = (id) => {
-    if (confirm("Bu kullanıcıyı platformdan tamamen silmek istediğinize emin misiniz?")) {
-      setUsers(prev => prev.filter(u => u.id !== id));
+    loadUsers();
+  }, []);
+
+  const enrichedUsers = useMemo(() => (
+    users.map((user) => {
+      const orderCount = platformOrders.filter((order) => String(order.userId) === String(user.id)).length;
+      const fullName = `${user.name || ''} ${user.surname || ''}`.trim() || user.email || 'İsimsiz Kullanıcı';
+
+      return {
+        ...user,
+        name: fullName,
+        orders: orderCount,
+        platformRole: getCustomerPlatformRole(orderCount),
+        joined: formatJoinedDate(user),
+        status: user.status || 'Aktif',
+      };
+    })
+  ), [users, platformOrders]);
+
+  const handleToggleUserStatus = async (id) => {
+    const user = users.find((item) => String(item.id) === String(id));
+    if (!user) return;
+
+    const nextStatus = (user.status || 'Aktif') === 'Aktif' ? 'Pasif' : 'Aktif';
+
+    try {
+      const response = await api.patch(`/users/${id}`, { status: nextStatus });
+      setUsers((prev) => prev.map((item) => String(item.id) === String(id) ? { ...item, ...response.data } : item));
+      addToast({ message: 'Kullanıcı durumu güncellendi.', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Kullanıcı durumu güncellenirken bir sorun oluştu.', type: 'error' });
     }
   };
 
+  const openUserDeleteModal = (user) => {
+    setUserDeleteModal(user);
+  };
 
-  const handleUpdateOrderStatus = (id, newStatus) => {
-    addToast({ message: `Sipariş ${newStatus.toLowerCase()} olarak işaretlendi.`, type: 'success' });
+  const closeUserDeleteModal = () => {
+    setUserDeleteModal(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userDeleteModal?.id) return;
+
+    try {
+      await api.delete(`/users/${userDeleteModal.id}`);
+      setUsers((prev) => prev.filter((user) => String(user.id) !== String(userDeleteModal.id)));
+      addToast({ message: 'Kullanıcı platformdan kaldırıldı.', type: 'success' });
+      closeUserDeleteModal();
+    } catch (error) {
+      addToast({ message: 'Kullanıcı silinirken bir sorun oluştu.', type: 'error' });
+    }
+  };
+
+  const [orderStatusModal, setOrderStatusModal] = useState(null);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const ordersPerPage = 10;
+  const totalOrderPages = Math.max(1, Math.ceil(orders.length / ordersPerPage));
+  const paginatedOrders = orders.slice((ordersPage - 1) * ordersPerPage, ordersPage * ordersPerPage);
+
+  useEffect(() => {
+    if (ordersPage > totalOrderPages) {
+      setOrdersPage(totalOrderPages);
+    }
+  }, [ordersPage, totalOrderPages]);
+
+  const openOrderStatusModal = (order) => {
+    setOrderStatusModal(order);
+  };
+
+  const closeOrderStatusModal = () => {
+    setOrderStatusModal(null);
+  };
+
+  const handleUpdateOrderStatus = async (statusOption, targetOrder = orderStatusModal) => {
+    if (!targetOrder?.id) return;
+
+    try {
+      const response = await api.patch(`/orders/${targetOrder.id}`, {
+        status: statusOption.status,
+        deliveryStatus: statusOption.deliveryStatus,
+        progress: statusOption.progress,
+      });
+
+      dispatch(updatePlatformOrderStatus({
+        id: response.data.id,
+        status: response.data.status,
+        deliveryStatus: response.data.deliveryStatus,
+        progress: response.data.progress,
+      }));
+      addToast({ message: `Sipariş durumu "${statusOption.label}" olarak güncellendi.`, type: 'success' });
+      if (orderStatusModal?.id === targetOrder.id) {
+        closeOrderStatusModal();
+      }
+    } catch (error) {
+      addToast({ message: 'Sipariş durumu güncellenirken bir sorun oluştu.', type: 'error' });
+    }
   };
 
 
@@ -276,49 +502,129 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     loadCouriers();
   }, []);
 
-  const [selectedOrderToAssign, setSelectedOrderToAssign] = useState('VH-9420');
+  const [selectedOrderToAssign, setSelectedOrderToAssign] = useState('');
   const [selectedCourierToAssign, setSelectedCourierToAssign] = useState('courier-2');
 
   const activeCouriers = couriers.filter((courier) => courier.status !== 'Çevrimdışı');
   const deliveryCouriers = couriers.filter((courier) => courier.status === 'Teslimatta');
   const availableCouriers = couriers.filter((courier) => courier.status === 'Müsait' || courier.status === 'Beklemede');
+  const assignableOrders = orders.filter((order) => (
+    order.deliveryStatus === 'ready' ||
+    order.status === 'Sipariş Hazır' ||
+    order.status === 'Hazır' ||
+    order.deliveryStatus === 'preparing'
+  ));
 
-  const handleAssignOrder = () => {
-    addToast({ message: `Sipariş #${selectedOrderToAssign}, kurye ${couriers.find(c => String(c.id) === String(selectedCourierToAssign))?.name} üzerine başarıyla atandı!`, type: 'success' });
-    // update status
-    setCouriers(prev => prev.map(c => String(c.id) === String(selectedCourierToAssign) ? { ...c, status: 'Teslimatta' } : c));
+  useEffect(() => {
+    if (assignableOrders.length === 0) {
+      if (selectedOrderToAssign) setSelectedOrderToAssign('');
+      return;
+    }
+
+    if (!assignableOrders.find((order) => String(order.id) === String(selectedOrderToAssign))) {
+      setSelectedOrderToAssign(assignableOrders[0].id);
+    }
+  }, [assignableOrders, selectedOrderToAssign]);
+
+  useEffect(() => {
+    if (availableCouriers.length === 0) {
+      if (selectedCourierToAssign) setSelectedCourierToAssign('');
+      return;
+    }
+
+    if (!availableCouriers.find((courier) => String(courier.id) === String(selectedCourierToAssign)) && availableCouriers.length > 0) {
+      setSelectedCourierToAssign(availableCouriers[0].id);
+    }
+  }, [availableCouriers, selectedCourierToAssign]);
+
+  const handleAssignOrder = async () => {
+    const selectedCourier = couriers.find(c => String(c.id) === String(selectedCourierToAssign));
+    const selectedOrder = orders.find((order) => String(order.id) === String(selectedOrderToAssign));
+
+    if (!selectedCourier || !selectedOrder) {
+      addToast({ message: 'Atama için sipariş ve kurye seçmelisiniz.', type: 'error' });
+      return;
+    }
+
+    try {
+      const [courierResponse, orderResponse] = await Promise.all([
+        api.patch(`/couriers/${selectedCourier.id}`, { status: 'Teslimatta' }),
+        api.patch(`/orders/${selectedOrder.id}`, {
+          status: 'Kurye Yola Çıktı',
+          deliveryStatus: 'on_the_way',
+          progress: 55,
+          courierId: selectedCourier.id,
+          courierName: selectedCourier.name,
+        }),
+      ]);
+
+      setCouriers(prev => prev.map(c => String(c.id) === String(selectedCourier.id) ? { ...c, ...courierResponse.data } : c));
+      dispatch(updatePlatformOrderStatus({
+        id: orderResponse.data.id,
+        status: orderResponse.data.status,
+        deliveryStatus: orderResponse.data.deliveryStatus,
+        progress: orderResponse.data.progress,
+      }));
+      addToast({ message: `Sipariş #${selectedOrder.id}, kurye ${selectedCourier.name} üzerine başarıyla atandı.`, type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Kurye ataması yapılırken bir sorun oluştu.', type: 'error' });
+    }
   };
 
 
   // 5. Campaign & Promotion Management State
-  const [promos, setPromos] = useState([
-    { code: 'LEZZET25', type: 'Kupon Kodu', rate: '%25', desc: 'Yeni Kullanıcı Kampanyası', usage: '1.240 / 5,000', progress: 25, condition: 'Min. 150 ₺', status: 'Aktif' },
-    { code: 'FREEFOOD', type: 'Kampanya', rate: '0 ₺ Kargo', desc: 'Ücretsiz Teslimat', usage: '3.456 / ∞', progress: 65, condition: 'Tüm Restoranlar', status: 'Aktif' },
-    { code: 'BAHAR20', type: 'Kupon Kodu', rate: '%20', desc: 'Bahar Sezonu İndirimi', usage: '2,000 / 2,000', progress: 100, condition: 'Min. 150 ₺', status: 'Sona Erdi' }
-  ]);
+  const [promos, setPromos] = useState([]);
 
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignCode, setNewCampaignCode] = useState('');
+  const [newCampaignType, setNewCampaignType] = useState('coupon_percent');
   const [newCampaignDiscount, setNewCampaignDiscount] = useState('20');
   const [newCampaignMin, setNewCampaignMin] = useState('150');
+  const activePromos = promos.filter((promo) => promo.status === 'Aktif');
+  const totalCampaignUsage = promos.reduce((sum, promo) => sum + Number(promo.usageCount || 0), 0);
+  const couponPromoCount = promos.filter((promo) => promo.type !== 'free_delivery').length;
 
-  const handleLaunchCampaign = (e) => {
+  useEffect(() => {
+    async function loadCampaigns() {
+      try {
+        const response = await api.get('/campaigns');
+        setPromos(response.data || []);
+      } catch (error) {
+        setPromos([]);
+      }
+    }
+
+    loadCampaigns();
+  }, []);
+
+  const handleLaunchCampaign = async (e) => {
     e.preventDefault();
-    if (!newCampaignCode.trim()) return;
+    if (newCampaignType !== 'free_delivery' && !newCampaignCode.trim()) return;
+
     const newPromo = {
-      code: newCampaignCode.toUpperCase(),
-      type: 'Kupon Kodu',
-      rate: `%${newCampaignDiscount}`,
-      desc: newCampaignName || 'Yeni Lansman Kampanyası',
-      usage: '0 / 10,000',
-      progress: 0,
-      condition: `Min. ${newCampaignMin} ₺`,
-      status: 'Aktif'
+      id: 'camp-' + Date.now(),
+      name: newCampaignName || 'Yeni Kampanya',
+      code: newCampaignType === 'free_delivery' ? '' : newCampaignCode.toUpperCase().trim(),
+      type: newCampaignType,
+      discountValue: newCampaignType === 'free_delivery' ? 50 : Number(newCampaignDiscount || 0),
+      minOrder: Number(newCampaignMin || 0),
+      status: 'Aktif',
+      usageCount: 0,
+      usageLimit: newCampaignType === 'free_delivery' ? null : 10000,
+      description: newCampaignType === 'free_delivery'
+        ? `${newCampaignMin} TL üzeri siparişlerde teslimat ücreti bedava`
+        : `${newCampaignMin} TL üzeri siparişlerde geçerli kupon`,
     };
-    setPromos(prev => [newPromo, ...prev]);
-    setNewCampaignName('');
-    setNewCampaignCode('');
-    addToast({ message: `Yeni kampanya ve "${newPromo.code}" kuponu canlı sisteme tanımlandı!`, type: 'success' });
+
+    try {
+      const response = await api.post('/campaigns', newPromo);
+      setPromos(prev => [response.data, ...prev]);
+      setNewCampaignName('');
+      setNewCampaignCode('');
+      addToast({ message: 'Yeni kampanya yayına alındı.', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Kampanya kaydedilirken bir sorun oluştu.', type: 'error' });
+    }
   };
 
 
@@ -358,9 +664,9 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     (r.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = enrichedUsers.filter(u => 
+    (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -706,7 +1012,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                         
                         <div className="flex gap-1">
                           <button 
-                            onClick={() => handleUpdateOrderStatus(ord.id, 'Teslim Edildi')}
+                            onClick={() => handleUpdateOrderStatus(ORDER_STATUS_OPTIONS[3], ord)}
                             className="bg-white hover:bg-stone-100 text-stone-700 p-1.5 rounded-lg border border-stone-200 shadow-sm text-[10px] font-bold"
                             title="Teslim Edildi İşaretle"
                           >
@@ -959,14 +1265,14 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                                 <span className="material-symbols-outlined text-[16px]">sync</span>
                               </button>
                               <button 
-                                onClick={() => handleUpdateCommission(rest.id, rest.commission)}
+                                onClick={() => openCommissionModal(rest)}
                                 className="p-1.5 hover:bg-stone-50 border border-stone-200 rounded-lg shadow-sm text-stone-500 hover:text-stone-800"
                                 title="Komisyon Oranını Güncelle"
                               >
                                 <span className="material-symbols-outlined text-[16px]">percent</span>
                               </button>
                               <button 
-                                onClick={() => handleDeleteRestaurant(rest.id)}
+                                onClick={() => openDeleteModal(rest)}
                                 className="p-1.5 hover:bg-rose-50 border border-rose-100 rounded-lg shadow-sm text-primary"
                                 title="Restoranı Sil"
                               >
@@ -981,6 +1287,106 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 </table>
               </div>
             </div>
+
+            {commissionModal && (
+              <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <form
+                  onSubmit={handleUpdateCommission}
+                  className="bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl border border-stone-100 space-y-5 animate-scale-up"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="text-lg font-black text-stone-800">Komisyon Oranı</h4>
+                      <p className="text-xs text-stone-400 font-semibold mt-1">{commissionModal.name}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeCommissionModal}
+                      className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg cursor-pointer transition-all"
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
+                      Yeni Komisyon Oranı (%)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={commissionValue}
+                        onChange={(event) => setCommissionValue(event.target.value)}
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pr-10 text-sm font-bold text-stone-800 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary"
+                        autoFocus
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm font-black">%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={closeCommissionModal}
+                      className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-primary hover:bg-primary-container text-white rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                    >
+                      Kaydet
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {deleteModal && (
+              <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl border border-stone-100 space-y-5 animate-scale-up">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="w-11 h-11 rounded-2xl bg-rose-50 text-primary flex items-center justify-center mb-3">
+                        <span className="material-symbols-outlined">delete</span>
+                      </div>
+                      <h4 className="text-lg font-black text-stone-800">Restoranı Sil</h4>
+                      <p className="text-xs text-stone-500 font-semibold mt-2 leading-relaxed">
+                        <span className="font-black text-stone-800">{deleteModal.name}</span> restoranını platformdan kaldırmak istediğine emin misin?
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeDeleteModal}
+                      className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg cursor-pointer transition-all"
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={closeDeleteModal}
+                      className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteRestaurant}
+                      className="px-5 py-2 bg-primary hover:bg-primary-container text-white rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                    >
+                      Sil
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1036,7 +1442,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                                 <img src={user.avatar} alt={user.name} className="w-9 h-9 object-cover rounded-full shadow-sm border border-stone-100" />
                               ) : (
                                 <div className="w-9 h-9 bg-primary-container text-white rounded-full flex items-center justify-center font-bold text-xs">
-                                  {user.name.split(' ').map(n => n[0]).join('')}
+                                  {(user.name || '?').split(' ').map(n => n[0]).join('')}
                                 </div>
                               )}
                               <div>
@@ -1047,11 +1453,11 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                           </td>
                           <td className="px-4 py-4 text-center">
                             <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide inline-block ${
-                              user.role === 'VIP' || user.role === 'ELITE'
+                              user.platformRole === 'VIP' || user.platformRole === 'Elite' || user.platformRole === 'Gold'
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : 'bg-stone-100 text-stone-500 border border-stone-200'
                             }`}>
-                              {user.role}
+                              {user.platformRole}
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center font-black text-stone-800">
@@ -1079,7 +1485,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                                 <span className="material-symbols-outlined text-[16px]">sync</span>
                               </button>
                               <button 
-                                onClick={() => handleDeleteUser(user.id)}
+                                onClick={() => openUserDeleteModal(user)}
                                 className="p-1.5 hover:bg-rose-50 border border-rose-100 rounded-lg shadow-sm text-primary"
                                 title="Kullanıcıyı Sil"
                               >
@@ -1094,6 +1500,48 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 </table>
               </div>
             </div>
+
+            {userDeleteModal && (
+              <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl border border-stone-100 space-y-5 animate-scale-up">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="w-11 h-11 rounded-2xl bg-rose-50 text-primary flex items-center justify-center mb-3">
+                        <span className="material-symbols-outlined">person_remove</span>
+                      </div>
+                      <h4 className="text-lg font-black text-stone-800">Kullanıcıyı Sil</h4>
+                      <p className="text-xs text-stone-500 font-semibold mt-2 leading-relaxed">
+                        <span className="font-black text-stone-800">{userDeleteModal.name}</span> kullanıcısını platformdan kaldırmak istediğine emin misin?
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeUserDeleteModal}
+                      className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg cursor-pointer transition-all"
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={closeUserDeleteModal}
+                      className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteUser}
+                      className="px-5 py-2 bg-primary hover:bg-primary-container text-white rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                    >
+                      Sil
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1124,7 +1572,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                   </thead>
                   
                   <tbody className="divide-y divide-stone-100 text-xs text-stone-700 font-medium">
-                    {orders.map((ord) => (
+                    {paginatedOrders.map((ord) => (
                       <tr key={ord.id} className="hover:bg-stone-50/40 transition-colors">
                         <td className="px-6 py-4 font-bold text-stone-800">{ord.id}</td>
                         <td className="px-4 py-4 font-bold text-stone-700">{ord.customer}</td>
@@ -1143,33 +1591,112 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                         </td>
                         <td className="px-4 py-4 text-stone-400 whitespace-nowrap">{ord.time}</td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex gap-1 justify-end">
-                            <button 
-                              onClick={() => handleUpdateOrderStatus(ord.id, 'Hazırlanıyor')}
-                              className="px-2.5 py-1 text-[10px] font-bold bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors"
-                            >
-                              Hazırlanıyor
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateOrderStatus(ord.id, 'Yolda')}
-                              className="px-2.5 py-1 text-[10px] font-bold bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors"
-                            >
-                              Yolda
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateOrderStatus(ord.id, 'Teslim Edildi')}
-                              className="px-2.5 py-1 text-[10px] font-bold bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-                            >
-                              Teslim Edildi
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => openOrderStatusModal(ord)}
+                            className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-stone-200 text-stone-500 hover:text-primary hover:bg-rose-50 hover:border-rose-100 transition-all"
+                            title="Durumu Güncelle"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">edit_square</span>
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+
+              {orders.length > ordersPerPage && (
+                <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-stone-100 bg-stone-50/50">
+                  <p className="text-[10px] font-bold text-stone-400">
+                    {orders.length} sipariş içinde sayfa {ordersPage} / {totalOrderPages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOrdersPage((page) => Math.max(1, page - 1))}
+                      disabled={ordersPage === 1}
+                      className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Önceki sayfa"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                    </button>
+
+                    {Array.from({ length: totalOrderPages }, (_, index) => index + 1).map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setOrdersPage(page)}
+                        className={`w-9 h-9 rounded-xl text-xs font-black border transition-all ${
+                          ordersPage === page
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-stone-500 border-stone-200 hover:text-primary'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setOrdersPage((page) => Math.min(totalOrderPages, page + 1))}
+                      disabled={ordersPage === totalOrderPages}
+                      className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Sonraki sayfa"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {orderStatusModal && (
+              <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl border border-stone-100 space-y-5 animate-scale-up">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="text-lg font-black text-stone-800">Sipariş Durumu</h4>
+                      <p className="text-xs text-stone-500 font-semibold mt-1">
+                        #{orderStatusModal.id} için yeni durumu seç
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeOrderStatusModal}
+                      className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg cursor-pointer transition-all"
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {ORDER_STATUS_OPTIONS.map((option) => {
+                      const isActive = orderStatusModal.deliveryStatus === option.deliveryStatus;
+
+                      return (
+                        <button
+                          key={option.deliveryStatus}
+                          type="button"
+                          onClick={() => handleUpdateOrderStatus(option)}
+                          className={`w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3 border text-left transition-all ${
+                            isActive
+                              ? 'border-primary bg-rose-50 text-primary'
+                              : 'border-stone-100 bg-stone-50 text-stone-700 hover:border-rose-100 hover:bg-rose-50/60'
+                          }`}
+                        >
+                          <span className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-[20px]">{option.icon}</span>
+                            <span className="text-xs font-black">{option.label}</span>
+                          </span>
+                          {isActive && <span className="material-symbols-outlined text-[18px]">check</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1211,14 +1738,27 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 </div>
               </div>
 
-              {/* LIVE COURIER INTERACTIVE MAP (High fidelity SVG) */}
+              {/* LIVE COURIER DEMO MAP */}
               <div className="bg-white p-6 rounded-[28px] border border-stone-100 shadow-soft lg:col-span-2 relative min-h-[280px] overflow-hidden flex flex-col justify-between">
+                <style>{`
+                  @keyframes courierDemoRide {
+                    0% { offset-distance: 0%; }
+                    100% { offset-distance: 100%; }
+                  }
+                  .courier-demo-ride {
+                    offset-rotate: auto 0deg;
+                    animation: courierDemoRide var(--ride-duration) linear infinite;
+                  }
+                  .courier-demo-paused {
+                    offset-distance: var(--park-position);
+                  }
+                `}</style>
                 <div className="absolute inset-0 z-0 opacity-40" style={{ backgroundImage: 'radial-gradient(#e5bdb6 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
                 
                 <div className="relative z-10 flex justify-between items-start mb-4">
                   <div>
                     <h4 className="text-sm font-extrabold text-stone-800">Canlı Kurye Haritası (İstanbul)</h4>
-                    <p className="text-[10px] text-stone-400 font-bold tracking-wide mt-0.5">Sistem kuryelerinin canlı kentsel koordinatları</p>
+                    <p className="text-[10px] text-stone-400 font-bold tracking-wide mt-0.5">Demo şehir planı üzerinde hareketli kurye görünümü</p>
                   </div>
                   <div className="flex gap-1.5">
                     <button className="p-1 rounded bg-white hover:bg-stone-100 border border-stone-200 shadow-sm"><span className="material-symbols-outlined text-[15px]">zoom_in</span></button>
@@ -1226,36 +1766,88 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                   </div>
                 </div>
 
-                {/* Simulated live visual elements */}
-                <div className="w-full h-44 border border-stone-100 bg-stone-50/50 rounded-2xl relative flex items-center justify-center">
-                  {/* Streets mockup layout */}
-                  <div className="absolute w-[2px] h-full bg-stone-200 left-1/3"></div>
-                  <div className="absolute w-[2px] h-full bg-stone-200 left-2/3"></div>
-                  <div className="absolute h-[2px] w-full bg-stone-200 top-1/2"></div>
+                <div className="w-full h-64 border border-stone-100 bg-[#f3efe7] rounded-2xl relative overflow-hidden shadow-inner">
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 560 240" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="courierWater" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#dbeafe" />
+                        <stop offset="100%" stopColor="#bae6fd" />
+                      </linearGradient>
+                      <filter id="softRoadShadow" x="-10%" y="-10%" width="120%" height="120%">
+                        <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#78716c" floodOpacity="0.16" />
+                      </filter>
+                    </defs>
+                    <path d="M 0 196 C 76 176, 126 216, 198 198 S 322 178, 394 204 S 496 222, 560 198 L 560 240 L 0 240 Z" fill="url(#courierWater)" opacity="0.9" />
+                    <path d="M 10 196 C 88 184, 132 214, 204 198 S 322 184, 390 206 S 486 220, 550 204" fill="none" stroke="#7dd3fc" strokeWidth="2" opacity="0.65" />
 
-                  {/* Pulsing Courier Dot 1 */}
-                  <div className="absolute top-1/4 left-1/4 group cursor-pointer text-primary">
-                    <span className="material-symbols-outlined text-lg animate-bounce select-none">motorcycle</span>
-                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[8px] px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 whitespace-nowrap z-20 transition-opacity">
-                      Ahmet Y.
-                    </span>
-                  </div>
+                    <rect x="20" y="18" width="102" height="48" rx="12" fill="#fffaf5" stroke="#e7e5e4" />
+                    <rect x="138" y="22" width="72" height="40" rx="10" fill="#fef3c7" stroke="#fde68a" opacity="0.9" />
+                    <rect x="392" y="22" width="126" height="54" rx="14" fill="#fffaf5" stroke="#e7e5e4" />
+                    <rect x="72" y="148" width="98" height="44" rx="12" fill="#fffaf5" stroke="#e7e5e4" />
+                    <rect x="194" y="158" width="80" height="42" rx="12" fill="#dcfce7" stroke="#bbf7d0" />
+                    <rect x="360" y="146" width="136" height="48" rx="14" fill="#fffaf5" stroke="#e7e5e4" />
+                    <rect x="468" y="92" width="58" height="36" rx="10" fill="#f5f5f4" stroke="#e7e5e4" />
+                    <rect x="20" y="84" width="54" height="34" rx="9" fill="#f5f5f4" stroke="#e7e5e4" />
 
-                  {/* Pulsing Courier Dot 2 */}
-                  <div className="absolute bottom-1/3 right-1/4 group cursor-pointer text-amber-500">
-                    <span className="material-symbols-outlined text-lg animate-pulse select-none">pedal_bike</span>
-                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[8px] px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 whitespace-nowrap z-20 transition-opacity">
-                      Mehmet T.
-                    </span>
-                  </div>
+                    <path d="M 18 72 C 96 58, 158 54, 216 74 S 326 140, 536 142" fill="none" stroke="#c9c2b8" strokeWidth="22" strokeLinecap="round" filter="url(#softRoadShadow)" />
+                    <path d="M 24 116 C 110 94, 168 92, 242 118 S 382 154, 500 112" fill="none" stroke="#c9c2b8" strokeWidth="22" strokeLinecap="round" filter="url(#softRoadShadow)" />
+                    <path d="M 78 178 C 146 134, 218 146, 280 108 S 390 66, 520 78" fill="none" stroke="#d5cec4" strokeWidth="18" strokeLinecap="round" />
+                    <path d="M 64 38 C 122 76, 158 126, 216 126 S 330 82, 456 46" fill="none" stroke="#ddd6cc" strokeWidth="13" strokeLinecap="round" />
+                    <path d="M 512 190 C 420 166, 364 156, 296 178 S 156 210, 42 172" fill="none" stroke="#ddd6cc" strokeWidth="13" strokeLinecap="round" />
+                    <path d="M 282 24 C 268 82, 286 128, 250 170 S 180 216, 102 206" fill="none" stroke="#ddd6cc" strokeWidth="13" strokeLinecap="round" />
+                    <path d="M 18 72 C 96 58, 158 54, 216 74 S 326 140, 536 142" fill="none" stroke="#f8fafc" strokeWidth="2" strokeDasharray="12 12" strokeLinecap="round" opacity="0.9" />
+                    <path d="M 24 116 C 110 94, 168 92, 242 118 S 382 154, 500 112" fill="none" stroke="#f8fafc" strokeWidth="2" strokeDasharray="12 12" strokeLinecap="round" opacity="0.9" />
+                    <path d="M 78 178 C 146 134, 218 146, 280 108 S 390 66, 520 78" fill="none" stroke="#f8fafc" strokeWidth="1.6" strokeDasharray="10 10" strokeLinecap="round" opacity="0.9" />
+                    {COURIER_MAP_ROUTES.map((route, index) => (
+                      <path
+                        key={index}
+                        d={route.path}
+                        fill="none"
+                        stroke={index % 2 === 0 ? '#b51c00' : '#16a34a'}
+                        strokeWidth="2"
+                        strokeDasharray="8 10"
+                        strokeLinecap="round"
+                        opacity="0.34"
+                      />
+                    ))}
+                    <circle cx="250" cy="116" r="5" fill="#b51c00" opacity="0.82" />
+                    <circle cx="425" cy="150" r="5" fill="#b51c00" opacity="0.82" />
+                    <circle cx="178" cy="64" r="4" fill="#16a34a" opacity="0.8" />
+                    <text x="32" y="44" fill="#78716c" fontSize="9" fontWeight="700">Beşiktaş</text>
+                    <text x="400" y="54" fill="#78716c" fontSize="9" fontWeight="700">Kadıköy</text>
+                    <text x="206" y="184" fill="#166534" fontSize="8" fontWeight="700">Park</text>
+                    <text x="18" y="226" fill="#0369a1" fontSize="8" fontWeight="700">Sahil hattı</text>
+                  </svg>
 
-                  {/* Pulsing Courier Dot 3 */}
-                  <div className="absolute top-1/2 right-1/2 group cursor-pointer text-green-600">
-                    <span className="material-symbols-outlined text-lg animate-pulse select-none">delivery_dining</span>
-                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[8px] px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 whitespace-nowrap z-20 transition-opacity">
-                      Caner B.
-                    </span>
-                  </div>
+                  {couriers.length === 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <p className="text-xs font-bold text-stone-400">Kurye verisi bulunamadı.</p>
+                    </div>
+                  ) : (
+                    couriers.map((courier, index) => {
+                      const visual = getCourierMapVisual(courier, index);
+
+                      return (
+                        <div
+                          key={courier.id}
+                          className={`absolute left-0 top-0 group cursor-pointer ${visual.colorClass} ${visual.isMoving ? 'courier-demo-ride' : 'courier-demo-paused'}`}
+                          style={{
+                            offsetPath: `path('${visual.path}')`,
+                            '--ride-duration': `${visual.duration}s`,
+                            '--park-position': `${18 + (index * 13) % 70}%`,
+                            animationDelay: `-${index * 3.2}s`,
+                          }}
+                        >
+                          <span className={`material-symbols-outlined text-[28px] select-none drop-shadow-md ${visual.pulseClass}`}>
+                            {visual.icon}
+                          </span>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[8px] px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 whitespace-nowrap z-20 transition-opacity">
+                            {courier.name} - {courier.status}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
 
                 <div className="relative z-10 flex justify-between items-center text-[9px] font-bold text-stone-400 uppercase tracking-wider mt-3">
@@ -1325,8 +1917,15 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                       onChange={(e) => setSelectedOrderToAssign(e.target.value)}
                       className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none"
                     >
-                      <option value="VH-9420">VH-9420 (Burger Haven &bull; Hazır)</option>
-                      <option value="VH-9419">VH-9419 (Pizza Roma &bull; Paketlendi)</option>
+                      {assignableOrders.length === 0 ? (
+                        <option value="">Atanacak sipariş yok</option>
+                      ) : (
+                        assignableOrders.map((order) => (
+                          <option key={order.id} value={order.id}>
+                            {order.id} ({order.restaurant} - {order.status})
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -1337,9 +1936,13 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                       onChange={(e) => setSelectedCourierToAssign(e.target.value)}
                       className="w-full bg-stone-50 hover:bg-stone-100/70 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none"
                     >
-                      {couriers.map(c => (
-                        <option key={c.id} value={c.id}>{c.name} ({c.status} &bull; {c.zone})</option>
-                      ))}
+                      {availableCouriers.length === 0 ? (
+                        <option value="">Müsait kurye yok</option>
+                      ) : (
+                        availableCouriers.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.status} &bull; {c.zone})</option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -1356,7 +1959,8 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
                   <button 
                     onClick={handleAssignOrder}
-                    className="w-full py-3 bg-primary hover:bg-primary-container text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-md transition-all active:scale-95"
+                    disabled={!selectedOrderToAssign || !selectedCourierToAssign}
+                    className="w-full py-3 bg-primary hover:bg-primary-container text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-md transition-all active:scale-95 disabled:opacity-45 disabled:cursor-not-allowed"
                   >
                     Siparişi Ata ve Bildirim Gönder
                   </button>
@@ -1378,7 +1982,7 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                 <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
                   <div>
                     <p className="text-stone-400 font-bold text-xs tracking-wide">Toplam Kupon Kullanımı</p>
-                    <h3 className="text-2xl font-black text-stone-800 mt-1">12.450</h3>
+                    <h3 className="text-2xl font-black text-stone-800 mt-1">{totalCampaignUsage}</h3>
                   </div>
                   <div className="p-3 bg-rose-50 text-primary rounded-xl">
                     <span className="material-symbols-outlined">shopping_cart_checkout</span>
@@ -1387,8 +1991,8 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
                 <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
                   <div>
-                    <p className="text-stone-400 font-bold text-xs tracking-wide">Sağlanan Toplam İndirim</p>
-                    <h3 className="text-2xl font-black text-stone-800 mt-1">245.600 ₺</h3>
+                    <p className="text-stone-400 font-bold text-xs tracking-wide">Aktif Kampanya</p>
+                    <h3 className="text-2xl font-black text-stone-800 mt-1">{activePromos.length}</h3>
                   </div>
                   <div className="p-3 bg-amber-50 text-amber-500 rounded-xl">
                     <span className="material-symbols-outlined">savings</span>
@@ -1397,8 +2001,8 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
 
                 <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
                   <div>
-                    <p className="text-stone-400 font-bold text-xs tracking-wide">Dönüşüm Oranı</p>
-                    <h3 className="text-2xl font-black text-stone-800 mt-1">%18.5</h3>
+                    <p className="text-stone-400 font-bold text-xs tracking-wide">Kupon Kampanyası</p>
+                    <h3 className="text-2xl font-black text-stone-800 mt-1">{couponPromoCount}</h3>
                   </div>
                   <div className="p-3 bg-green-50 text-green-600 rounded-xl">
                     <span className="material-symbols-outlined">trending_up</span>
@@ -1430,24 +2034,40 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                       />
                     </div>
                     <div>
+                      <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Kampanya Türü</label>
+                      <select
+                        value={newCampaignType}
+                        onChange={(e) => setNewCampaignType(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
+                      >
+                        <option value="free_delivery">Teslimat Ücreti Bedava</option>
+                        <option value="coupon_fixed">Sabit Tutar Kuponu</option>
+                        <option value="coupon_percent">Yüzde İndirim Kuponu</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Kupon Kodu (Benzersiz)</label>
                       <input 
                         type="text"
-                        required
+                        required={newCampaignType !== 'free_delivery'}
+                        disabled={newCampaignType === 'free_delivery'}
                         placeholder="Örn: CRAVEWEEKEND"
                         value={newCampaignCode}
                         onChange={(e) => setNewCampaignCode(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-45"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">İndirim Yüzdesi (%)</label>
+                      <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
+                        {newCampaignType === 'coupon_percent' ? 'İndirim Yüzdesi (%)' : 'İndirim Tutarı (TL)'}
+                      </label>
                       <input 
                         type="number"
                         required
+                        disabled={newCampaignType === 'free_delivery'}
                         value={newCampaignDiscount}
                         onChange={(e) => setNewCampaignDiscount(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-45"
                       />
                     </div>
                     <div>
@@ -1493,26 +2113,26 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100 text-xs text-stone-700 font-medium">
-                    {promos.map((promo, idx) => (
-                      <tr key={idx} className="hover:bg-stone-50/40 transition-colors">
+                    {promos.map((promo) => (
+                      <tr key={promo.id} className="hover:bg-stone-50/40 transition-colors">
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-extrabold text-stone-800 text-xs tracking-wide">{promo.code}</p>
-                            <p className="text-[10px] text-stone-400 font-semibold">{promo.desc}</p>
+                            <p className="font-extrabold text-stone-800 text-xs tracking-wide">{promo.code || 'Otomatik Kampanya'}</p>
+                            <p className="text-[10px] text-stone-400 font-semibold">{promo.name || promo.description}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-4">{promo.type}</td>
-                        <td className="px-4 py-4 font-black text-primary">{promo.rate}</td>
+                        <td className="px-4 py-4">{getCampaignTypeLabel(promo.type)}</td>
+                        <td className="px-4 py-4 font-black text-primary">{getCampaignRateText(promo)}</td>
                         <td className="px-4 py-4">
                           <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded text-[10px] font-bold">
-                            {promo.condition}
+                            Min. {Number(promo.minOrder || 0)} ₺
                           </span>
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col w-28">
-                            <span className="text-[10px] text-stone-400 font-bold mb-1">{promo.usage}</span>
+                            <span className="text-[10px] text-stone-400 font-bold mb-1">{getCampaignUsageText(promo)}</span>
                             <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-primary rounded-full" style={{ width: `${promo.progress}%` }}></div>
+                              <div className="h-full bg-primary rounded-full" style={{ width: `${getCampaignProgress(promo)}%` }}></div>
                             </div>
                           </div>
                         </td>
@@ -1848,3 +2468,4 @@ export default function PlatformAdminDashboard({ onExitAdmin, propActiveTab, hid
     </div>
   );
 }
+

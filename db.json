@@ -37,7 +37,26 @@
       "role": "customer",
       "phone": "",
       "birthdate": "",
-      "avatar": "https://ui-avatars.com/api/?name=Furkan%20%2BYorulmaz&background=b51c00&color=fff"
+      "avatar": "https://ui-avatars.com/api/?name=Furkan%20%2BYorulmaz&background=b51c00&color=fff",
+      "status": "Aktif"
+    },
+    {
+      "id": "ar6u1LWSuG8",
+      "role": "restaurant",
+      "email": "furkan@jetyemek.com",
+      "password": "123",
+      "restaurantId": "rest-furkan-usta-1783175227784",
+      "name": "Furkan Usta",
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U"
+    },
+    {
+      "id": "M_a-7uJuTwc",
+      "role": "restaurant",
+      "email": "aciktim@jetyemek.com",
+      "password": "rest123",
+      "restaurantId": "rest-acktm-usta-1783175907260",
+      "name": "Acıktım Usta",
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U"
     }
   ],
   "addresses": [
@@ -128,7 +147,7 @@
   "restaurants": [
     {
       "id": "gourmet-burger",
-      "name": "Gourmet Burger House",
+      "name": "Hamburgercim",
       "rating": "4.9",
       "time": "20-30 dk",
       "deliveryFee": "Ücretsiz",
@@ -273,6 +292,100 @@
       "isOpen": true,
       "isSponsor": true,
       "image": "http://googleusercontent.com/profile/picture/7"
+    },
+    {
+      "id": "rest-furkan-usta-1783175227784",
+      "name": "Furkan Usta",
+      "rating": "5.0",
+      "time": "30-40 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "100 TL",
+      "category": "Fast Food",
+      "tag": "restoran",
+      "city": "Kadıköy, İstanbul",
+      "commission": 12,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": false,
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U",
+      "bannerImage": "",
+      "description": "",
+      "deliveryZones": "Kadıköy, İstanbul",
+      "phone": "",
+      "email": "furkan@jetyemek.com",
+      "address": "Kadıköy, İstanbul",
+      "holidayMode": false,
+      "holidayStart": "",
+      "holidayEnd": ""
+    },
+    {
+      "id": "oXdPx5YLYCg",
+      "name": "Acıktım Usta",
+      "category": "Kebap & Izgara",
+      "commission": 9,
+      "status": "Aktif",
+      "isOpen": true,
+      "isSponsor": false,
+      "city": "Güngören, İstanbul",
+      "rating": "5.0",
+      "time": "30-40 dk",
+      "deliveryFee": "Ücretsiz",
+      "minOrder": "100 TL",
+      "tag": "restoran",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0vZ1q68hHQrWZGjxjqgcU8jEsHzk9ih8_gha-7rhHBF_NMrffCFEVq_s&s=10",
+      "description": "",
+      "deliveryZones": "Güngören, İstanbul",
+      "address": "Güngören, İstanbul",
+      "phone": "",
+      "email": "aciktim@jetyemek.com",
+      "holidayMode": false,
+      "holidayStart": "",
+      "holidayEnd": "",
+      "workingHours": [
+        {
+          "day": "Pazartesi",
+          "start": "09:00",
+          "end": "22:00",
+          "closed": false
+        },
+        {
+          "day": "Salı",
+          "start": "09:00",
+          "end": "22:00",
+          "closed": false
+        },
+        {
+          "day": "Çarşamba",
+          "start": "09:00",
+          "end": "22:00",
+          "closed": false
+        },
+        {
+          "day": "Perşembe",
+          "start": "09:00",
+          "end": "22:00",
+          "closed": false
+        },
+        {
+          "day": "Cuma",
+          "start": "09:00",
+          "end": "23:00",
+          "closed": false
+        },
+        {
+          "day": "Cumartesi",
+          "start": "10:00",
+          "end": "23:00",
+          "closed": false
+        },
+        {
+          "day": "Pazar",
+          "start": "10:00",
+          "end": "21:00",
+          "closed": true
+        }
+      ],
+      "bannerImage": "https://www.shutterstock.com/image-photo/turkish-arabic-traditional-ramadan-mix-260nw-1354447631.jpg"
     }
   ],
   "menuItems": [
@@ -343,6 +456,17 @@
           }
         ]
       }
+    },
+    {
+      "name": "xcvfd",
+      "price": 122,
+      "description": "Özenle hazırlanan gurme lezzetler.",
+      "category": "Popüler",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80",
+      "status": "Active",
+      "tag": null,
+      "restaurantId": "rest-furkan-usta-1783175227784",
+      "id": "tOeC1b4fcgQ"
     }
   ],
   "orders": [
@@ -632,6 +756,31 @@
       "createdAt": "2026-07-04T09:17:05.236Z",
       "image": "https://image.hurimg.com/i/hurriyet/90/0x0/5eb5162c7152d818e4c60fea.jpg",
       "id": "HSPX5Z7jIRQ"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Restoran",
+      "restaurantId": "",
+      "items": [
+        {
+          "id": "PyHcsNI_Drg-reorder",
+          "name": "Lezzet Restoran Menüsü",
+          "qty": 1,
+          "price": 75
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 75,
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
+      "date": "4 Temmuz 2026",
+      "createdAt": "2026-07-04T14:16:21.534Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U",
+      "id": "E8cv_j796kY"
     }
   ],
   "reviews": [
@@ -673,6 +822,18 @@
       "reply": "Afiyet olsun efendim. Beğenmenize çok sevindik. Yine bekleriz :)",
       "hasImage": false,
       "id": "RIAVtTDBzGE"
+    },
+    {
+      "orderId": "1m_np6OTltI",
+      "restaurantId": "gourmet-burger",
+      "userId": "1",
+      "user": "Ahmet Y.",
+      "rating": 4,
+      "comment": "limon tadı daha baskın olabilirdi ama güzeldi",
+      "date": "4 Temmuz 2026",
+      "reply": "afiyet olsun",
+      "hasImage": false,
+      "id": "nm5HPtshJgA"
     }
   ],
   "couriers": [
@@ -731,7 +892,44 @@
       "phone": "0537 666 77 88"
     }
   ],
-  "campaigns": [],
+  "campaigns": [
+    {
+      "id": "camp-free-delivery-150",
+      "name": "150 TL Üzeri Ücretsiz Teslimat",
+      "code": "",
+      "type": "free_delivery",
+      "discountValue": 50,
+      "minOrder": 150,
+      "status": "Aktif",
+      "usageCount": 0,
+      "usageLimit": null,
+      "description": "150 TL üzeri siparişlerde 50 TL teslimat ücreti bedava"
+    },
+    {
+      "id": "camp-ilk50",
+      "name": "İlk Kupon İndirimi",
+      "code": "ILK50",
+      "type": "coupon_fixed",
+      "discountValue": 50,
+      "minOrder": 200,
+      "status": "Aktif",
+      "usageCount": 0,
+      "usageLimit": 10000,
+      "description": "200 TL üzeri siparişlerde 50 TL indirim"
+    },
+    {
+      "id": "camp-lezzet25",
+      "name": "Lezzet25 Kuponu",
+      "code": "LEZZET25",
+      "type": "coupon_percent",
+      "discountValue": 25,
+      "minOrder": 150,
+      "status": "Aktif",
+      "usageCount": 0,
+      "usageLimit": 5000,
+      "description": "150 TL üzeri siparişlerde %25 indirim"
+    }
+  ],
   "financeLogs": [],
   "settings": [
     {

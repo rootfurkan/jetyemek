@@ -13,6 +13,10 @@ function getOrderDate(order) {
   return new Date(order.createdAt || order.date || 0);
 }
 
+function getMainProductName(name) {
+  return String(name || 'Ürün').replace(/\s*\([^)]*\)\s*$/u, '').trim() || 'Ürün';
+}
+
 function isCancelled(order) {
   return order.deliveryStatus === 'cancelled' || order.status === 'İptal Edildi' || order.status === 'Iptal Edildi';
 }
@@ -147,7 +151,7 @@ export default function AdminFinance() {
   const productRevenue = {};
   paidOrders.forEach((order) => {
     (order.items || []).forEach((item) => {
-      const key = item.name || 'Ürün';
+      const key = getMainProductName(item.name);
       const revenue = (Number(item.price) || 0) * (Number(item.qty || item.quantity) || 1);
       productRevenue[key] = (productRevenue[key] || 0) + revenue;
     });

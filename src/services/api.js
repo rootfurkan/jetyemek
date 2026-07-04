@@ -99,6 +99,21 @@ export async function updateOrder(id, data) {
   return response.data;
 }
 
+export async function getCampaigns() {
+  const response = await api.get('/campaigns');
+  return response.data || [];
+}
+
+export async function createCampaign(campaign) {
+  const response = await api.post('/campaigns', campaign);
+  return response.data;
+}
+
+export async function updateCampaign(id, data) {
+  const response = await api.patch(`/campaigns/${id}`, data);
+  return response.data;
+}
+
 // ─── Reviews ──────────────────────────────────────────────────────────────────
 export async function getReviews(restaurantId) {
   const url = restaurantId ? `/reviews?restaurantId=${restaurantId}` : '/reviews';

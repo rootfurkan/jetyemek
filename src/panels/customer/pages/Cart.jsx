@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { removeFromCart, addToCart, clearCart } from '../../../features/cart/cartSlice.js';
 import { setActiveOrder, addPlatformOrder } from '../../../features/orders/ordersSlice.js';
 import { addAddress, addCard } from '../../../features/auth/authSlice.js';
-import { createOrder, createAddress, getCards, createCard } from '../../../services/api.js';
+import { createOrder, createAddress, getCards, createCard, getCampaigns, updateCampaign } from '../../../services/api.js';
 import { useToast } from '../../../common/components/Toast.jsx';
 import CreditCardForm, { validateCardForm } from '../../../common/components/CreditCardForm.jsx';
 import Modal from '../../../common/components/Modal.jsx';
@@ -47,6 +47,7 @@ export default function Cart() {
   // Coupon
   const [couponApplied, setCouponApplied] = useState(null);
   const [couponInput, setCouponInput] = useState('');
+  const [campaigns, setCampaigns] = useState([]);
 
   // Saved cards state (loaded from DB)
   const [savedCards, setSavedCards] = useState([]);
@@ -87,10 +88,27 @@ export default function Cart() {
     }
   }, [isAuthenticated, currentUser?.id, savedCardsFromRedux.length]);
 
+  useEffect(() => {
+    getCampaigns()
+      .then((data) => setCampaigns((data || []).filter((campaign) => campaign.status === 'Aktif')))
+      .catch(() => setCampaigns([]));
+  }, []);
+
   // Calculations
   const subtotal = cartItems.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
-  const deliveryFee = 0;
-  const discount = couponApplied === 'İLK50' ? 50.0 : 0.0;
+  const baseDeliveryFee = deliveryType === 'kurye' ? 50 : 0;
+  const freeDeliveryCampaign = campaigns.find((campaign) => (
+    deliveryType === 'kurye' &&
+    campaign.type === 'free_delivery' &&
+    subtotal >= Number(campaign.minOrder || 0)
+  ));
+  const deliveryDiscount = freeDeliveryCampaign ? Math.min(baseDeliveryFee, Number(freeDeliveryCampaign.discountValue || baseDeliveryFee)) : 0;
+  const deliveryFee = Math.max(0, baseDeliveryFee - deliveryDiscount);
+  const discount = couponApplied
+    ? couponApplied.type === 'coupon_percent'
+      ? Math.min(subtotal, subtotal * (Number(couponApplied.discountValue || 0) / 100))
+      : Math.min(subtotal, Number(couponApplied.discountValue || 0))
+    : 0.0;
   const total = Math.max(0, subtotal + deliveryFee - discount);
 
   const activeAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0];
@@ -98,17 +116,24 @@ export default function Cart() {
   const handleApplyCouponBtn = (e) => {
     e.preventDefault();
     const cleanCoupon = couponInput.toUpperCase().trim();
-    if (cleanCoupon === 'İLK50') {
-      if (subtotal > 200) {
-        setCouponApplied('İLK50');
-        setCouponInput('');
-        addToast({ message: "'İLK50' kupon kodu uygulandı! 50 TL indirim kazandınız.", type: 'success' });
-      } else {
-        addToast({ message: "Kupon uygulanamadı: Sepet tutarı 200 TL'den fazla olmalı.", type: 'error' });
-      }
-    } else {
-      addToast({ message: "Geçersiz kupon kodu. 'İLK50' kodunu deneyebilirsiniz!", type: 'error' });
+    const coupon = campaigns.find((campaign) => (
+      campaign.code?.toUpperCase() === cleanCoupon &&
+      ['coupon_fixed', 'coupon_percent'].includes(campaign.type)
+    ));
+
+    if (!coupon) {
+      addToast({ message: 'Geçersiz kupon kodu.', type: 'error' });
+      return;
     }
+
+    if (subtotal < Number(coupon.minOrder || 0)) {
+      addToast({ message: `Kupon uygulanamadı: Sepet tutarı en az ${Number(coupon.minOrder || 0)} TL olmalı.`, type: 'error' });
+      return;
+    }
+
+    setCouponApplied(coupon);
+    setCouponInput('');
+    addToast({ message: `"${coupon.code}" kuponu uygulandı.`, type: 'success' });
   };
 
   const onSubmitCheckout = async () => {
@@ -180,6 +205,15 @@ export default function Cart() {
         items: cartItems.map((i) => ({ id: i.id, name: i.name, qty: i.quantity, price: i.price })),
         itemsSummary: `${cartItems.reduce((a, c) => a + c.quantity, 0)} Ürün`,
         total,
+        subtotal,
+        deliveryFee,
+        deliveryDiscount,
+        couponCode: couponApplied?.code || '',
+        couponDiscount: discount,
+        appliedCampaigns: [
+          ...(freeDeliveryCampaign ? [freeDeliveryCampaign.id] : []),
+          ...(couponApplied ? [couponApplied.id] : []),
+        ],
         address: activeAddress?.details || 'Adres belirtilmedi',
         paymentMethod,
         status: 'Hazırlanıyor',
@@ -191,6 +225,13 @@ export default function Cart() {
       };
 
       const savedOrder = await createOrder(orderPayload);
+      const usedCampaigns = [freeDeliveryCampaign, couponApplied].filter(Boolean);
+
+      await Promise.all(
+        usedCampaigns.map((campaign) => (
+          updateCampaign(campaign.id, { usageCount: Number(campaign.usageCount || 0) + 1 }).catch(() => null)
+        ))
+      );
 
       dispatch(setActiveOrder({ ...savedOrder }));
       dispatch(addPlatformOrder({
@@ -475,11 +516,24 @@ export default function Cart() {
                   </div>
                   <div className="flex justify-between text-stone-500 font-medium">
                     <span>Teslimat Ücreti</span>
-                    <span className="text-green-600 font-bold">Ücretsiz</span>
+                    {deliveryDiscount > 0 ? (
+                      <span className="flex items-center gap-2">
+                        <span className="line-through text-stone-400">₺{baseDeliveryFee.toFixed(2)}</span>
+                        <span className="text-green-600 font-bold">Ücretsiz</span>
+                      </span>
+                    ) : (
+                      <span>₺{deliveryFee.toFixed(2)}</span>
+                    )}
                   </div>
+                  {freeDeliveryCampaign && (
+                    <div className="bg-green-50 border border-green-100 text-green-700 rounded-2xl px-3 py-2 text-[11px] font-bold flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px]">local_shipping</span>
+                      <span>{freeDeliveryCampaign.name} kampanyasından yararlandınız.</span>
+                    </div>
+                  )}
                   {discount > 0 && (
                     <div className="flex justify-between text-stone-500 font-medium">
-                      <span>İndirim ({couponApplied})</span>
+                      <span>İndirim ({couponApplied?.code})</span>
                       <span className="text-primary font-bold">-₺{discount.toFixed(2)}</span>
                     </div>
                   )}
@@ -494,7 +548,7 @@ export default function Cart() {
                   {couponApplied ? (
                     <div className="bg-green-50 text-green-700 px-3.5 py-3 rounded-2xl flex items-center gap-3 border border-dashed border-green-200 text-xs font-bold">
                       <span className="material-symbols-outlined text-[16px]">local_offer</span>
-                      <span className="flex-grow text-left">İLK50 Kuponu Uygulandı</span>
+                      <span className="flex-grow text-left">{couponApplied.code} Kuponu Uygulandı</span>
                       <button onClick={() => setCouponApplied(null)} className="material-symbols-outlined text-stone-500 hover:text-primary transition-colors cursor-pointer select-none text-[16px]">close</button>
                     </div>
                   ) : (

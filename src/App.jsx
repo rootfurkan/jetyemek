@@ -71,9 +71,7 @@ function AppDataLoader() {
           );
 
           // Aktif siparişi state'e yükle (sayfa yenilenince kaybolmasın)
-          if (active) {
-            dispatch(setActiveOrder(active));
-          }
+          dispatch(setActiveOrder(active || null));
 
           dispatch(setPreviousOrders(previous));
         } else {

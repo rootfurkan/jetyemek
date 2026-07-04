@@ -49,7 +49,14 @@ export default function RestaurantMenu() {
     category: "",
     rating: "5.0",
     image: "",
+    bannerImage: "",
   };
+  const defaultHeroImage =
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuAdsrEu0cTgCoAyw-HYvB8hMUEXf8mijFgr2COUjT4SaGIGbQCLEVqNQtdK2e8Xtrby-L_i53rdRO3Shm6qKK1umC71PCYlkfY6Z2b4_U_drhT2luNRMPPsD2jsqX-9OZ69M1Fi545TVlxKaRypp9Q4UECwSHEIIl5rniNqVMGek6mD8eUWyFk4BxBAKJPrLuOUrTh9B7n4t4Dz5XlQ9UTGshFgZcdvb7UW042vdbpVrbqKLA00vLZ26EyNZZ11_HqBZvBwZ-sCcRU";
+  const defaultLogoImage =
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuDbFlmGUJoFqTdp_jj1c_h9q9nHWfua_407ovHmjpcgVSjMMJHdZzWRfQAfyF-7W7zedVonUz_0hGgC0xWv5ELAjQpUB5gOH75fWXWzTu9CwkuHItfDaqRqTgfG4mCp3-yZIdmkyeJxHILqjP2UuG7sWmRqq2FoiJSf2cnGTyO_dK9vatCfnz3oB7A-JPSMp223cPtz4wu0jLv6zH3HlmjYRT_ftlM0FTEWpQ5tPsPlFLc7EddyiS6KxhI33yDZJYZq1WdSNqmIu5A";
+  const heroImage = restaurant.bannerImage || restaurant.banner || restaurant.coverImage || defaultHeroImage;
+  const logoImage = restaurant.image || defaultLogoImage;
 
   const [selectedSection, setSelectedSection] = useState("Popüler");
   const [menuSearch, setMenuSearch] = useState("");
@@ -125,7 +132,7 @@ export default function RestaurantMenu() {
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] hover:scale-105"
           style={{
-            backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAdsrEu0cTgCoAyw-HYvB8hMUEXf8mijFgr2COUjT4SaGIGbQCLEVqNQtdK2e8Xtrby-L_i53rdRO3Shm6qKK1umC71PCYlkfY6Z2b4_U_drhT2luNRMPPsD2jsqX-9OZ69M1Fi545TVlxKaRypp9Q4UECwSHEIIl5rniNqVMGek6mD8eUWyFk4BxBAKJPrLuOUrTh9B7n4t4Dz5XlQ9UTGshFgZcdvb7UW042vdbpVrbqKLA00vLZ26EyNZZ11_HqBZvBwZ-sCcRU')`,
+            backgroundImage: `url('${heroImage}')`,
           }}
         ></div>
         <div className="absolute inset-0 hero-gradient"></div>
@@ -134,8 +141,9 @@ export default function RestaurantMenu() {
           <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-[24px] p-3 mb-5 shadow-2xl transform rotate-3 hover:rotate-0 transition-all duration-500 flex items-center justify-center overflow-hidden border border-rose-50">
             <img
               className="w-full h-full object-contain"
-              alt="Hearty Delights Brand Logo"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbFlmGUJoFqTdp_jj1c_h9q9nHWfua_407ovHmjpcgVSjMMJHdZzWRfQAfyF-7W7zedVonUz_0hGgC0xWv5ELAjQpUB5gOH75fWXWzTu9CwkuHItfDaqRqTgfG4mCp3-yZIdmkyeJxHILqjP2UuG7sWmRqq2FoiJSf2cnGTyO_dK9vatCfnz3oB7A-JPSMp223cPtz4wu0jLv6zH3HlmjYRT_ftlM0FTEWpQ5tPsPlFLc7EddyiS6KxhI33yDZJYZq1WdSNqmIu5A"
+              alt={`${restaurant.name} logo`}
+              src={logoImage}
+              referrerPolicy="no-referrer"
             />
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 tracking-tight select-none">

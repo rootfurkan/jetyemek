@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../common/components/Toast.jsx';
 import { updateRestaurant as updateRestaurantState } from '../../features/restaurants/restaurantsSlice.js';
-import { updateRestaurant } from '../../services/api.js';
+import api, { updateRestaurant } from '../../services/api.js';
 
 const defaultWorkingHours = [
   { day: 'Pazartesi', start: '09:00', end: '22:00', closed: false },
@@ -30,7 +30,13 @@ export default function AdminSettings() {
 
   const currentUser = useSelector((state) => state.auth.currentUser);
   const restaurants = useSelector((state) => state.restaurants.list);
-  const restaurant = restaurants.find((item) => item.id === currentUser?.restaurantId);
+  const [remoteRestaurant, setRemoteRestaurant] = useState(null);
+  const [isRestaurantLookupLoading, setIsRestaurantLookupLoading] = useState(false);
+  const restaurantFromState = useMemo(() => (
+    restaurants.find((item) => item.id === currentUser?.restaurantId) ||
+    restaurants.find((item) => item.email && item.email === currentUser?.email)
+  ), [restaurants, currentUser?.restaurantId, currentUser?.email]);
+  const restaurant = restaurantFromState || remoteRestaurant;
 
   const [form, setForm] = useState({
     name: '',
@@ -43,6 +49,7 @@ export default function AdminSettings() {
     email: '',
     address: '',
     image: '',
+    bannerImage: '',
     isOpen: true,
     holidayMode: false,
     holidayStart: '',
@@ -50,6 +57,61 @@ export default function AdminSettings() {
     workingHours: defaultWorkingHours,
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (restaurantFromState) {
+      setRemoteRestaurant(null);
+      setIsRestaurantLookupLoading(false);
+      return;
+    }
+
+    if (!currentUser?.restaurantId && !currentUser?.email) {
+      setIsRestaurantLookupLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function findRestaurant() {
+      setIsRestaurantLookupLoading(true);
+
+      try {
+        let foundRestaurant = null;
+
+        if (currentUser?.restaurantId) {
+          try {
+            const response = await api.get(`/restaurants/${encodeURIComponent(currentUser.restaurantId)}`);
+            foundRestaurant = response.data;
+          } catch (_) {
+            foundRestaurant = null;
+          }
+        }
+
+        if (!foundRestaurant && currentUser?.email) {
+          const response = await api.get(`/restaurants?email=${encodeURIComponent(currentUser.email)}`);
+          foundRestaurant = response.data?.[0] || null;
+        }
+
+        if (!isCancelled) {
+          setRemoteRestaurant(foundRestaurant);
+        }
+      } catch (_) {
+        if (!isCancelled) {
+          setRemoteRestaurant(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsRestaurantLookupLoading(false);
+        }
+      }
+    }
+
+    findRestaurant();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [restaurantFromState, currentUser?.restaurantId, currentUser?.email]);
 
   useEffect(() => {
     if (!restaurant) return;
@@ -65,6 +127,7 @@ export default function AdminSettings() {
       email: restaurant.email || currentUser?.email || '',
       address: restaurant.address || restaurant.city || '',
       image: restaurant.image || '',
+      bannerImage: restaurant.bannerImage || '',
       isOpen: restaurant.isOpen !== false,
       holidayMode: Boolean(restaurant.holidayMode),
       holidayStart: restaurant.holidayStart || '',
@@ -121,6 +184,7 @@ export default function AdminSettings() {
       address: form.address.trim(),
       city: form.address.trim() || form.deliveryZones.trim(),
       image: form.image.trim(),
+      bannerImage: form.bannerImage.trim(),
       isOpen: form.isOpen && !form.holidayMode,
       status: form.isOpen && !form.holidayMode ? 'Aktif' : 'Pasif',
       holidayMode: form.holidayMode,
@@ -140,6 +204,15 @@ export default function AdminSettings() {
       setIsSaving(false);
     }
   };
+
+  if (isRestaurantLookupLoading) {
+    return (
+      <div className="bg-white rounded-[24px] border border-stone-100 shadow-soft p-8">
+        <h2 className="text-xl font-black text-stone-800">Restoran bilgileri yükleniyor</h2>
+        <p className="text-sm text-stone-500 mt-2">Mağaza ayarları hazırlanıyor.</p>
+      </div>
+    );
+  }
 
   if (!restaurant) {
     return (
@@ -219,6 +292,24 @@ export default function AdminSettings() {
                   onChange={(event) => updateField('image', event.target.value)}
                   className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">Banner Görseli URL</label>
+                <input
+                  type="url"
+                  value={form.bannerImage}
+                  onChange={(event) => updateField('bannerImage', event.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
+                  placeholder="Restoran detay sayfasındaki üst görsel"
+                />
+                <div className="mt-3 h-32 rounded-2xl overflow-hidden border border-stone-100 bg-stone-100 flex items-center justify-center">
+                  {form.bannerImage ? (
+                    <img className="w-full h-full object-cover" alt={`${form.name} banner`} src={form.bannerImage} referrerPolicy="no-referrer" />
+                  ) : (
+                    <span className="text-xs font-bold text-stone-400">Banner önizlemesi</span>
+                  )}
+                </div>
               </div>
             </div>
           </section>

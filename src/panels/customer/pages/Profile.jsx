@@ -283,7 +283,7 @@ export default function Profile() {
       try {
         const orders = await getOrders(currentUser.id);
 
-        const activeDeliveryStatuses = ['preparing', 'ready', 'on_the_way', 'delivered'];
+        const activeDeliveryStatuses = ['preparing', 'ready', 'on_the_way'];
 
         // En yeni aktif siparişi bul (sadece 1 tane aktif gösterilir)
         const active = orders.find(
@@ -298,7 +298,7 @@ export default function Profile() {
           return true;
         });
 
-        if (active) dispatch(setActiveOrder(active));
+        dispatch(setActiveOrder(active || null));
         dispatch(setPreviousOrders(previous));
       } catch (err) {
         console.error('Siparişler yüklenemedi:', err);
@@ -563,7 +563,7 @@ export default function Profile() {
           <section className="space-y-8">
             {/* Aktif Sipariş */}
             <AnimatePresence>
-              {activeOrder && (
+              {activeOrder && !['delivered', 'cancelled'].includes(activeOrder.deliveryStatus) && (
                 <div>
                   <h3 className="font-bold text-primary flex items-center gap-2 mb-4 text-xs uppercase tracking-wider select-none">
                     <motion.span
