@@ -5404,6 +5404,22 @@
       "reply": "Afiyet olsun, beğenmenize sevindik",
       "hasImage": false,
       "id": "povI8-g6IAc"
+    },
+    {
+      "orderId": "TQmDrJaq5Zc",
+      "restaurantId": "gourmet-burger",
+      "userId": "1",
+      "user": "Ahmet Y.",
+      "rating": 3,
+      "comment": "eh işte",
+      "date": "5 Temmuz 2026",
+      "createdAt": "2026-07-05T11:27:51.457Z",
+      "reply": null,
+      "hasImage": false,
+      "status": "Yayında",
+      "moderationReason": "",
+      "moderationMatchedWord": "",
+      "id": "btHoCWbXNoY"
     }
   ],
   "couriers": [

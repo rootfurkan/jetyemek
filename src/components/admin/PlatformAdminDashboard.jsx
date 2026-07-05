@@ -1,14 +1,6 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+﻿import React, { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import {
-  addRestaurant,
-  deleteRestaurant,
-  toggleRestaurantStatus,
-  updateRestaurantCommission,
-} from "../../features/restaurants/restaurantsSlice.js";
-import { updatePlatformOrderStatus } from "../../features/orders/ordersSlice.js";
-import api from "../../services/api.js";
 import { useToast } from "../../common/components/Toast.jsx";
 import AdminCampaignsTab from "./platform/AdminCampaignsTab.jsx";
 import AdminCouriersTab from "./platform/AdminCouriersTab.jsx";
@@ -18,252 +10,24 @@ import AdminOrdersTab from "./platform/AdminOrdersTab.jsx";
 import AdminRestaurantsTab from "./platform/AdminRestaurantsTab.jsx";
 import AdminSettingsTab from "./platform/AdminSettingsTab.jsx";
 import AdminUsersTab from "./platform/AdminUsersTab.jsx";
-
-const DEFAULT_ADMIN_AVATAR =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCW3F7uh6g1Kznczffnq89_eaBUXJq8xASo0zbD3eje_5FDbt5YvAYODYbkYpUnOEh1Hw2G6gPOlJBj9uGmtICPXc7xJGIts_Pe7soyVnnalozY_lL_RLoT8N3gng22vnqC7Q9hGG5FCSn-TtpYKjeTzSZuIxZvnd0sQnEKV_eeRZPLl6XSdbmnYHOffUF_DfOylLNs5qVH5kcor9EUg-LfQCi8dLcsRuaNNac3lG-cjyMYLGlcECKbklmwsAXuYFS93v2MYPGR6Ug";
-
-function formatCurrency(value) {
-  return `${Number(value || 0).toLocaleString("tr-TR")} ₺`;
-}
-
-function formatPdfCurrency(value) {
-  return `${Number(value || 0).toLocaleString("tr-TR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} TL`;
-}
-
-function getOrderDate(order) {
-  return new Date(order.createdAt || order.date || 0);
-}
-
-function isCancelled(order) {
-  return (
-    order.deliveryStatus === "cancelled" ||
-    order.status === "İptal Edildi" ||
-    order.status === "Iptal Edildi"
-  );
-}
-
-function getOrderStatusText(order) {
-  if (isCancelled(order)) return "İptal Edildi";
-  if (order.deliveryStatus === "delivered") return "Teslim Edildi";
-  if (order.deliveryStatus === "on_the_way") return "Yolda";
-  if (order.deliveryStatus === "ready") return "Hazır";
-  return order.status || "Hazırlanıyor";
-}
-
-function getFinancialStatus(order) {
-  if (isCancelled(order)) return "İptal Edildi";
-  if (order.deliveryStatus === "delivered" || order.status === "Teslim Edildi")
-    return "Tamamlandı";
-  return "Beklemede";
-}
-
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    const chunk = bytes.subarray(index, index + chunkSize);
-    binary += String.fromCharCode.apply(null, chunk);
-  }
-
-  return btoa(binary);
-}
-
-async function registerArialFont(doc) {
-  const fontCandidates = [
-    {
-      url: "/fonts/Roboto-Medium.ttf",
-      fileName: "Roboto-Medium.ttf",
-      family: "JetYemekFont",
-    },
-    { url: "/fonts/arial.ttf", fileName: "arial.ttf", family: "JetYemekFont" },
-    {
-      url: "/fonts/Arial.ttf",
-      fileName: "Arial.ttf",
-      family: "JetYemekFont",
-    },
-  ];
-
-  for (const font of fontCandidates) {
-    try {
-      const response = await fetch(font.url);
-      if (!response.ok) continue;
-
-      const fontBase64 = arrayBufferToBase64(await response.arrayBuffer());
-      doc.addFileToVFS(font.fileName, fontBase64);
-      doc.addFont(font.fileName, font.family, "normal", "Identity-H");
-      doc.setFont(font.family, "normal");
-      doc.setCharSpace(0);
-      doc.getTextWidth("Türkçe karakter testi: ğüşöçıİ");
-      return true;
-    } catch (error) {
-      doc.setFont("helvetica", "normal");
-      // Bir sonraki font adayını dene.
-    }
-  }
-
-  doc.setFont("helvetica", "normal");
-  doc.setCharSpace(0);
-  return false;
-}
-
-function normalizePdfText(value, hasUnicodeFont) {
-  const text = String(value ?? "");
-  if (hasUnicodeFont) return text;
-
-  return text
-    .replaceAll("İ", "I")
-    .replaceAll("I", "I")
-    .replaceAll("ı", "i")
-    .replaceAll("Ş", "S")
-    .replaceAll("ş", "s")
-    .replaceAll("Ğ", "G")
-    .replaceAll("ğ", "g")
-    .replaceAll("Ü", "U")
-    .replaceAll("ü", "u")
-    .replaceAll("Ö", "O")
-    .replaceAll("ö", "o")
-    .replaceAll("Ç", "C")
-    .replaceAll("ç", "c");
-}
-
-function getCustomerPlatformRole(orderCount) {
-  if (orderCount > 10) return "VIP";
-  if (orderCount >= 10) return "Elite";
-  if (orderCount >= 5) return "Gold";
-  if (orderCount >= 3) return "Silver";
-  return "Yeni";
-}
-
-function formatJoinedDate(user) {
-  const dateValue = user.createdAt || user.joinedAt || user.registeredAt;
-  if (!dateValue) return "-";
-
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return date.toLocaleDateString("tr-TR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-const ORDER_STATUS_OPTIONS = [
-  {
-    label: "Hazırlanıyor",
-    status: "Hazırlanıyor",
-    deliveryStatus: "preparing",
-    progress: 10,
-    icon: "restaurant",
-  },
-  {
-    label: "Sipariş Hazır",
-    status: "Sipariş Hazır",
-    deliveryStatus: "ready",
-    progress: 35,
-    icon: "inventory_2",
-  },
-  {
-    label: "Kurye Yola Çıktı",
-    status: "Kurye Yola Çıktı",
-    deliveryStatus: "on_the_way",
-    progress: 55,
-    icon: "local_shipping",
-  },
-  {
-    label: "Teslim Edildi",
-    status: "Teslim Edildi",
-    deliveryStatus: "delivered",
-    progress: 100,
-    icon: "check_circle",
-  },
-  {
-    label: "İptal Edildi",
-    status: "İptal Edildi",
-    deliveryStatus: "cancelled",
-    progress: 0,
-    icon: "cancel",
-  },
-];
-
-const COURIER_MAP_ROUTES = [
-  {
-    path: "M 24 116 C 110 94, 168 92, 242 118 S 382 154, 500 112",
-    duration: 24,
-  },
-  { path: "M 64 38 C 122 76, 158 126, 216 126 S 330 82, 456 46", duration: 22 },
-  {
-    path: "M 78 178 C 146 134, 218 146, 280 108 S 390 66, 520 78",
-    duration: 27,
-  },
-  {
-    path: "M 512 190 C 420 166, 364 156, 296 178 S 156 210, 42 172",
-    duration: 26,
-  },
-  {
-    path: "M 282 24 C 268 82, 286 128, 250 170 S 180 216, 102 206",
-    duration: 23,
-  },
-  { path: "M 18 72 C 96 58, 158 54, 216 74 S 326 140, 536 142", duration: 29 },
-];
-
-function getCourierMapVisual(courier, index) {
-  const route = COURIER_MAP_ROUTES[index % COURIER_MAP_ROUTES.length];
-  const isBusy = courier.status === "Teslimatta";
-  const isAvailable =
-    courier.status === "Müsait" || courier.status === "Beklemede";
-
-  return {
-    ...route,
-    icon: courier.vehicle?.toLowerCase().includes("bisiklet")
-      ? "pedal_bike"
-      : "motorcycle",
-    colorClass: isBusy
-      ? "text-primary"
-      : isAvailable
-        ? "text-green-600"
-        : "text-stone-400",
-    pulseClass: isAvailable ? "animate-pulse" : "",
-    isMoving: courier.status !== "Çevrimdışı",
-  };
-}
-
-function getCampaignTypeLabel(type) {
-  if (type === "free_delivery") return "Teslimat Kampanyası";
-  if (type === "coupon_fixed") return "Sabit Kupon";
-  if (type === "coupon_percent") return "Yüzde Kupon";
-  return "Kampanya";
-}
-
-function getCampaignRateText(campaign) {
-  if (campaign.type === "free_delivery")
-    return `${Number(campaign.discountValue || 0)} TL teslimat`;
-  if (campaign.type === "coupon_fixed")
-    return `${Number(campaign.discountValue || 0)} TL`;
-  if (campaign.type === "coupon_percent")
-    return `%${Number(campaign.discountValue || 0)}`;
-  return "-";
-}
-
-function getCampaignUsageText(campaign) {
-  const usageCount = Number(campaign.usageCount || 0);
-  return campaign.usageLimit
-    ? `${usageCount} / ${campaign.usageLimit}`
-    : `${usageCount} / sınırsız`;
-}
-
-function getCampaignProgress(campaign) {
-  if (!campaign.usageLimit) return 0;
-  return Math.min(
-    100,
-    (Number(campaign.usageCount || 0) / Number(campaign.usageLimit)) * 100,
-  );
-}
+import {
+  ORDER_STATUS_OPTIONS,
+  formatCurrency,
+  getCampaignProgress,
+  getCampaignRateText,
+  getCampaignTypeLabel,
+  getCampaignUsageText,
+  getOrderDate,
+  getOrderStatusText,
+  isCancelled,
+} from "./platform/adminDashboardUtils.js";
+import useAdminCampaigns from "./platform/hooks/useAdminCampaigns.js";
+import useAdminCouriers from "./platform/hooks/useAdminCouriers.js";
+import useAdminFinance from "./platform/hooks/useAdminFinance.js";
+import useAdminOrders from "./platform/hooks/useAdminOrders.js";
+import useAdminRestaurants from "./platform/hooks/useAdminRestaurants.js";
+import useAdminSettings from "./platform/hooks/useAdminSettings.js";
+import useAdminUsers from "./platform/hooks/useAdminUsers.js";
 
 export default function PlatformAdminDashboard({
   onExitAdmin,
@@ -271,7 +35,6 @@ export default function PlatformAdminDashboard({
   hideSidebar,
 }) {
   const addToast = useToast();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   // Navigation tabs for Super Admin
   const [localActiveTab, setLocalActiveTab] = useState("overview"); // 'overview' | 'restaurants' | 'users' | 'orders' | 'couriers' | 'campaigns' | 'finance' | 'settings'
@@ -287,8 +50,6 @@ export default function PlatformAdminDashboard({
   // Search queries for various tabs
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Platform Load Simulation state
-  const [platformLoad, setPlatformLoad] = useState(38);
   const [showLogs, setShowLogs] = useState(false);
 
   const paidOrders = platformOrders.filter((order) => !isCancelled(order));
@@ -470,935 +231,129 @@ export default function PlatformAdminDashboard({
     },
   ];
 
-  // 1. Restaurant Management Tab State — Redux'a bağlı
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [showAddRestaurant, setShowAddRestaurant] = useState(false);
-  const [newRestName, setNewRestName] = useState("");
-  const [newRestCategory, setNewRestCategory] = useState("Fast Food");
-  const [newRestComm, setNewRestCommission] = useState("12");
-  const [newRestCity, setNewRestCity] = useState("Kadıköy, İstanbul");
-  const [newRestEmail, setNewRestEmail] = useState("");
-  const [newRestPassword, setNewRestPassword] = useState("");
-  const [commissionModal, setCommissionModal] = useState(null);
-  const [commissionValue, setCommissionValue] = useState("");
-  const [deleteModal, setDeleteModal] = useState(null);
-
-  const handleToggleRestStatus = (id) => {
-    dispatch(toggleRestaurantStatus(id));
-  };
-
-  const openCommissionModal = (restaurant) => {
-    setCommissionModal(restaurant);
-    setCommissionValue(String(restaurant.commission ?? 12));
-  };
-
-  const closeCommissionModal = () => {
-    setCommissionModal(null);
-    setCommissionValue("");
-  };
-
-  const handleUpdateCommission = (event) => {
-    event.preventDefault();
-    const commission = Number(commissionValue);
-
-    if (
-      !commissionModal ||
-      Number.isNaN(commission) ||
-      commission < 0 ||
-      commission > 100
-    ) {
-      addToast({
-        message: "Lütfen 0 ile 100 arasında geçerli bir komisyon oranı girin.",
-        type: "error",
-      });
-      return;
-    }
-
-    dispatch(
-      updateRestaurantCommission({ id: commissionModal.id, commission }),
-    );
-    addToast({ message: "Komisyon oranı güncellendi.", type: "success" });
-    closeCommissionModal();
-  };
-
-  const openDeleteModal = (restaurant) => {
-    setDeleteModal(restaurant);
-  };
-
-  const closeDeleteModal = () => {
-    setDeleteModal(null);
-  };
-
-  const handleDeleteRestaurant = () => {
-    if (!deleteModal?.id) return;
-
-    dispatch(deleteRestaurant(deleteModal.id));
-    addToast({ message: "Restoran platformdan kaldırıldı.", type: "success" });
-    closeDeleteModal();
-  };
-
-  const handleAddRestaurantSubmit = async (e) => {
-    e.preventDefault();
-    if (!newRestName.trim()) return;
-
-    const restId =
-      "rest-" +
-      newRestName
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "") +
-      "-" +
-      Date.now();
-    const defaultRestaurantImage =
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U";
-    const restaurantPayload = {
-      id: restId,
-      name: newRestName.trim(),
-      category: newRestCategory,
-      commission: parseFloat(newRestComm) || 12,
-      status: "Aktif",
-      isOpen: true,
-      isSponsor: false,
-      city: newRestCity,
-      rating: "5.0",
-      time: "30-40 dk",
-      deliveryFee: "Ücretsiz",
-      minOrder: "100 TL",
-      tag: "restoran",
-      image: defaultRestaurantImage,
-      bannerImage: "",
-      description: "",
-      deliveryZones: newRestCity,
-      address: newRestCity,
-      phone: "",
-      email: newRestEmail.trim(),
-      holidayMode: false,
-      holidayStart: "",
-      holidayEnd: "",
-    };
-
-    try {
-      const savedRestaurantResponse = await api.post(
-        "/restaurants",
-        restaurantPayload,
-      );
-      dispatch(addRestaurant(savedRestaurantResponse.data));
-
-      if (newRestEmail.trim()) {
-        await api.post("/users", {
-          id: restId + "-user",
-          role: "restaurant",
-          email: newRestEmail.trim(),
-          password: newRestPassword || "rest123",
-          restaurantId: restId,
-          name: newRestName.trim(),
-          avatar: defaultRestaurantImage,
-        });
-      }
-    } catch (_) {
-      addToast({
-        message: "Restoran kaydedilirken bir sorun oluştu.",
-        type: "error",
-      });
-      return;
-    }
-
-    addToast({
-      message: `"${newRestName}" restoranı platforma eklendi ve müşteri paneline yansıdı!`,
-      type: "success",
-    });
-    setNewRestName("");
-    setNewRestEmail("");
-    setNewRestPassword("");
-    setShowAddRestaurant(false);
-  };
-
-  // 2. User Management Tab State
-  const [users, setUsers] = useState([]);
-  const [userDeleteModal, setUserDeleteModal] = useState(null);
-
-  useEffect(() => {
-    async function loadUsers() {
-      try {
-        const response = await api.get("/users");
-        const customerUsers = (response.data || []).filter(
-          (user) => user.role === "customer",
-        );
-        setUsers(customerUsers);
-      } catch (error) {
-        setUsers([]);
-      }
-    }
-
-    loadUsers();
-  }, []);
-
-  const enrichedUsers = useMemo(
-    () =>
-      users.map((user) => {
-        const orderCount = platformOrders.filter(
-          (order) => String(order.userId) === String(user.id),
-        ).length;
-        const fullName =
-          `${user.name || ""} ${user.surname || ""}`.trim() ||
-          user.email ||
-          "İsimsiz Kullanıcı";
-
-        return {
-          ...user,
-          name: fullName,
-          orders: orderCount,
-          platformRole: getCustomerPlatformRole(orderCount),
-          joined: formatJoinedDate(user),
-          status: user.status || "Aktif",
-        };
-      }),
-    [users, platformOrders],
-  );
-
-  const handleToggleUserStatus = async (id) => {
-    const user = users.find((item) => String(item.id) === String(id));
-    if (!user) return;
-
-    const nextStatus = (user.status || "Aktif") === "Aktif" ? "Pasif" : "Aktif";
-
-    try {
-      const response = await api.patch(`/users/${id}`, { status: nextStatus });
-      setUsers((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(id) ? { ...item, ...response.data } : item,
-        ),
-      );
-      addToast({ message: "Kullanıcı durumu güncellendi.", type: "success" });
-    } catch (error) {
-      addToast({
-        message: "Kullanıcı durumu güncellenirken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  const openUserDeleteModal = (user) => {
-    setUserDeleteModal(user);
-  };
-
-  const closeUserDeleteModal = () => {
-    setUserDeleteModal(null);
-  };
-
-  const handleDeleteUser = async () => {
-    if (!userDeleteModal?.id) return;
-
-    try {
-      await api.delete(`/users/${userDeleteModal.id}`);
-      setUsers((prev) =>
-        prev.filter((user) => String(user.id) !== String(userDeleteModal.id)),
-      );
-      addToast({
-        message: "Kullanıcı platformdan kaldırıldı.",
-        type: "success",
-      });
-      closeUserDeleteModal();
-    } catch (error) {
-      addToast({
-        message: "Kullanıcı silinirken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  const [orderStatusModal, setOrderStatusModal] = useState(null);
-  const [ordersPage, setOrdersPage] = useState(1);
-  const ordersPerPage = 10;
-  const totalOrderPages = Math.max(1, Math.ceil(orders.length / ordersPerPage));
-  const paginatedOrders = orders.slice(
-    (ordersPage - 1) * ordersPerPage,
-    ordersPage * ordersPerPage,
-  );
-
-  useEffect(() => {
-    if (ordersPage > totalOrderPages) {
-      setOrdersPage(totalOrderPages);
-    }
-  }, [ordersPage, totalOrderPages]);
-
-  const openOrderStatusModal = (order) => {
-    setOrderStatusModal(order);
-  };
-
-  const closeOrderStatusModal = () => {
-    setOrderStatusModal(null);
-  };
-
-  const handleUpdateOrderStatus = async (
-    statusOption,
-    targetOrder = orderStatusModal,
-  ) => {
-    if (!targetOrder?.id) return;
-
-    try {
-      const response = await api.patch(`/orders/${targetOrder.id}`, {
-        status: statusOption.status,
-        deliveryStatus: statusOption.deliveryStatus,
-        progress: statusOption.progress,
-      });
-
-      dispatch(
-        updatePlatformOrderStatus({
-          id: response.data.id,
-          status: response.data.status,
-          deliveryStatus: response.data.deliveryStatus,
-          progress: response.data.progress,
-        }),
-      );
-      addToast({
-        message: `Sipariş durumu "${statusOption.label}" olarak güncellendi.`,
-        type: "success",
-      });
-      if (orderStatusModal?.id === targetOrder.id) {
-        closeOrderStatusModal();
-      }
-    } catch (error) {
-      addToast({
-        message: "Sipariş durumu güncellenirken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  // 4. Courier Management State
-  const [couriers, setCouriers] = useState([]);
-
-  useEffect(() => {
-    async function loadCouriers() {
-      try {
-        const response = await api.get("/couriers");
-        setCouriers(response.data || []);
-      } catch (error) {
-        setCouriers([]);
-      }
-    }
-
-    loadCouriers();
-  }, []);
-
-  const [selectedOrderToAssign, setSelectedOrderToAssign] = useState("");
-  const [selectedCourierToAssign, setSelectedCourierToAssign] =
-    useState("courier-2");
-
-  const activeCouriers = couriers.filter(
-    (courier) => courier.status !== "Çevrimdışı",
-  );
-  const deliveryCouriers = couriers.filter(
-    (courier) => courier.status === "Teslimatta",
-  );
-  const availableCouriers = couriers.filter(
-    (courier) => courier.status === "Müsait" || courier.status === "Beklemede",
-  );
-  const assignableOrders = orders.filter(
-    (order) =>
-      order.deliveryStatus === "ready" ||
-      order.status === "Sipariş Hazır" ||
-      order.status === "Hazır" ||
-      order.deliveryStatus === "preparing",
-  );
-
-  useEffect(() => {
-    if (assignableOrders.length === 0) {
-      if (selectedOrderToAssign) setSelectedOrderToAssign("");
-      return;
-    }
-
-    if (
-      !assignableOrders.find(
-        (order) => String(order.id) === String(selectedOrderToAssign),
-      )
-    ) {
-      setSelectedOrderToAssign(assignableOrders[0].id);
-    }
-  }, [assignableOrders, selectedOrderToAssign]);
-
-  useEffect(() => {
-    if (availableCouriers.length === 0) {
-      if (selectedCourierToAssign) setSelectedCourierToAssign("");
-      return;
-    }
-
-    if (
-      !availableCouriers.find(
-        (courier) => String(courier.id) === String(selectedCourierToAssign),
-      ) &&
-      availableCouriers.length > 0
-    ) {
-      setSelectedCourierToAssign(availableCouriers[0].id);
-    }
-  }, [availableCouriers, selectedCourierToAssign]);
-
-  const handleAssignOrder = async () => {
-    const selectedCourier = couriers.find(
-      (c) => String(c.id) === String(selectedCourierToAssign),
-    );
-    const selectedOrder = orders.find(
-      (order) => String(order.id) === String(selectedOrderToAssign),
-    );
-
-    if (!selectedCourier || !selectedOrder) {
-      addToast({
-        message: "Atama için sipariş ve kurye seçmelisiniz.",
-        type: "error",
-      });
-      return;
-    }
-
-    try {
-      const [courierResponse, orderResponse] = await Promise.all([
-        api.patch(`/couriers/${selectedCourier.id}`, { status: "Teslimatta" }),
-        api.patch(`/orders/${selectedOrder.id}`, {
-          status: "Kurye Yola Çıktı",
-          deliveryStatus: "on_the_way",
-          progress: 55,
-          courierId: selectedCourier.id,
-          courierName: selectedCourier.name,
-        }),
-      ]);
-
-      setCouriers((prev) =>
-        prev.map((c) =>
-          String(c.id) === String(selectedCourier.id)
-            ? { ...c, ...courierResponse.data }
-            : c,
-        ),
-      );
-      dispatch(
-        updatePlatformOrderStatus({
-          id: orderResponse.data.id,
-          status: orderResponse.data.status,
-          deliveryStatus: orderResponse.data.deliveryStatus,
-          progress: orderResponse.data.progress,
-        }),
-      );
-      addToast({
-        message: `Sipariş #${selectedOrder.id}, kurye ${selectedCourier.name} üzerine başarıyla atandı.`,
-        type: "success",
-      });
-    } catch (error) {
-      addToast({
-        message: "Kurye ataması yapılırken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  // 5. Campaign & Promotion Management State
-  const [promos, setPromos] = useState([]);
-
-  const [newCampaignName, setNewCampaignName] = useState("");
-  const [newCampaignCode, setNewCampaignCode] = useState("");
-  const [newCampaignType, setNewCampaignType] = useState("coupon_percent");
-  const [newCampaignDiscount, setNewCampaignDiscount] = useState("20");
-  const [newCampaignMin, setNewCampaignMin] = useState("150");
-  const [campaignDeleteModal, setCampaignDeleteModal] = useState(null);
-  const activePromos = promos.filter((promo) => promo.status === "Aktif");
-  const totalCampaignUsage = promos.reduce(
-    (sum, promo) => sum + Number(promo.usageCount || 0),
-    0,
-  );
-  const couponPromoCount = promos.filter(
-    (promo) => promo.type !== "free_delivery",
-  ).length;
-
-  useEffect(() => {
-    async function loadCampaigns() {
-      try {
-        const response = await api.get("/campaigns");
-        setPromos(response.data || []);
-      } catch (error) {
-        setPromos([]);
-      }
-    }
-
-    loadCampaigns();
-  }, []);
-
-  const handleLaunchCampaign = async (e) => {
-    e.preventDefault();
-    if (newCampaignType !== "free_delivery" && !newCampaignCode.trim()) return;
-
-    const newPromo = {
-      id: "camp-" + Date.now(),
-      name: newCampaignName || "Yeni Kampanya",
-      code:
-        newCampaignType === "free_delivery"
-          ? ""
-          : newCampaignCode.toUpperCase().trim(),
-      type: newCampaignType,
-      discountValue:
-        newCampaignType === "free_delivery"
-          ? 50
-          : Number(newCampaignDiscount || 0),
-      minOrder: Number(newCampaignMin || 0),
-      status: "Aktif",
-      usageCount: 0,
-      usageLimit: newCampaignType === "free_delivery" ? null : 10000,
-      description:
-        newCampaignType === "free_delivery"
-          ? `${newCampaignMin} TL üzeri siparişlerde teslimat ücreti bedava`
-          : `${newCampaignMin} TL üzeri siparişlerde geçerli kupon`,
-    };
-
-    try {
-      const response = await api.post("/campaigns", newPromo);
-      setPromos((prev) => [response.data, ...prev]);
-      setNewCampaignName("");
-      setNewCampaignCode("");
-      addToast({ message: "Yeni kampanya yayına alındı.", type: "success" });
-    } catch (error) {
-      addToast({
-        message: "Kampanya kaydedilirken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  const handleToggleCampaignStatus = async (campaign) => {
-    const nextStatus = campaign.status === "Aktif" ? "Pasif" : "Aktif";
-
-    try {
-      const response = await api.patch(`/campaigns/${campaign.id}`, {
-        status: nextStatus,
-      });
-      setPromos((prev) =>
-        prev.map((promo) =>
-          String(promo.id) === String(campaign.id)
-            ? { ...promo, ...response.data }
-            : promo,
-        ),
-      );
-      addToast({
-        message: `Kampanya ${nextStatus.toLowerCase()} duruma alındı.`,
-        type: "success",
-      });
-    } catch (error) {
-      addToast({
-        message: "Kampanya durumu güncellenirken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  const openCampaignDeleteModal = (campaign) => {
-    setCampaignDeleteModal(campaign);
-  };
-
-  const closeCampaignDeleteModal = () => {
-    setCampaignDeleteModal(null);
-  };
-
-  const handleDeleteCampaign = async () => {
-    if (!campaignDeleteModal?.id) return;
-
-    try {
-      await api.delete(`/campaigns/${campaignDeleteModal.id}`);
-      setPromos((prev) =>
-        prev.filter(
-          (promo) => String(promo.id) !== String(campaignDeleteModal.id),
-        ),
-      );
-      addToast({ message: "Kampanya silindi.", type: "success" });
-      closeCampaignDeleteModal();
-    } catch (error) {
-      addToast({
-        message: "Kampanya silinirken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  // 6. Payments and Financial Logs State
-  const [financeSearch, setFinanceSearch] = useState("");
-  const [financeSort, setFinanceSort] = useState("amount_desc");
-  const [financePage, setFinancePage] = useState(1);
-  const [pdfLoading, setPdfLoading] = useState(false);
-
-  const financials = useMemo(
-    () =>
-      [...platformOrders]
-        .sort((a, b) => getOrderDate(b) - getOrderDate(a))
-        .map((order) => {
-          const restaurant = restaurants.find(
-            (item) => String(item.id) === String(order.restaurantId),
-          );
-          const gross = Number(order.total) || 0;
-          const commissionRate = Number(restaurant?.commission ?? 12);
-          const comm = isCancelled(order) ? 0 : (gross * commissionRate) / 100;
-          const net = isCancelled(order) ? 0 : gross - comm;
-          const orderDate = getOrderDate(order);
-
-          return {
-            id: order.id,
-            restaurant:
-              restaurant?.name ||
-              order.restaurant ||
-              order.restaurantName ||
-              "Restoran",
-            date: Number.isNaN(orderDate.getTime())
-              ? "-"
-              : orderDate.toLocaleString("tr-TR", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-            dateValue: Number.isNaN(orderDate.getTime())
-              ? 0
-              : orderDate.getTime(),
-            gross,
-            comm,
-            net,
-            commissionRate,
-            status: getFinancialStatus(order),
-          };
-        }),
-    [platformOrders, restaurants],
-  );
-
-  const filteredFinancials = useMemo(() => {
-    const searchText = financeSearch.trim().toLocaleLowerCase("tr-TR");
-    const searchedFinancials = financials.filter(
-      (ledger) =>
-        !searchText ||
-        String(ledger.id).toLocaleLowerCase("tr-TR").includes(searchText) ||
-        ledger.restaurant.toLocaleLowerCase("tr-TR").includes(searchText) ||
-        ledger.status.toLocaleLowerCase("tr-TR").includes(searchText),
-    );
-
-    return [...searchedFinancials].sort((a, b) => {
-      if (financeSort === "amount_asc") return a.gross - b.gross;
-      if (financeSort === "commission_desc") return b.comm - a.comm;
-      if (financeSort === "date_desc") return b.dateValue - a.dateValue;
-      return b.gross - a.gross;
-    });
-  }, [financeSearch, financeSort, financials]);
-
-  const financePerPage = 10;
-  const financeTotalPages = Math.max(
-    1,
-    Math.ceil(filteredFinancials.length / financePerPage),
-  );
-  const paginatedFinancials = filteredFinancials.slice(
-    (financePage - 1) * financePerPage,
-    financePage * financePerPage,
-  );
-  const financeGrossTotal = financials.reduce(
-    (sum, ledger) =>
-      sum + (ledger.status === "İptal Edildi" ? 0 : ledger.gross),
-    0,
-  );
-  const financeCommissionTotal = financials.reduce(
-    (sum, ledger) => sum + ledger.comm,
-    0,
-  );
-  const financeRestaurantPayout = financials.reduce(
-    (sum, ledger) => sum + ledger.net,
-    0,
-  );
-  const averageCommissionRate = financials.length
-    ? financials.reduce((sum, ledger) => sum + ledger.commissionRate, 0) /
-      financials.length
-    : 0;
-
-  useEffect(() => {
-    setFinancePage(1);
-  }, [financeSearch, financeSort]);
-
-  useEffect(() => {
-    if (financePage > financeTotalPages) {
-      setFinancePage(financeTotalPages);
-    }
-  }, [financePage, financeTotalPages]);
-
-  const handleDownloadPDF = async () => {
-    setPdfLoading(true);
-
-    try {
-      const { jsPDF } = await import("jspdf");
-      const doc = new jsPDF({ unit: "mm", format: "a4" });
-      const hasArialFont = await registerArialFont(doc);
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 14;
-      const primary = [225, 29, 72];
-      const primaryDark = [190, 18, 60];
-      const roseLight = [255, 241, 242];
-      const stoneText = [41, 37, 36];
-      const mutedText = [120, 113, 108];
-      const border = [231, 229, 228];
-      let y = 16;
-      const pdfText = (value) => normalizePdfText(value, hasArialFont);
-
-      const addPageFooter = () => {
-        const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(7);
-        doc.setTextColor(...mutedText);
-        doc.text(
-          pdfText(`JetYemek Finans Raporu • Sayfa ${pageCount}`),
-          margin,
-          pageHeight - 8,
-        );
-      };
-
-      const drawCoverHeader = () => {
-        doc.setFillColor(...primary);
-        doc.roundedRect(margin, y, pageWidth - margin * 2, 24, 4, 4, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(17);
-        doc.text(pdfText("JetYemek Finans Raporu"), margin + 7, y + 10);
-        doc.setFontSize(8.5);
-        doc.text(
-          pdfText(`Oluşturma Tarihi: ${new Date().toLocaleString("tr-TR")}`),
-          margin + 7,
-          y + 17,
-        );
-        y += 32;
-      };
-
-      const drawSummaryCard = (x, title, value, note) => {
-        doc.setFillColor(...roseLight);
-        doc.setDrawColor(...border);
-        doc.roundedRect(x, y, 56, 25, 3, 3, "FD");
-        doc.setTextColor(...mutedText);
-        doc.setFontSize(7.5);
-        doc.text(pdfText(title), x + 4, y + 7);
-        doc.setTextColor(...primaryDark);
-        doc.setFontSize(11);
-        doc.text(pdfText(value), x + 4, y + 15);
-        doc.setTextColor(...mutedText);
-        doc.setFontSize(6.8);
-        doc.text(pdfText(note), x + 4, y + 21);
-      };
-
-      drawCoverHeader();
-      drawSummaryCard(
-        margin,
-        "Platform Cirosu",
-        formatPdfCurrency(financeGrossTotal),
-        "İptal dışı siparişler",
-      );
-      drawSummaryCard(
-        margin + 62,
-        "Komisyon Geliri",
-        formatPdfCurrency(financeCommissionTotal),
-        "Restoran oranlarına göre",
-      );
-      drawSummaryCard(
-        margin + 124,
-        "Restoran Hak Edişi",
-        formatPdfCurrency(financeRestaurantPayout),
-        `${filteredFinancials.length} kayıt`,
-      );
-      y += 35;
-
-      const columns = [
-        { key: "id", label: "İşlem", x: margin, width: 26, align: "left" },
-        { key: "restaurant", label: "Restoran", x: 40, width: 43, align: "left" },
-        { key: "date", label: "Tarih", x: 84, width: 34, align: "left" },
-        { key: "gross", label: "Brüt", x: 119, width: 24, align: "right" },
-        { key: "comm", label: "Komisyon", x: 144, width: 25, align: "right" },
-        { key: "net", label: "Net", x: 170, width: 26, align: "right" },
-      ];
-      const tableWidth = pageWidth - margin * 2;
-      const rowHeight = 10;
-
-      const drawHeader = () => {
-        doc.setFillColor(...primary);
-        doc.roundedRect(margin, y, tableWidth, 9, 2, 2, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(7.5);
-        columns.forEach((column) => {
-          const textX =
-            column.align === "right" ? column.x + column.width - 2 : column.x + 2;
-          doc.text(pdfText(column.label), textX, y + 5.8, {
-            align: column.align === "right" ? "right" : "left",
-          });
-        });
-        y += 9;
-      };
-
-      drawHeader();
-
-      filteredFinancials.forEach((ledger, index) => {
-        if (y > pageHeight - 18) {
-          addPageFooter();
-          doc.addPage();
-          y = 16;
-          drawHeader();
-        }
-
-        doc.setFillColor(index % 2 === 0 ? 255 : 250, index % 2 === 0 ? 255 : 250, index % 2 === 0 ? 255 : 250);
-        doc.rect(margin, y, tableWidth, rowHeight, "F");
-        doc.setDrawColor(...border);
-        doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
-        doc.setFontSize(7.2);
-
-        const values = {
-          id: `#${ledger.id}`,
-          restaurant: ledger.restaurant,
-          date: ledger.date,
-          gross: formatPdfCurrency(ledger.gross),
-          comm: `-${formatPdfCurrency(ledger.comm)}`,
-          net: formatPdfCurrency(ledger.net),
-        };
-
-        columns.forEach((column) => {
-          const text = doc.splitTextToSize(pdfText(values[column.key]), column.width - 3)[0] || "";
-          const isMoney = ["gross", "comm", "net"].includes(column.key);
-          doc.setTextColor(column.key === "comm" ? primaryDark[0] : stoneText[0], column.key === "comm" ? primaryDark[1] : stoneText[1], column.key === "comm" ? primaryDark[2] : stoneText[2]);
-          if (!isMoney && column.key !== "restaurant") doc.setTextColor(...mutedText);
-
-          const textX =
-            column.align === "right" ? column.x + column.width - 2 : column.x + 2;
-          doc.text(text, textX, y + 6.4, {
-            align: column.align === "right" ? "right" : "left",
-          });
-        });
-
-        y += rowHeight;
-      });
-
-      addPageFooter();
-      doc.save(
-        `jetyemek-finans-raporu-${new Date().toISOString().slice(0, 10)}.pdf`,
-      );
-      setPdfLoading(false);
-      addToast({
-        message: hasArialFont
-          ? "Finans raporu indirildi."
-          : "Finans raporu indirildi. Türkçe karakterler için public/fonts/arial.ttf dosyasını ekleyin.",
-        type: "success",
-      });
-    } catch (error) {
-      setPdfLoading(false);
-      addToast({
-        message: "Finans raporu oluşturulurken bir sorun oluştu.",
-        type: "error",
-      });
-    }
-  };
-
-  // 7. General Settings State
-  const [platformSettingsId, setPlatformSettingsId] = useState(null);
-  const [baseCommission, setBaseCommission] = useState("12");
-  const [baseDeliveryFee, setBaseDeliveryFee] = useState("24.90");
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [smsNotifs, setSmsNotifs] = useState(false);
-  const [adminProfileName, setAdminProfileName] = useState("Cansu Yılmaz");
-  const [adminEmail, setAdminProfileEmail] = useState(
-    "cansu.y@vibranthearth.com",
-  );
-  const [adminAvatar, setAdminAvatar] = useState("");
-  const [savedPlatformSettings, setSavedPlatformSettings] = useState(null);
-  const [settingsLoading, setSettingsLoading] = useState(false);
-  const [settingsSaving, setSettingsSaving] = useState(false);
-
-  const applyPlatformSettings = (settings) => {
-    if (!settings) return;
-
-    setPlatformSettingsId(settings.id || null);
-    setBaseCommission(String(settings.baseCommission ?? 12));
-    setBaseDeliveryFee(String(settings.baseDeliveryFee ?? 24.9));
-    setEmailNotifs(settings.emailNotifications ?? true);
-    setSmsNotifs(settings.smsNotifications ?? false);
-    setAdminProfileName(settings.adminName || currentUser?.name || "Platform Admin");
-    setAdminProfileEmail(settings.adminEmail || currentUser?.email || "admin@jetyemek.com");
-    setAdminAvatar(settings.adminAvatar || currentUser?.avatar || "");
-    setSavedPlatformSettings(settings);
-  };
-
-  useEffect(() => {
-    async function loadPlatformSettings() {
-      setSettingsLoading(true);
-
-      try {
-        const response = await api.get("/settings");
-        const settings = (response.data || [])[0] || null;
-
-        if (settings) {
-          applyPlatformSettings(settings);
-        } else {
-          const fallbackSettings = {
-            id: "platform",
-            baseCommission: 12,
-            baseDeliveryFee: 24.9,
-            emailNotifications: true,
-            smsNotifications: false,
-            adminName: currentUser?.name || "Platform Admin",
-            adminEmail: currentUser?.email || "admin@jetyemek.com",
-            adminAvatar: currentUser?.avatar || "",
-          };
-          const createResponse = await api.post("/settings", fallbackSettings);
-          applyPlatformSettings(createResponse.data);
-        }
-      } catch (error) {
-        addToast({ message: "Platform ayarları yüklenirken bir sorun oluştu.", type: "error" });
-      } finally {
-        setSettingsLoading(false);
-      }
-    }
-
-    loadPlatformSettings();
-  }, [currentUser?.avatar, currentUser?.email, currentUser?.name]);
-
-  const handleResetSystemSettings = () => {
-    applyPlatformSettings(savedPlatformSettings);
-    addToast({ message: "Değişiklikler geri alındı.", type: "success" });
-  };
-
-  const handleSaveSystemSettings = async () => {
-    const commissionValue = Number(baseCommission);
-    const deliveryFeeValue = Number(String(baseDeliveryFee).replace(",", "."));
-
-    if (Number.isNaN(commissionValue) || commissionValue < 0 || commissionValue > 100) {
-      addToast({ message: "Komisyon oranı 0 ile 100 arasında olmalı.", type: "error" });
-      return;
-    }
-
-    if (Number.isNaN(deliveryFeeValue) || deliveryFeeValue < 0) {
-      addToast({ message: "Teslimat ücreti geçerli bir tutar olmalı.", type: "error" });
-      return;
-    }
-
-    const payload = {
-      baseCommission: commissionValue,
-      baseDeliveryFee: deliveryFeeValue,
-      emailNotifications: emailNotifs,
-      smsNotifications: smsNotifs,
-      adminName: adminProfileName.trim() || "Platform Admin",
-      adminEmail: adminEmail.trim() || "admin@jetyemek.com",
-      adminAvatar: adminAvatar.trim(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setSettingsSaving(true);
-
-    try {
-      const response = platformSettingsId
-        ? await api.patch(`/settings/${platformSettingsId}`, payload)
-        : await api.post("/settings", { id: "platform", ...payload });
-
-      applyPlatformSettings(response.data);
-      window.dispatchEvent(
-        new CustomEvent("platformSettingsUpdated", { detail: response.data }),
-      );
-      addToast({ message: "Sistem ayarları kaydedildi.", type: "success" });
-    } catch (error) {
-      addToast({ message: "Sistem ayarları kaydedilirken bir sorun oluştu.", type: "error" });
-    } finally {
-      setSettingsSaving(false);
-    }
-  };
-
+  const {
+    showAddRestaurant,
+    setShowAddRestaurant,
+    newRestName,
+    setNewRestName,
+    newRestCategory,
+    setNewRestCategory,
+    newRestComm,
+    setNewRestCommission,
+    newRestCity,
+    setNewRestCity,
+    newRestEmail,
+    setNewRestEmail,
+    newRestPassword,
+    setNewRestPassword,
+    commissionModal,
+    commissionValue,
+    setCommissionValue,
+    deleteModal,
+    handleToggleRestStatus,
+    openCommissionModal,
+    closeCommissionModal,
+    handleUpdateCommission,
+    openDeleteModal,
+    closeDeleteModal,
+    handleDeleteRestaurant,
+    handleAddRestaurantSubmit,
+  } = useAdminRestaurants({ addToast });
+  const {
+    enrichedUsers,
+    userDeleteModal,
+    handleToggleUserStatus,
+    openUserDeleteModal,
+    closeUserDeleteModal,
+    handleDeleteUser,
+  } = useAdminUsers({ platformOrders, addToast });
+  const {
+    orderStatusModal,
+    ordersPage,
+    setOrdersPage,
+    ordersPerPage,
+    totalOrderPages,
+    paginatedOrders,
+    openOrderStatusModal,
+    closeOrderStatusModal,
+    handleUpdateOrderStatus,
+  } = useAdminOrders({ orders, addToast });
+  const {
+    couriers,
+    activeCouriers,
+    deliveryCouriers,
+    availableCouriers,
+    assignableOrders,
+    selectedOrderToAssign,
+    setSelectedOrderToAssign,
+    selectedCourierToAssign,
+    setSelectedCourierToAssign,
+    handleAssignOrder,
+  } = useAdminCouriers({ orders, addToast });
+  const {
+    promos,
+    activePromos,
+    totalCampaignUsage,
+    couponPromoCount,
+    newCampaignName,
+    setNewCampaignName,
+    newCampaignCode,
+    setNewCampaignCode,
+    newCampaignType,
+    setNewCampaignType,
+    newCampaignDiscount,
+    setNewCampaignDiscount,
+    newCampaignMin,
+    setNewCampaignMin,
+    campaignDeleteModal,
+    handleLaunchCampaign,
+    handleToggleCampaignStatus,
+    openCampaignDeleteModal,
+    closeCampaignDeleteModal,
+    handleDeleteCampaign,
+  } = useAdminCampaigns({ addToast });
+  const {
+    financials,
+    filteredFinancials,
+    paginatedFinancials,
+    financeGrossTotal,
+    financeCommissionTotal,
+    financeRestaurantPayout,
+    averageCommissionRate,
+    financeSearch,
+    setFinanceSearch,
+    financeSort,
+    setFinanceSort,
+    handleDownloadPDF,
+    pdfLoading,
+    financePerPage,
+    financePage,
+    setFinancePage,
+    financeTotalPages,
+  } = useAdminFinance({ platformOrders, restaurants, addToast });
+  const {
+    settingsLoading,
+    settingsSaving,
+    baseCommission,
+    setBaseCommission,
+    baseDeliveryFee,
+    setBaseDeliveryFee,
+    emailNotifs,
+    setEmailNotifs,
+    smsNotifs,
+    setSmsNotifs,
+    adminProfileName,
+    setAdminProfileName,
+    adminEmail,
+    setAdminProfileEmail,
+    adminAvatar,
+    setAdminAvatar,
+    visibleAdminName,
+    visibleAdminEmail,
+    visibleAdminAvatar,
+    handleResetSystemSettings,
+    handleSaveSystemSettings,
+  } = useAdminSettings({ currentUser, addToast });
   // Helper filters
   const filteredRestaurants = restaurants.filter(
     (r) =>
@@ -1411,10 +366,6 @@ export default function PlatformAdminDashboard({
       (u.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.email || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
-  const visibleAdminName = adminProfileName.trim() || "Platform Admin";
-  const visibleAdminEmail = adminEmail.trim() || "admin@jetyemek.com";
-  const visibleAdminAvatar = adminAvatar.trim() || DEFAULT_ADMIN_AVATAR;
-
   return (
     <div
       className={
@@ -1758,8 +709,6 @@ export default function PlatformAdminDashboard({
             selectedCourierToAssign={selectedCourierToAssign}
             setSelectedCourierToAssign={setSelectedCourierToAssign}
             handleAssignOrder={handleAssignOrder}
-            courierMapRoutes={COURIER_MAP_ROUTES}
-            getCourierMapVisual={getCourierMapVisual}
           />
         )}
         {/* 6. CAMPAIGNS TAB */}
@@ -1903,6 +852,10 @@ export default function PlatformAdminDashboard({
     </div>
   );
 }
+
+
+
+
 
 
 

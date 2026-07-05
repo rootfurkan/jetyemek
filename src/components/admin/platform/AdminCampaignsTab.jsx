@@ -1,7 +1,8 @@
-import React from 'react';
-import ConfirmDeleteModal from '../../../common/components/ConfirmDeleteModal.jsx';
-import StatCard from '../../../common/components/StatCard.jsx';
-import StatusBadge from '../../../common/components/StatusBadge.jsx';
+import React from "react";
+import ConfirmDeleteModal from "../../../common/components/ConfirmDeleteModal.jsx";
+import StatCard from "../../../common/components/StatCard.jsx";
+import StatusBadge from "../../../common/components/StatusBadge.jsx";
+import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
 export default function AdminCampaignsTab({
   promos,
@@ -33,19 +34,36 @@ export default function AdminCampaignsTab({
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
-          <StatCard label="Toplam Kupon Kullanımı" value={totalCampaignUsage} icon="shopping_cart_checkout" />
-          <StatCard label="Aktif Kampanya" value={activePromos.length} icon="savings" color="warning" />
-          <StatCard label="Kupon Kampanyası" value={couponPromoCount} icon="trending_up" color="success" />
+          <StatCard
+            label="Toplam Kupon Kullanımı"
+            value={totalCampaignUsage}
+            icon="shopping_cart_checkout"
+          />
+          <StatCard
+            label="Aktif Kampanya"
+            value={activePromos.length}
+            icon="savings"
+            color="warning"
+          />
+          <StatCard
+            label="Kupon Kampanyası"
+            value={couponPromoCount}
+            icon="trending_up"
+            color="success"
+          />
         </div>
 
         <div className="bg-white p-6 rounded-[28px] border border-stone-100 shadow-soft lg:col-span-2 flex flex-col justify-between">
           <div>
             <h4 className="text-base font-extrabold text-stone-800 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">auto_awesome</span>
+              <span className="material-symbols-outlined text-primary">
+                auto_awesome
+              </span>
               Platform Kampanya Oluşturucu
             </h4>
             <p className="text-stone-400 text-xs font-semibold mb-6">
-              Tüm platformda veya belirli restoranlarda geçerli yeni bir indirim kuponu tanımlayın.
+              Tüm platformda veya belirli restoranlarda geçerli yeni bir
+              indirim kuponu tanımlayın.
             </p>
           </div>
 
@@ -58,7 +76,7 @@ export default function AdminCampaignsTab({
                 <input
                   type="text"
                   required
-                  placeholder="Örn: Hafta Sonu Çılgınlığı"
+                  placeholder="Örn: Hafta Sonu İndirimi"
                   value={newCampaignName}
                   onChange={(event) => setNewCampaignName(event.target.value)}
                   className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary"
@@ -80,12 +98,12 @@ export default function AdminCampaignsTab({
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                  Kupon Kodu (Benzersiz)
+                  Kupon Kodu
                 </label>
                 <input
                   type="text"
-                  required={newCampaignType !== 'free_delivery'}
-                  disabled={newCampaignType === 'free_delivery'}
+                  required={newCampaignType !== "free_delivery"}
+                  disabled={newCampaignType === "free_delivery"}
                   placeholder="Örn: HAFTA50"
                   value={newCampaignCode}
                   onChange={(event) => setNewCampaignCode(event.target.value)}
@@ -94,14 +112,18 @@ export default function AdminCampaignsTab({
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                  {newCampaignType === 'coupon_percent' ? 'İndirim Yüzdesi (%)' : 'İndirim Tutarı (TL)'}
+                  {newCampaignType === "coupon_percent"
+                    ? "İndirim Yüzdesi (%)"
+                    : "İndirim Tutarı (TL)"}
                 </label>
                 <input
                   type="number"
                   required
-                  disabled={newCampaignType === 'free_delivery'}
+                  disabled={newCampaignType === "free_delivery"}
                   value={newCampaignDiscount}
-                  onChange={(event) => setNewCampaignDiscount(event.target.value)}
+                  onChange={(event) =>
+                    setNewCampaignDiscount(event.target.value)
+                  }
                   className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-45"
                 />
               </div>
@@ -152,24 +174,27 @@ export default function AdminCampaignsTab({
             </thead>
             <tbody className="divide-y divide-stone-100 text-xs text-stone-700 font-medium">
               {promos.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-10 text-center text-stone-400 font-bold">
-                    Henüz kampanya bulunmuyor.
-                  </td>
-                </tr>
+                <TableEmptyState colSpan="7" message="Henüz kampanya bulunmuyor." />
               ) : (
                 promos.map((promo) => (
-                  <tr key={promo.id} className="hover:bg-stone-50/40 transition-colors">
+                  <tr
+                    key={promo.id}
+                    className="hover:bg-stone-50/40 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <p className="font-extrabold text-stone-800 text-xs tracking-wide">
-                        {promo.code || 'Otomatik Kampanya'}
+                        {promo.code || "Otomatik Kampanya"}
                       </p>
                       <p className="text-[10px] text-stone-400 font-semibold">
                         {promo.name || promo.description}
                       </p>
                     </td>
-                    <td className="px-4 py-4">{getCampaignTypeLabel(promo.type)}</td>
-                    <td className="px-4 py-4 font-black text-primary">{getCampaignRateText(promo)}</td>
+                    <td className="px-4 py-4">
+                      {getCampaignTypeLabel(promo.type)}
+                    </td>
+                    <td className="px-4 py-4 font-black text-primary">
+                      {getCampaignRateText(promo)}
+                    </td>
                     <td className="px-4 py-4">
                       <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded text-[10px] font-bold">
                         Min. {Number(promo.minOrder || 0)} ₺
@@ -197,14 +222,20 @@ export default function AdminCampaignsTab({
                           type="button"
                           onClick={() => handleToggleCampaignStatus(promo)}
                           className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all active:scale-95 ${
-                            promo.status === 'Aktif'
-                              ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                              : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
+                            promo.status === "Aktif"
+                              ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                              : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
                           }`}
-                          title={promo.status === 'Aktif' ? 'Pasife Al' : 'Aktife Al'}
+                          title={
+                            promo.status === "Aktif"
+                              ? "Pasife Al"
+                              : "Aktife Al"
+                          }
                         >
                           <span className="material-symbols-outlined text-[20px]">
-                            {promo.status === 'Aktif' ? 'toggle_on' : 'toggle_off'}
+                            {promo.status === "Aktif"
+                              ? "toggle_on"
+                              : "toggle_off"}
                           </span>
                         </button>
                         <button
@@ -213,7 +244,9 @@ export default function AdminCampaignsTab({
                           className="w-9 h-9 rounded-xl border border-rose-100 bg-rose-50 text-primary hover:bg-rose-100 flex items-center justify-center transition-all active:scale-95"
                           title="Kampanyayı Sil"
                         >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                          <span className="material-symbols-outlined text-[18px]">
+                            delete
+                          </span>
                         </button>
                       </div>
                     </td>
@@ -228,7 +261,11 @@ export default function AdminCampaignsTab({
       <ConfirmDeleteModal
         isOpen={Boolean(campaignDeleteModal)}
         title="Kampanyayı Sil"
-        message={`${campaignDeleteModal?.code || campaignDeleteModal?.name || 'Bu kampanya'} silinsin mi?`}
+        message={`${
+          campaignDeleteModal?.code ||
+          campaignDeleteModal?.name ||
+          "Bu kampanya"
+        } silinsin mi?`}
         onClose={closeCampaignDeleteModal}
         onConfirm={handleDeleteCampaign}
       />

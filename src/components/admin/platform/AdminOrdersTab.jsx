@@ -1,4 +1,6 @@
 import React from "react";
+import AdminPagination from "../../../common/components/AdminPagination.jsx";
+import AdminSectionHeader from "../../../common/components/AdminSectionHeader.jsx";
 
 export default function AdminOrdersTab({
   orders,
@@ -15,16 +17,10 @@ export default function AdminOrdersTab({
 }) {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center pb-3">
-        <div>
-          <h3 className="text-base font-extrabold text-stone-400 uppercase tracking-wider">
-            Genel Sipariş Akışı
-          </h3>
-          <p className="text-stone-500 text-xs font-semibold mt-1">
-            Platformdaki anlık işlem hareketliliği ve statü takipleri.
-          </p>
-        </div>
-      </div>
+      <AdminSectionHeader
+        title="Genel Sipariş Akışı"
+        description="Platformdaki anlık işlem hareketliliği ve statü takipleri."
+      />
 
       <div className="bg-white rounded-[28px] border border-stone-100 shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
@@ -93,57 +89,13 @@ export default function AdminOrdersTab({
         </div>
 
         {orders.length > ordersPerPage && (
-          <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-stone-100 bg-stone-50/50">
-            <p className="text-[10px] font-bold text-stone-400">
-              {orders.length} sipariş içinde sayfa {ordersPage} /{" "}
-              {totalOrderPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setOrdersPage((page) => Math.max(1, page - 1))}
-                disabled={ordersPage === 1}
-                className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Önceki sayfa"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  chevron_left
-                </span>
-              </button>
-
-              {Array.from(
-                { length: totalOrderPages },
-                (_, index) => index + 1,
-              ).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => setOrdersPage(page)}
-                  className={`w-9 h-9 rounded-xl text-xs font-black border transition-all ${
-                    ordersPage === page
-                      ? "bg-primary text-white border-primary"
-                      : "bg-white text-stone-500 border-stone-200 hover:text-primary"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setOrdersPage((page) => Math.min(totalOrderPages, page + 1))
-                }
-                disabled={ordersPage === totalOrderPages}
-                className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Sonraki sayfa"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  chevron_right
-                </span>
-              </button>
-            </div>
-          </div>
+          <AdminPagination
+            currentPage={ordersPage}
+            totalPages={totalOrderPages}
+            onPageChange={setOrdersPage}
+            showPageNumbers
+            label={`${orders.length} sipariş içinde sayfa ${ordersPage} / ${totalOrderPages}`}
+          />
         )}
       </div>
 

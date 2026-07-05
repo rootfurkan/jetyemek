@@ -1,7 +1,9 @@
-import React from 'react';
-import SearchInput from '../../../common/components/SearchInput.jsx';
-import StatCard from '../../../common/components/StatCard.jsx';
-import StatusBadge from '../../../common/components/StatusBadge.jsx';
+import React from "react";
+import AdminPagination from "../../../common/components/AdminPagination.jsx";
+import SearchInput from "../../../common/components/SearchInput.jsx";
+import StatCard from "../../../common/components/StatCard.jsx";
+import StatusBadge from "../../../common/components/StatusBadge.jsx";
+import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
 export default function AdminFinanceTab({
   financials,
@@ -54,7 +56,8 @@ export default function AdminFinanceTab({
               Hak Ediş ve Muhasebe Logları
             </h4>
             <p className="text-[10px] text-stone-400 font-bold mt-1">
-              {filteredFinancials.length} kayıt listeleniyor • %{averageCommissionRate.toFixed(1)} ortalama komisyon
+              {filteredFinancials.length} kayıt listeleniyor • %
+              {averageCommissionRate.toFixed(1)} ortalama komisyon
             </p>
           </div>
 
@@ -81,8 +84,10 @@ export default function AdminFinanceTab({
               disabled={pdfLoading || filteredFinancials.length === 0}
               className="px-5 py-2.5 bg-primary hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-xs rounded-xl uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-              {pdfLoading ? 'Rapor Üretiliyor...' : 'PDF Finans Raporu Al'}
+              <span className="material-symbols-outlined text-[16px]">
+                picture_as_pdf
+              </span>
+              {pdfLoading ? "Rapor Üretiliyor..." : "PDF Finans Raporu Al"}
             </button>
           </div>
         </div>
@@ -93,7 +98,7 @@ export default function AdminFinanceTab({
               <tr className="bg-stone-50 border-b border-stone-100 text-[10px] font-black text-stone-400 uppercase tracking-wider">
                 <th className="px-6 py-4">Restoran Bilgisi</th>
                 <th className="px-4 py-4">İşlem Tarihi</th>
-                <th className="px-4 py-4">Brüt Sipariş Tutar</th>
+                <th className="px-4 py-4">Brüt Sipariş Tutarı</th>
                 <th className="px-4 py-4">Alınan Komisyon</th>
                 <th className="px-4 py-4">Net Restoran Ödeme</th>
                 <th className="px-6 py-4">Mutabakat Statüsü</th>
@@ -101,24 +106,34 @@ export default function AdminFinanceTab({
             </thead>
             <tbody className="divide-y divide-stone-100 text-xs text-stone-700 font-medium">
               {paginatedFinancials.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-stone-400 font-bold">
-                    Finans kaydı bulunamadı.
-                  </td>
-                </tr>
+                <TableEmptyState colSpan="6" message="Finans kaydı bulunamadı." />
               ) : (
                 paginatedFinancials.map((ledger) => (
-                  <tr key={ledger.id} className="hover:bg-stone-50/40 transition-colors">
+                  <tr
+                    key={ledger.id}
+                    className="hover:bg-stone-50/40 transition-colors"
+                  >
                     <td className="px-6 py-4">
-                      <p className="font-extrabold text-stone-800 text-xs">{ledger.restaurant}</p>
-                      <p className="text-[10px] text-stone-400 font-semibold">İşlem: {ledger.id}</p>
+                      <p className="font-extrabold text-stone-800 text-xs">
+                        {ledger.restaurant}
+                      </p>
+                      <p className="text-[10px] text-stone-400 font-semibold">
+                        İşlem: {ledger.id}
+                      </p>
                     </td>
-                    <td className="px-4 py-4 text-stone-400 whitespace-nowrap">{ledger.date}</td>
+                    <td className="px-4 py-4 text-stone-400 whitespace-nowrap">
+                      {ledger.date}
+                    </td>
                     <td className="px-4 py-4">{formatCurrency(ledger.gross)}</td>
                     <td className="px-4 py-4 text-primary">
-                      -{formatCurrency(ledger.comm)} <span className="text-[10px] text-stone-400">(%{ledger.commissionRate})</span>
+                      -{formatCurrency(ledger.comm)}{" "}
+                      <span className="text-[10px] text-stone-400">
+                        (%{ledger.commissionRate})
+                      </span>
                     </td>
-                    <td className="px-4 py-4 font-black text-stone-800">{formatCurrency(ledger.net)}</td>
+                    <td className="px-4 py-4 font-black text-stone-800">
+                      {formatCurrency(ledger.net)}
+                    </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={ledger.status} />
                     </td>
@@ -130,29 +145,11 @@ export default function AdminFinanceTab({
         </div>
 
         {filteredFinancials.length > financePerPage && (
-          <div className="px-6 py-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-[10px] text-stone-400 font-bold">
-              Sayfa {financePage} / {financeTotalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setFinancePage((page) => Math.max(1, page - 1))}
-                disabled={financePage === 1}
-                className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all"
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFinancePage((page) => Math.min(financeTotalPages, page + 1))}
-                disabled={financePage === financeTotalPages}
-                className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all"
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-              </button>
-            </div>
-          </div>
+          <AdminPagination
+            currentPage={financePage}
+            totalPages={financeTotalPages}
+            onPageChange={setFinancePage}
+          />
         )}
       </div>
     </div>

@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 
 export default function ConfirmDeleteModal({
   isOpen,
-  title = 'Kaydı Sil',
-  message = 'Bu kaydı silmek istediğine emin misin?',
-  confirmLabel = 'Sil',
-  cancelLabel = 'İptal',
+  title = "Kaydı Sil",
+  message = "Bu kaydı silmek istediğine emin misin?",
+  confirmLabel = "Sil",
+  cancelLabel = "İptal",
   onClose,
   onConfirm,
 }) {

@@ -1,4 +1,6 @@
 import React from "react";
+import AdminSectionHeader from "../../../common/components/AdminSectionHeader.jsx";
+import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
 export default function AdminUsersTab({
   searchQuery,
@@ -12,17 +14,10 @@ export default function AdminUsersTab({
 }) {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h3 className="text-base font-extrabold text-stone-400 uppercase tracking-wider">
-            Müşteri Portföyü
-          </h3>
-          <p className="text-stone-500 text-xs font-semibold mt-1">
-            Platformdaki tüm kayıtlı kullanıcıların listesi, sipariş adetleri ve
-            hesap durumları.
-          </p>
-        </div>
-
+      <AdminSectionHeader
+        title="Müşteri Portföyü"
+        description="Platformdaki tüm kayıtlı kullanıcıların listesi, sipariş adetleri ve hesap durumları."
+      >
         <div className="relative max-w-xs w-full">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-[18px]">
             search
@@ -35,7 +30,7 @@ export default function AdminUsersTab({
             className="pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-primary/5 w-full text-stone-700 placeholder-stone-400 transition-all"
           />
         </div>
-      </div>
+      </AdminSectionHeader>
 
       <div className="bg-white rounded-[28px] shadow-soft border border-stone-100 overflow-hidden">
         <div className="overflow-x-auto">
@@ -53,14 +48,7 @@ export default function AdminUsersTab({
 
             <tbody className="divide-y divide-stone-100 text-xs text-stone-700 font-medium">
               {filteredUsers.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-8 text-center text-stone-400 font-bold"
-                  >
-                    Kullanıcı bulunamadı.
-                  </td>
-                </tr>
+                <TableEmptyState colSpan="6" message="Kullanıcı bulunamadı." />
               ) : (
                 filteredUsers.map((user) => (
                   <tr

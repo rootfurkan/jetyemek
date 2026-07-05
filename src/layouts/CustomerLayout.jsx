@@ -1,12 +1,15 @@
-import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
 import { ToastProvider } from '../common/components/Toast.jsx';
+import Preloader from '../common/components/Preloader.jsx';
 
 export default function CustomerLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
 
   const cartItems = useSelector((state) => state.cart.items);
   const cartTotal = useSelector((state) => state.cart.cartTotal);
@@ -15,9 +18,20 @@ export default function CustomerLayout() {
 
   const cartCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
 
+  useEffect(() => {
+    setIsRouteLoading(true);
+    const timer = window.setTimeout(() => {
+      setIsRouteLoading(false);
+    }, 1450);
+
+    return () => window.clearTimeout(timer);
+  }, [location.pathname, location.search]);
+
   return (
     <ToastProvider>
       <div className="min-h-screen bg-stone-50/20 flex flex-col font-sans">
+        {isRouteLoading && <Preloader fullscreen />}
+
         <Navbar
           currentTab=""
           setCurrentTab={(tab) => {
