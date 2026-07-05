@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { useDispatch, useSelector } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useLocation } from 'react-router-dom';
 import store from './app/store.js';
 import AppRouter from './routes/AppRouter.jsx';
 import { getMenuItems, getRestaurants, getAddresses, getOrders, getUserById } from './services/api.js';
@@ -15,6 +15,16 @@ import {
   setPlatformOrders,
 } from './features/orders/ordersSlice.js';
 import { ToastProvider } from './common/components/Toast.jsx';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 function AppDataLoader() {
   const dispatch = useDispatch();
@@ -101,6 +111,7 @@ export default function App() {
     <Provider store={store}>
       <ToastProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <AppDataLoader />
         </BrowserRouter>
       </ToastProvider>
