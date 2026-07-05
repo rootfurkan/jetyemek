@@ -3,10 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchReviews, replyToReview } from '../../features/reviews/reviewsSlice.js';
 import { useToast } from '../../common/components/Toast.jsx';
 
+// Yorum tarihini ekranda gösterilecek hale getirir.
 function getReviewDate(review) {
   return new Date(review.createdAt || review.date || 0);
 }
 
+// Müşteri adından kısa avatar harfleri üretir.
 function getCustomerInitials(name) {
   if (!name) return 'M';
   return name
@@ -18,6 +20,7 @@ function getCustomerInitials(name) {
     .toUpperCase();
 }
 
+// Restoran yorumlarını listeler ve yanıtları yönetir.
 export default function AdminReviews() {
   const dispatch = useDispatch();
   const addToast = useToast();
@@ -60,6 +63,7 @@ export default function AdminReviews() {
     });
   }, [filter, reviews, sortBy]);
 
+  // Restoran cevabını seçili yoruma kaydeder.
   const handleSendReply = async (id) => {
     const reply = replyTextMap[id]?.trim();
 

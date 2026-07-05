@@ -1,5 +1,6 @@
 import React from 'react';
 
+// Menüdeki tek bir ürün kartını gösterir.
 export default function AdminMenuProductCard({
   product,
   editingPrice,

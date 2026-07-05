@@ -1,5 +1,6 @@
 ﻿import React from "react";
 
+// Siparişi seçilen kuryeye atar.
 export default function CourierAssignmentPanel({
   assignableOrders,
   availableCouriers,

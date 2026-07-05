@@ -5,6 +5,7 @@ import {
   getCustomerPlatformRole,
 } from "../adminDashboardUtils.js";
 
+// Kullanıcı listesini ve hesap işlemlerini yönetir.
 export default function useAdminUsers({ platformOrders, addToast }) {
   const [users, setUsers] = useState([]);
   const [userDeleteModal, setUserDeleteModal] = useState(null);
@@ -48,6 +49,7 @@ export default function useAdminUsers({ platformOrders, addToast }) {
     [users, platformOrders],
   );
 
+  // Kullanıcı hesabını aktif veya askıya alınmış yapar.
   const handleToggleUserStatus = async (id) => {
     const user = users.find((item) => String(item.id) === String(id));
     if (!user) return;
@@ -70,14 +72,17 @@ export default function useAdminUsers({ platformOrders, addToast }) {
     }
   };
 
+  // Kullanıcı silme onay modalını açar.
   const openUserDeleteModal = (user) => {
     setUserDeleteModal(user);
   };
 
+  // Kullanıcı silme modalını kapatır.
   const closeUserDeleteModal = () => {
     setUserDeleteModal(null);
   };
 
+  // Onaylanan kullanıcıyı veritabanından siler.
   const handleDeleteUser = async () => {
     if (!userDeleteModal?.id) return;
 

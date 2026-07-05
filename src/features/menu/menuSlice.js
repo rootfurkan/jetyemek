@@ -37,12 +37,14 @@ const INITIAL_MENU_ITEMS = [
   },
 ];
 
+// Restoran menü ürünlerinin Redux tarafını yönetir.
 const menuSlice = createSlice({
   name: 'menu',
   initialState: {
     items: INITIAL_MENU_ITEMS,
   },
   reducers: {
+    // db.json menü ürünlerini Redux state içine aktarır.
     setMenuItems: (state, action) => {
       // API'den gelen veriler ile mevcut state'i birleştir (restaurantId ekle)
       const apiItems = action.payload.map(item => ({
@@ -52,6 +54,7 @@ const menuSlice = createSlice({
       // Mevcut eklenen itemleri koru, sadece API kayıtlarını güncelle
       state.items = apiItems;
     },
+    // Restoran panelinden eklenen ürünü liste başına koyar.
     addMenuItem: (state, action) => {
       state.items.unshift({
         id: 'item-' + Date.now(),
@@ -59,9 +62,11 @@ const menuSlice = createSlice({
         ...action.payload,
       });
     },
+    // Silinen ürünü menü listesinden çıkarır.
     deleteMenuItem: (state, action) => {
       state.items = state.items.filter(item => item.id !== action.payload);
     },
+    // Ürün düzenleme, fiyat ve aktiflik değişimini işler.
     updateMenuItem: (state, action) => {
       const index = state.items.findIndex(item => item.id === action.payload.id);
       if (index !== -1) {

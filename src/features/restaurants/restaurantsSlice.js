@@ -9,6 +9,7 @@ const ALL_RESTAURANTS = [
   })),
 ];
 
+// Restoran listesini, durumunu ve komisyon bilgisini yönetir.
 const restaurantsSlice = createSlice({
   name: 'restaurants',
   initialState: {
@@ -18,14 +19,17 @@ const restaurantsSlice = createSlice({
     selectedRestaurantId: null,
   },
   reducers: {
+    // db.json restoran verisini Redux listelerine aktarır.
     setRestaurants: (state, action) => {
       state.list = action.payload;
       state.sponsorList = action.payload.filter(r => r.isSponsor);
       state.gridList = action.payload;
     },
+    // Panelde seçili restoran bilgisini saklar.
     setSelectedRestaurantId: (state, action) => {
       state.selectedRestaurantId = action.payload;
     },
+    // Restoranı aktif veya pasif hale getirir.
     toggleRestaurantStatus: (state, action) => {
       const updateItem = (arr, id) => {
         const r = arr.find(r => r.id === id);
@@ -37,6 +41,7 @@ const restaurantsSlice = createSlice({
       updateItem(state.list, action.payload);
       updateItem(state.gridList, action.payload);
     },
+    // Restorana ait komisyon oranını günceller.
     updateRestaurantCommission: (state, action) => {
       const { id, commission } = action.payload;
       const update = arr => {
@@ -46,6 +51,7 @@ const restaurantsSlice = createSlice({
       update(state.list);
       update(state.gridList);
     },
+    // Restoran profil ve ayar değişikliklerini listelere işler.
     updateRestaurant: (state, action) => {
       const updatedRestaurant = action.payload;
       const update = arr => {
@@ -56,6 +62,7 @@ const restaurantsSlice = createSlice({
       update(state.gridList);
       update(state.sponsorList);
     },
+    // Admin panelden yeni restoranı listeye ekler.
     addRestaurant: (state, action) => {
       const newRest = {
         id: action.payload.id || 'rest-' + Date.now(),
@@ -74,6 +81,7 @@ const restaurantsSlice = createSlice({
       state.list.push(newRest);
       state.gridList.push(newRest);
     },
+    // Seçilen restoranı tüm restoran listelerinden kaldırır.
     deleteRestaurant: (state, action) => {
       state.list = state.list.filter(r => r.id !== action.payload);
       state.gridList = state.gridList.filter(r => r.id !== action.payload);

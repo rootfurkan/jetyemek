@@ -16,6 +16,11 @@ import {
   savePendingCoupon,
 } from '../../../common/utils/campaignUtils.js';
 
+const isProductActive = (item) => {
+  if (!item.status) return true;
+  return item.status === 'Active' || item.status === 'Aktif' || item.status === true;
+};
+
 export default function Home() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -135,7 +140,7 @@ export default function Home() {
       if (r.tag === selectedCategory) return true;
       
       // Restoranın ürünlerinde seçili kategoride/isimde ürün varsa göster
-      const rItems = allMenuItems.filter(item => String(item.restaurantId) === String(r.id));
+      const rItems = allMenuItems.filter(item => String(item.restaurantId) === String(r.id) && isProductActive(item));
       return rItems.some(item => 
         (item.category && normalizeTr(item.category).includes(searchCat)) ||
         (item.name && normalizeTr(item.name).includes(searchCat)) ||

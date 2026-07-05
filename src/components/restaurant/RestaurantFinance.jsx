@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useToast } from '../../common/components/Toast.jsx';
 
+// Finans tutarlarını TL formatında gösterir.
 function formatPrice(value) {
   return `${Number(value || 0).toLocaleString('tr-TR', {
     minimumFractionDigits: 2,
@@ -9,24 +10,29 @@ function formatPrice(value) {
   })} TL`;
 }
 
+// Sipariş tarihini güvenli Date nesnesine çevirir.
 function getOrderDate(order) {
   return new Date(order.createdAt || order.date || 0);
 }
 
+// Ek seçenekleri çıkarıp ana ürün adını döndürür.
 function getMainProductName(name) {
   return String(name || 'Ürün').replace(/\s*\([^)]*\)\s*$/u, '').trim() || 'Ürün';
 }
 
+// İptal edilen siparişleri ayırır.
 function isCancelled(order) {
   return order.deliveryStatus === 'cancelled' || order.status === 'İptal Edildi' || order.status === 'Iptal Edildi';
 }
 
+// Siparişin finans tablosundaki durumunu belirler.
 function getFinanceStatus(order) {
   if (isCancelled(order)) return 'İptal';
   if (order.deliveryStatus === 'delivered') return 'Başarılı';
   return 'Beklemede';
 }
 
+// Seçilen rapor döneminin başlangıç tarihini hesaplar.
 function getPeriodStart(period) {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -41,6 +47,7 @@ function getPeriodStart(period) {
   return date;
 }
 
+// Restoran finans raporları ekranını yönetir.
 export default function RestaurantFinance() {
   const addToast = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('Last30');

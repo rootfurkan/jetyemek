@@ -29,6 +29,7 @@ import useAdminRestaurants from "./platform/hooks/useAdminRestaurants.js";
 import useAdminSettings from "./platform/hooks/useAdminSettings.js";
 import useAdminUsers from "./platform/hooks/useAdminUsers.js";
 
+// Admin panelinin ana ekranını ve sekme verilerini yönetir.
 export default function PlatformAdminDashboard({
   onExitAdmin,
   propActiveTab,
@@ -74,6 +75,7 @@ export default function PlatformAdminDashboard({
     return sum + ((Number(order.total) || 0) * commission) / 100;
   }, 0);
 
+  // Siparişleri admin tablosunda gösterilecek formata çevirir.
   const orders = useMemo(
     () =>
       [...platformOrders]
@@ -99,6 +101,7 @@ export default function PlatformAdminDashboard({
     [platformOrders, restaurants],
   );
 
+  // En çok ciro yapan restoranları hesaplar.
   const topRestaurants = useMemo(() => {
     const salesByRestaurant = {};
 
@@ -128,6 +131,7 @@ export default function PlatformAdminDashboard({
     ...topRestaurants.map((item) => item.revenue),
     1,
   );
+  // Aylık satış grafiği için bar verisi üretir.
   const monthlyOrderBars = useMemo(() => {
     const today = new Date();
     const months = Array.from({ length: 12 }, (_, index) => {

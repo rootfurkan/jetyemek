@@ -95,6 +95,7 @@ const BRIDGES = [
   { x: 345, y: 303, w: 55, h: 14, rot: -22 },
 ];
 
+// Haritadaki motor ikonunu çizer.
 function MotorcycleIcon({ color }) {
   return (
     <g filter="url(#glow-soft)">
@@ -128,6 +129,7 @@ function MotorcycleIcon({ color }) {
   );
 }
 
+// Restoran konum işaretini çizer.
 function PinRestaurant({ color }) {
   return (
     <g>
@@ -143,6 +145,7 @@ function PinRestaurant({ color }) {
   );
 }
 
+// Teslimat adresi işaretini çizer.
 function PinHome({ color }) {
   return (
     <g>
@@ -166,6 +169,7 @@ function PinHome({ color }) {
   );
 }
 
+// Demo kurye haritasını animasyonlu gösterir.
 export default function CourierDemoMap() {
   return (
     <div className="lg:col-span-2 bg-white border border-stone-100 rounded-[28px] p-5 shadow-soft">

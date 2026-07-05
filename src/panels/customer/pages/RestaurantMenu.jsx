@@ -25,6 +25,21 @@ const formatProductTag = (tag) => {
   return tag;
 };
 
+const isProductActive = (item) => {
+  if (!item.status) return true;
+  return item.status === "Active" || item.status === "Aktif" || item.status === true;
+};
+
+const hasProductExtraOptions = (item) => {
+  if (!item?.extraOptions) return false;
+
+  if (Array.isArray(item.extraOptions)) {
+    return item.extraOptions.some((group) => Array.isArray(group.options) && group.options.length > 0);
+  }
+
+  return Array.isArray(item.extraOptions.options) && item.extraOptions.options.length > 0;
+};
+
 export default function RestaurantMenu() {
   const dispatch = useDispatch();
   const addToast = useToast();
@@ -39,9 +54,9 @@ export default function RestaurantMenu() {
   const allReviews = useSelector((state) => state.reviews.list) || [];
   const { isAuthenticated } = useSelector((state) => state.auth);
 
-  // Bu restorana ait menü ürünlerini filtrele
+  // Bu restorana ait ve satışa açık menü ürünlerini filtrele
   const menuItems = allMenuItems.filter(
-    (item) => item.restaurantId === restaurantId,
+    (item) => item.restaurantId === restaurantId && isProductActive(item),
   );
   const restaurantReviews = allReviews.filter(
     (r) => r.restaurantId === restaurantId && (r.status === 'Yayında' || !r.status),
@@ -152,7 +167,7 @@ export default function RestaurantMenu() {
     const isBurger = item.category === 'Burgerler' || item.name.toLowerCase().includes('burger');
     const isPizza = item.category === 'Pizzalar' || item.name.toLowerCase().includes('pizza');
     const isDessert = item.category === 'Tatlılar' || item.name.toLowerCase().includes('tatlı');
-    const hasExtras = item.extraOptions && item.extraOptions.options && item.extraOptions.options.length > 0;
+    const hasExtras = hasProductExtraOptions(item);
 
     if (isBurger || isPizza || isDessert || hasExtras) {
       setCustomizingItem(item);

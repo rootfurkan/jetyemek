@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../../../../services/api.js";
 import { DEFAULT_ADMIN_AVATAR } from "../adminDashboardUtils.js";
 
+// Platform ayarlarını db.json ile senkronize eder.
 export default function useAdminSettings({ currentUser, addToast }) {
   const [platformSettingsId, setPlatformSettingsId] = useState(null);
   const [baseCommission, setBaseCommission] = useState("12");
@@ -17,6 +18,7 @@ export default function useAdminSettings({ currentUser, addToast }) {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
+  // Ayarları state ve localStorage tarafına uygular.
   const applyPlatformSettings = (settings) => {
     if (!settings) return;
 
@@ -72,11 +74,13 @@ export default function useAdminSettings({ currentUser, addToast }) {
     loadPlatformSettings();
   }, [currentUser?.avatar, currentUser?.email, currentUser?.name]);
 
+  // Sistem ayarlarını varsayılan değerlere döndürür.
   const handleResetSystemSettings = () => {
     applyPlatformSettings(savedPlatformSettings);
     addToast({ message: "Değişiklikler geri alındı.", type: "success" });
   };
 
+  // Sistem ayarlarını veritabanına kaydeder.
   const handleSaveSystemSettings = async () => {
     const commissionValue = Number(baseCommission);
     const deliveryFeeValue = Number(String(baseDeliveryFee).replace(",", "."));

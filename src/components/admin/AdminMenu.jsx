@@ -8,6 +8,7 @@ import AdminMenuDeleteModal from './menu/AdminMenuDeleteModal.jsx';
 import AdminMenuProductCard from './menu/AdminMenuProductCard.jsx';
 import AdminMenuProductModal from './menu/AdminMenuProductModal.jsx';
 
+// Ürün etiketlerini kullanıcıya Türkçe gösterir.
 const formatProductTag = (tag) => {
   if (tag === 'Hot') return 'Popüler';
   if (tag === 'Bestseller') return 'En Çok Satan';
@@ -17,6 +18,7 @@ const formatProductTag = (tag) => {
   return tag;
 };
 
+// Restoran menü yönetimi ekranını çalıştırır.
 export default function AdminMenu() {
   const dispatch = useDispatch();
   const addToast = useToast();
@@ -57,6 +59,7 @@ export default function AdminMenu() {
     { title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }
   ]);
 
+  // Ürün formunu boş başlangıç haline getirir.
   const resetProductForm = () => {
     setEditingProduct(null);
     setNewProductName('');
@@ -69,11 +72,13 @@ export default function AdminMenu() {
     setExtraOptionGroups([{ title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }]);
   };
 
+  // Yeni ürün ekleme modalını açar.
   const openAddProductModal = () => {
     resetProductForm();
     setShowAddModal(true);
   };
 
+  // Seçilen ürünü düzenleme formuna taşır.
   const openEditProductModal = (product) => {
     setEditingProduct(product);
     setNewProductName(product.name || '');
@@ -112,6 +117,7 @@ export default function AdminMenu() {
   };
 
   // Handle product toggle status — Redux
+  // Ürünü satışa açar veya kapatır.
   const handleToggleStatus = async (prod) => {
     const nextStatus = prod.status === 'Active' ? 'Inactive' : 'Active';
 
@@ -128,11 +134,13 @@ export default function AdminMenu() {
   };
 
   // Handle product deletion — Redux
+  // Silinecek ürünü seçip onay modalını açar.
   const handleDeleteProduct = (id) => {
     setProductToDelete(id);
     setIsDeleteModalOpen(true);
   };
 
+  // Onaylanan ürünü db.json ve Redux üzerinden siler.
   const confirmDeleteProduct = async () => {
     if (productToDelete) {
       try {
@@ -148,6 +156,7 @@ export default function AdminMenu() {
   };
 
   // Inline fiyat güncelleme — Redux
+  // Ürün fiyatını hızlı düzenleme alanından günceller.
   const handlePriceUpdate = (id) => {
     if (!editingPrice || editingPrice.id !== id) return;
     const newPrice = parseFloat(editingPrice.value);
@@ -161,6 +170,7 @@ export default function AdminMenu() {
   };
 
   // Add new product submit handler — Redux
+  // Ürün ekleme ve düzenleme formunu kaydeder.
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     if (!newProductName || !newProductPrice) {
@@ -231,6 +241,7 @@ export default function AdminMenu() {
     });
   };
 
+  // Yeni kategoriyi menü filtrelerine ekler.
   const handleAddCategorySubmit = (e) => {
     e.preventDefault();
     const catName = newCategoryName.trim();

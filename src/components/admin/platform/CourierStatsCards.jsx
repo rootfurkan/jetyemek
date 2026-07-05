@@ -1,5 +1,6 @@
 import React from "react";
 
+// Tek bir kurye istatistik kartını çizer.
 function CourierStatCard({ label, value, icon, iconClass }) {
   return (
     <div className="bg-white p-5 rounded-[24px] border border-stone-100 shadow-soft flex justify-between items-center">
@@ -16,6 +17,7 @@ function CourierStatCard({ label, value, icon, iconClass }) {
   );
 }
 
+// Kurye özet istatistiklerini gösterir.
 export default function CourierStatsCards({
   activeCount,
   deliveryCount,

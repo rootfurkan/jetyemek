@@ -1,5 +1,6 @@
 ﻿import React from "react";
 
+// Kuryeleri tablo halinde listeler.
 export default function CourierListTable({ couriers }) {
   return (              <div className="xl:col-span-2 bg-white rounded-[28px] border border-stone-100 shadow-soft overflow-hidden">
                 <div className="p-5 border-b border-stone-100">

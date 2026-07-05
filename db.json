@@ -584,35 +584,27 @@
       "name": "Trüf Mantarlı & Parmesanlı Patates",
       "price": 120,
       "description": "Trüf yağı ve taze parmesan peyniri ile tatlandırılmış ince kesim patates kızartması.",
-      "time": "15-20 dk",
+      "time": "20-30 dk",
       "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2cGw4FsomzQgz1vzcPtyp2AGBwm3p9N9__166BAbHJw&s=10",
       "category": "Atıştırmalıklar",
       "tag": "Yeni",
       "extraOptions": [
         {
           "title": "Ekstra Soslar",
-          "type": "multi",
+          "type": "single",
           "required": false,
           "options": [
             {
               "name": "Ketçap",
-              "price": 5
+              "price": 20
             },
             {
               "name": "Mayonez",
-              "price": 5
+              "price": 20
             },
             {
-              "name": "Ranch Sos",
-              "price": 10
-            },
-            {
-              "name": "Barbekü Sos",
-              "price": 10
-            },
-            {
-              "name": "Acı Sos",
-              "price": 10
+              "name": "Barbekü Sosu",
+              "price": 29.99
             }
           ]
         }
@@ -1825,7 +1817,8 @@
       "description": "330 ml Sarıyer Kola",
       "time": "Hemen",
       "image": "https://cdn03.ciceksepeti.com/cicek/kcm28948737-1/XL/sariyer-kola-330-ml-kutu-6-li-kcm28948737-1-41bccd0130a947b2b4912ae5e743991b.jpg",
-      "category": "İçecekler"
+      "category": "İçecekler",
+      "status": "Active"
     },
     {
       "id": "sariyer-sekersiz-gourmet-burger",
@@ -1859,7 +1852,8 @@
       "description": "330 ml Sarıyer Portakallı Gazoz",
       "time": "Hemen",
       "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8mH7x9KQnvjpR02fjI7AC0SOA6-5-iF0Zmq5uxe1dwg&s=10",
-      "category": "İçecekler"
+      "category": "İçecekler",
+      "status": "Active"
     },
     {
       "id": "camlica-gazoz-gourmet-burger",
@@ -1869,7 +1863,8 @@
       "description": "250 ml Cam Şişe Çamlıca Gazoz",
       "time": "Hemen",
       "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGva6hM3Iw7Oa0BegFhmUKMmL2ZtIo5yMIX-pVuMseRQ&s",
-      "category": "İçecekler"
+      "category": "İçecekler",
+      "status": "Active"
     },
     {
       "id": "su-350-gourmet-burger",
@@ -1879,7 +1874,8 @@
       "description": "350 ml Pet Şişe Su",
       "time": "Hemen",
       "image": "https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg",
-      "category": "İçecekler"
+      "category": "İçecekler",
+      "status": "Active"
     },
     {
       "id": "su-500-gourmet-burger",
@@ -1889,7 +1885,8 @@
       "description": "500 ml Pet Şişe Su",
       "time": "Hemen",
       "image": "https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg",
-      "category": "İçecekler"
+      "category": "İçecekler",
+      "status": "Active"
     },
     {
       "id": "sariyer-kola-lezzet-sofrasi",
@@ -4663,6 +4660,34 @@
       "image": "https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg",
       "category": "İçecekler",
       "status": "Active"
+    },
+    {
+      "restaurantId": "gourmet-burger",
+      "name": "Nugget Parçaları",
+      "price": 170,
+      "description": "çıtır çıtır nugget lezzeti",
+      "category": "Atıştırmalıklar",
+      "image": "https://food.fnr.sndimg.com/content/dam/images/food/fullset/2013/9/12/1/FN_Picky-Eaters-Chicken-Nuggets_s4x3.jpg.rend.hgtvcom.1280.1280.suffix/1383770571120.webp",
+      "time": "20-30 dk",
+      "status": "Active",
+      "extraOptions": [
+        {
+          "title": "Ekstra Soslar",
+          "type": "single",
+          "required": false,
+          "options": [
+            {
+              "name": "Ketçap",
+              "price": 20
+            },
+            {
+              "name": "Mayonez",
+              "price": 20
+            }
+          ]
+        }
+      ],
+      "id": "RtaQmBUAJJg"
     }
   ],
   "orders": [

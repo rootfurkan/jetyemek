@@ -1,6 +1,7 @@
 import React from "react";
 import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
+// Restoran listesini tablo halinde gösterir.
 export default function RestaurantListTable({
   filteredRestaurants,
   handleToggleRestStatus,

@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux';
  * @param {boolean} requireAuth - true ise giriş yapılmamışsa login'e yönlendir
  * @param {React.ReactNode} children - Korunan içerik
  */
+// Rol kontrolü yapıp yetkisiz kullanıcıyı login sayfasına yollar.
 export default function ProtectedRoute({ allowedRole, requireAuth = false, children }) {
   const { isAuthenticated, userRole } = useSelector((state) => state.auth);
   const location = useLocation();

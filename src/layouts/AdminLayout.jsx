@@ -7,6 +7,7 @@ import api from '../services/api.js';
 
 const DEFAULT_ADMIN_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW3F7uh6g1Kznczffnq89_eaBUXJq8xASo0zbD3eje_5FDbt5YvAYODYbkYpUnOEh1Hw2G6gPOlJBj9uGmtICPXc7xJGIts_Pe7soyVnnalozY_lL_RLoT8N3gng22vnqC7Q9hGG5FCSn-TtpYKjeTzSZuIxZvnd0sQnEKV_eeRZPLl6XSdbmnYHOffUF_DfOylLNs5qVH5kcor9EUg-LfQCi8dLcsRuaNNac3lG-cjyMYLGlcECKbklmwsAXuYFS93v2MYPGR6Ug';
 
+// Admin panelinin sidebar, header ve içerik alanını kurar.
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,12 +28,14 @@ export default function AdminLayout() {
     { name: 'Sistem Ayarları', icon: 'settings_suggest', path: '/admin/settings' },
   ];
 
+// Admin çıkışını yapıp login sayfasına döndürür.
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login', { replace: true });
   };
 
   useEffect(() => {
+// Header ve sidebar için platform ayarlarını yükler.
     async function loadPlatformSettings() {
       try {
         const response = await api.get('/settings');
@@ -42,6 +45,7 @@ export default function AdminLayout() {
       }
     }
 
+// Ayarlar değişince admin bilgilerini ekrana yansıtır.
     const handleSettingsUpdated = (event) => {
       setPlatformSettings(event.detail || null);
     };

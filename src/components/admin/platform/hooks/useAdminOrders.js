@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { updatePlatformOrderStatus } from "../../../../features/orders/ordersSlice.js";
 import api from "../../../../services/api.js";
 
+// Admin sipariş durum modalını yönetir.
 export default function useAdminOrders({ orders, addToast }) {
   const dispatch = useDispatch();
   const [orderStatusModal, setOrderStatusModal] = useState(null);
@@ -20,14 +21,17 @@ export default function useAdminOrders({ orders, addToast }) {
     }
   }, [ordersPage, totalOrderPages]);
 
+  // Durumu değiştirilecek siparişi seçer.
   const openOrderStatusModal = (order) => {
     setOrderStatusModal(order);
   };
 
+  // Sipariş durum modalını kapatır.
   const closeOrderStatusModal = () => {
     setOrderStatusModal(null);
   };
 
+  // Sipariş durumunu güncelleyip müşteri paneline yansıtır.
   const handleUpdateOrderStatus = async (
     statusOption,
     targetOrder = orderStatusModal,

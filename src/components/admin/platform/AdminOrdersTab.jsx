@@ -2,6 +2,7 @@ import React from "react";
 import AdminPagination from "../../../common/components/AdminPagination.jsx";
 import AdminSectionHeader from "../../../common/components/AdminSectionHeader.jsx";
 
+// Admin tarafındaki tüm siparişleri listeler.
 export default function AdminOrdersTab({
   orders,
   paginatedOrders,

@@ -2,6 +2,7 @@ import React from "react";
 import AdminSectionHeader from "../../../common/components/AdminSectionHeader.jsx";
 import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
+// Platform kullanıcılarını ve durum işlemlerini gösterir.
 export default function AdminUsersTab({
   searchQuery,
   setSearchQuery,

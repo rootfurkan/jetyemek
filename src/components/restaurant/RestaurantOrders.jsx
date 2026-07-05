@@ -4,6 +4,7 @@ import { useToast } from '../../common/components/Toast.jsx';
 import { updatePlatformOrderStatus } from '../../features/orders/ordersSlice.js';
 import { updateOrder } from '../../services/api.js';
 
+// Siparişin restoran panelindeki durumunu belirler.
 function getPanelStatus(order) {
   if (order.deliveryStatus === 'new' || order.deliveryStatus === 'pending') return 'New';
   if (order.deliveryStatus === 'ready') return 'Ready';
@@ -14,6 +15,7 @@ function getPanelStatus(order) {
   return 'Preparing';
 }
 
+// Sipariş durumunu ekranda okunur metne çevirir.
 function getStatusLabel(status) {
   if (status === 'New') return 'Yeni Sipariş';
   if (status === 'Ready') return 'Teslimata Hazır';
@@ -22,6 +24,7 @@ function getStatusLabel(status) {
   return 'Hazırlanıyor';
 }
 
+// Siparişin kaç dakika önce geldiğini hesaplar.
 function getTimeText(createdAt) {
   if (!createdAt) return 'Şimdi';
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000));
@@ -30,10 +33,12 @@ function getTimeText(createdAt) {
   return `${Math.floor(minutes / 60)} sa ${minutes % 60} dk önce`;
 }
 
+// Tutarı TL formatında gösterir.
 function formatPrice(value) {
   return `${Number(value || 0).toFixed(2)} TL`;
 }
 
+// Restoranın canlı sipariş ekranını yönetir.
 export default function RestaurantOrders() {
   const addToast = useToast();
   const dispatch = useDispatch();
@@ -69,6 +74,7 @@ export default function RestaurantOrders() {
       }));
   }, [currentUser?.restaurantId, platformOrders, userRole]);
 
+  // Sipariş durumunu db.json ve Redux üzerinde günceller.
   const updateStatus = async (orderId, data, message) => {
     try {
       const updatedOrder = await updateOrder(orderId, data);
@@ -85,6 +91,7 @@ export default function RestaurantOrders() {
     }
   };
 
+  // Yeni siparişi hazırlama aşamasına alır.
   const handleAcceptNewOrder = (orderId) => {
     updateStatus(
       orderId,
@@ -93,6 +100,7 @@ export default function RestaurantOrders() {
     );
   };
 
+  // Siparişi kurye bekliyor durumuna geçirir.
   const handleMarkAsReady = (orderId) => {
     updateStatus(
       orderId,
@@ -101,6 +109,7 @@ export default function RestaurantOrders() {
     );
   };
 
+  // Siparişi kuryeye verildi durumuna taşır.
   const handleHandToCourier = (orderId) => {
     updateStatus(
       orderId,
@@ -109,6 +118,7 @@ export default function RestaurantOrders() {
     );
   };
 
+  // Siparişi iptal eder.
   const handleCancelOrder = (orderId) => {
     updateStatus(
       orderId,
@@ -117,6 +127,7 @@ export default function RestaurantOrders() {
     );
   };
 
+  // Siparişi teslim edildi olarak kapatır.
   const handleDeliveredOrder = (orderId) => {
     updateStatus(
       orderId,

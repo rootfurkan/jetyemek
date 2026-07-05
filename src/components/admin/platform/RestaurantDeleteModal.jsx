@@ -1,5 +1,6 @@
 import React from "react";
 
+// Restoran silmeden önce onay alır.
 export default function RestaurantDeleteModal({
   deleteModal,
   closeDeleteModal,

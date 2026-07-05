@@ -4,6 +4,7 @@ import CourierListTable from "./CourierListTable.jsx";
 import CourierDemoMap from "./CourierDemoMap.jsx";
 import CourierStatsCards from "./CourierStatsCards.jsx";
 
+// Kurye listesi ve atama ekranını gösterir.
 export default function AdminCouriersTab({
   couriers,
   activeCouriers,

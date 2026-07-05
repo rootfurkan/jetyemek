@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/auth/authSlice.js';
 import { ToastProvider } from '../common/components/Toast.jsx';
 
+// Restoran panelinin sidebar, header ve içerik alanını kurar.
 export default function RestaurantLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,11 +28,13 @@ export default function RestaurantLayout() {
     { name: 'Restoran Ayarları', icon: 'settings', path: '/restaurant/settings' },
   ];
 
+// Restoran kullanıcısını çıkış yaptırır.
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login', { replace: true });
   };
 
+// Restoran logosu yoksa varsayılan ikon gösterir.
   const renderRestaurantImage = (className) => (
     restaurantImage ? (
       <img src={restaurantImage} alt={restaurantName} className={className} />

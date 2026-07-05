@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getReviews, createReview, updateReview } from '../../services/api.js';
 
 // Async Thunks
+// Yorumları restoran bazlı veya genel olarak db.jsondan çeker.
 export const fetchReviews = createAsyncThunk(
   'reviews/fetchReviews',
   async (restaurantId, { rejectWithValue }) => {
@@ -14,6 +15,7 @@ export const fetchReviews = createAsyncThunk(
   }
 );
 
+// Müşterinin yorumunu moderasyon kurallarıyla kaydeder.
 export const addReview = createAsyncThunk(
   'reviews/addReview',
   async (reviewData, { rejectWithValue }) => {
@@ -26,6 +28,7 @@ export const addReview = createAsyncThunk(
   }
 );
 
+// Restoran cevabını ilgili yoruma kaydeder.
 export const replyToReview = createAsyncThunk(
   'reviews/replyToReview',
   async ({ id, reply }, { rejectWithValue }) => {
@@ -38,6 +41,7 @@ export const replyToReview = createAsyncThunk(
   }
 );
 
+// Yorum listesini ve yüklenme durumunu yönetir.
 const reviewsSlice = createSlice({
   name: 'reviews',
   initialState: {
@@ -46,6 +50,7 @@ const reviewsSlice = createSlice({
     error: null,
   },
   reducers: {
+    // Yorum listesini ve hata bilgisini temizler.
     clearReviews: (state) => {
       state.list = [];
       state.error = null;

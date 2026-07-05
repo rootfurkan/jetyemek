@@ -6,12 +6,14 @@ const INITIAL_PROMOS = [
   { code: 'BAHAR20', type: 'Kupon Kodu', rate: '%20', desc: 'Bahar Sezonu İndirimi', usage: '2,000 / 2,000', progress: 100, condition: 'Min. 150 ₺', status: 'Sona Erdi' }
 ];
 
+// Kampanya ve kupon state bilgisini yönetir.
 const campaignsSlice = createSlice({
   name: 'campaigns',
   initialState: {
     promos: INITIAL_PROMOS,
   },
   reducers: {
+    // Admin panelden yeni kampanyayı listeye ekler.
     addCampaign: (state, action) => {
       state.promos.unshift({
         usage: '0 / 10,000',
@@ -20,6 +22,7 @@ const campaignsSlice = createSlice({
         ...action.payload,
       });
     },
+    // Kampanyayı aktif veya pasif yapar.
     toggleCampaignStatus: (state, action) => {
       const promo = state.promos.find(p => p.code === action.payload);
       if (promo) {

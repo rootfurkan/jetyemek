@@ -6,12 +6,14 @@ const INITIAL_COURIERS = [
   { id: 3, name: 'Caner Bakır', vehicle: 'Otomobil', zone: 'Şişli', status: 'Çevrimdışı', ordersDelivered: 12 }
 ];
 
+// Kurye listesini ve teslimat durumlarını yönetir.
 const couriersSlice = createSlice({
   name: 'couriers',
   initialState: {
     list: INITIAL_COURIERS,
   },
   reducers: {
+    // Yeni kuryeyi listeye ekler.
     addCourier: (state, action) => {
       state.list.push({
         id: Date.now(),
@@ -19,6 +21,7 @@ const couriersSlice = createSlice({
         ...action.payload,
       });
     },
+    // Seçilen kuryenin müsaitlik durumunu değiştirir.
     updateCourierStatus: (state, action) => {
       const { id, status } = action.payload;
       const courier = state.list.find(c => c.id === id);
@@ -26,6 +29,7 @@ const couriersSlice = createSlice({
         courier.status = status;
       }
     },
+    // Kuryenin teslim ettiği sipariş sayısını artırır.
     incrementDelivered: (state, action) => {
       const courier = state.list.find(c => c.id === action.payload);
       if (courier) {

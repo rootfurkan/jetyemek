@@ -4,6 +4,7 @@ import StatCard from "../../../common/components/StatCard.jsx";
 import StatusBadge from "../../../common/components/StatusBadge.jsx";
 import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
+// Kampanya ve kupon yönetimi sekmesini gösterir.
 export default function AdminCampaignsTab({
   promos,
   activePromos,

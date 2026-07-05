@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
+// Tutarları restoran panelinde TL olarak gösterir.
 function formatPrice(value) {
   return `${Number(value || 0).toLocaleString('tr-TR', {
     minimumFractionDigits: 2,
@@ -9,16 +10,19 @@ function formatPrice(value) {
   })} TL`;
 }
 
+// Sipariş tarihinin bugün olup olmadığını kontrol eder.
 function isSameLocalDay(dateValue, selectedDate) {
   if (!dateValue) return false;
   const date = new Date(dateValue);
   return date.toLocaleDateString('tr-TR') === selectedDate.toLocaleDateString('tr-TR');
 }
 
+// İptal edilen siparişleri filtreler.
 function isCancelledOrder(order) {
   return order.deliveryStatus === 'cancelled' || order.status === 'İptal Edildi';
 }
 
+// Sipariş ürünlerini kısa metin haline getirir.
 function getOrderItemsText(order) {
   if (!Array.isArray(order.items) || order.items.length === 0) return order.itemsSummary || 'Urun bilgisi yok';
 
@@ -27,6 +31,7 @@ function getOrderItemsText(order) {
     .join(', ');
 }
 
+// Sipariş durumunu Türkçe etikete çevirir.
 function getOrderStatusLabel(order) {
   if (order.deliveryStatus === 'ready') return 'Siparis hazir';
   if (order.deliveryStatus === 'on_the_way') return 'Kurye yolda';
@@ -34,6 +39,7 @@ function getOrderStatusLabel(order) {
   return order.status || 'Hazirlaniyor';
 }
 
+// Sipariş durumuna göre CSS sınıfı seçer.
 function getOrderStatusClass(order) {
   if (order.deliveryStatus === 'ready') return 'text-green-600';
   if (order.deliveryStatus === 'on_the_way') return 'text-blue-600';
@@ -41,6 +47,7 @@ function getOrderStatusClass(order) {
   return 'text-amber-500';
 }
 
+// Restoran ana dashboard verilerini gösterir.
 export default function Overview() {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth.currentUser);

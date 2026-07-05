@@ -1,5 +1,6 @@
 import React from 'react';
 
+// Platform sistem ayarları formunu gösterir.
 export default function AdminSettingsTab({
   settingsLoading,
   settingsSaving,

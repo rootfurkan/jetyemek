@@ -8,6 +8,7 @@ import {
 } from "../../../../features/restaurants/restaurantsSlice.js";
 import api from "../../../../services/api.js";
 
+// Restoran ekleme, silme ve komisyon işlemlerini yönetir.
 export default function useAdminRestaurants({ addToast }) {
   const dispatch = useDispatch();
   const [showAddRestaurant, setShowAddRestaurant] = useState(false);
@@ -21,20 +22,24 @@ export default function useAdminRestaurants({ addToast }) {
   const [commissionValue, setCommissionValue] = useState("");
   const [deleteModal, setDeleteModal] = useState(null);
 
+  // Restoranı aktif veya pasif yapar.
   const handleToggleRestStatus = (id) => {
     dispatch(toggleRestaurantStatus(id));
   };
 
+  // Komisyon düzenleme modalını açar.
   const openCommissionModal = (restaurant) => {
     setCommissionModal(restaurant);
     setCommissionValue(String(restaurant.commission ?? 12));
   };
 
+  // Komisyon modalını kapatır.
   const closeCommissionModal = () => {
     setCommissionModal(null);
     setCommissionValue("");
   };
 
+  // Yeni komisyon oranını restorana kaydeder.
   const handleUpdateCommission = (event) => {
     event.preventDefault();
     const commission = Number(commissionValue);
@@ -57,14 +62,17 @@ export default function useAdminRestaurants({ addToast }) {
     closeCommissionModal();
   };
 
+  // Restoran silme onayını açar.
   const openDeleteModal = (restaurant) => {
     setDeleteModal(restaurant);
   };
 
+  // Restoran silme onayını kapatır.
   const closeDeleteModal = () => {
     setDeleteModal(null);
   };
 
+  // Seçili restoranı listeden kaldırır.
   const handleDeleteRestaurant = () => {
     if (!deleteModal?.id) return;
 
@@ -73,6 +81,7 @@ export default function useAdminRestaurants({ addToast }) {
     closeDeleteModal();
   };
 
+  // Yeni restoran ve giriş kullanıcısı oluşturur.
   const handleAddRestaurantSubmit = async (e) => {
     e.preventDefault();
     if (!newRestName.trim()) return;

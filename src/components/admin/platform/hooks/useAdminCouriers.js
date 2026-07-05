@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { updatePlatformOrderStatus } from "../../../../features/orders/ordersSlice.js";
 import api from "../../../../services/api.js";
 
+// Kurye verilerini ve sipariş atamalarını yönetir.
 export default function useAdminCouriers({ orders, addToast }) {
   const dispatch = useDispatch();
   const [couriers, setCouriers] = useState([]);
@@ -71,6 +72,7 @@ export default function useAdminCouriers({ orders, addToast }) {
     }
   }, [availableCouriers, selectedCourierToAssign]);
 
+  // Seçilen siparişi seçilen kuryeye bağlar.
   const handleAssignOrder = async () => {
     const selectedCourier = couriers.find(
       (c) => String(c.id) === String(selectedCourierToAssign),

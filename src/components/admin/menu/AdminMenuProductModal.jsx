@@ -7,6 +7,7 @@ const emptyOptionGroup = {
   options: [{ name: '', price: '' }],
 };
 
+// Ürün ekleme ve düzenleme modalını yönetir.
 export default function AdminMenuProductModal({
   editingProduct,
   categoryOptions,
@@ -29,6 +30,7 @@ export default function AdminMenuProductModal({
   onClose,
   onSubmit,
 }) {
+  // Ek seçenek grubunu günceller.
   const updateGroup = (groupIndex, patch) => {
     setExtraOptionGroups((prev) =>
       prev.map((group, index) =>
@@ -37,6 +39,7 @@ export default function AdminMenuProductModal({
     );
   };
 
+  // Ek seçenek içindeki tek seçeneği günceller.
   const updateOption = (groupIndex, optionIndex, patch) => {
     setExtraOptionGroups((prev) =>
       prev.map((group, index) =>
@@ -52,6 +55,7 @@ export default function AdminMenuProductModal({
     );
   };
 
+  // Ek seçenek grubunu kaldırır.
   const removeGroup = (groupIndex) => {
     setExtraOptionGroups((prev) =>
       prev.length === 1
@@ -60,6 +64,7 @@ export default function AdminMenuProductModal({
     );
   };
 
+  // Ek seçenek satırını kaldırır.
   const removeOption = (groupIndex, optionIndex) => {
     setExtraOptionGroups((prev) =>
       prev.map((group, index) =>
@@ -76,6 +81,7 @@ export default function AdminMenuProductModal({
     );
   };
 
+  // Seçili gruba yeni seçenek satırı ekler.
   const addOption = (groupIndex) => {
     setExtraOptionGroups((prev) =>
       prev.map((group, index) =>
@@ -86,6 +92,7 @@ export default function AdminMenuProductModal({
     );
   };
 
+  // Yeni ek seçenek grubu oluşturur.
   const addGroup = () => {
     setExtraOptionGroups((prev) => [...prev, emptyOptionGroup]);
   };

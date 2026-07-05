@@ -6,6 +6,7 @@ import Reviews from '../panels/restaurant/pages/Reviews.jsx';
 import Finance from '../panels/restaurant/pages/Finance.jsx';
 import Settings from '../panels/restaurant/pages/Settings.jsx';
 
+// Restoran panelindeki route ve sayfa eşleşmelerini tutar.
 export const RestaurantRoutes = [
   { index: true, element: <Overview /> },
   { path: 'orders', element: <Orders /> },

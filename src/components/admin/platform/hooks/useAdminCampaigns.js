@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../../../services/api.js";
 
+// Kampanya CRUD işlemlerini yönetir.
 export default function useAdminCampaigns({ addToast }) {
   const [promos, setPromos] = useState([]);
   const [newCampaignName, setNewCampaignName] = useState("");
@@ -32,6 +33,7 @@ export default function useAdminCampaigns({ addToast }) {
     loadCampaigns();
   }, []);
 
+  // Yeni kampanya veya kupon kaydı oluşturur.
   const handleLaunchCampaign = async (e) => {
     e.preventDefault();
     if (newCampaignType !== "free_delivery" && !newCampaignCode.trim()) return;
@@ -72,6 +74,7 @@ export default function useAdminCampaigns({ addToast }) {
     }
   };
 
+  // Kampanyayı aktif veya pasif yapar.
   const handleToggleCampaignStatus = async (campaign) => {
     const nextStatus = campaign.status === "Aktif" ? "Pasif" : "Aktif";
 
@@ -98,14 +101,17 @@ export default function useAdminCampaigns({ addToast }) {
     }
   };
 
+  // Silinecek kampanya için onay modalını açar.
   const openCampaignDeleteModal = (campaign) => {
     setCampaignDeleteModal(campaign);
   };
 
+  // Kampanya silme modalını kapatır.
   const closeCampaignDeleteModal = () => {
     setCampaignDeleteModal(null);
   };
 
+  // Onaylanan kampanyayı veritabanından siler.
   const handleDeleteCampaign = async () => {
     if (!campaignDeleteModal?.id) return;
 

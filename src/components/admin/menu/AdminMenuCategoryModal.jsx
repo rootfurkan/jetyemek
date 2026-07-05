@@ -1,5 +1,6 @@
 import React from 'react';
 
+// Yeni kategori ekleme modalını gösterir.
 export default function AdminMenuCategoryModal({
   newCategoryName,
   setNewCategoryName,

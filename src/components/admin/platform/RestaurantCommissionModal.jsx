@@ -1,5 +1,6 @@
 import React from "react";
 
+// Restoran komisyon oranını modal üzerinden günceller.
 export default function RestaurantCommissionModal({
   commissionModal,
   closeCommissionModal,

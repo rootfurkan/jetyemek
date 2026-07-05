@@ -2,6 +2,7 @@
 import { getFinancialStatus, getOrderDate, isCancelled } from "../adminDashboardUtils.js";
 import { downloadFinancePdf } from "../financePdf.js";
 
+// Finans filtreleme, sıralama ve PDF işlemlerini yönetir.
 export default function useAdminFinance({
   platformOrders,
   restaurants,
@@ -110,6 +111,7 @@ export default function useAdminFinance({
     }
   }, [financePage, financeTotalPages]);
 
+  // Finans raporunu PDF olarak indirir.
   const handleDownloadPDF = async () => {
     setPdfLoading(true);
 

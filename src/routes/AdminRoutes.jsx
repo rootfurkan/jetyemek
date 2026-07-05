@@ -9,6 +9,7 @@ import PlatformReviews from '../panels/admin/pages/PlatformReviews.jsx';
 import PlatformFinance from '../panels/admin/pages/PlatformFinance.jsx';
 import PlatformSettings from '../panels/admin/pages/PlatformSettings.jsx';
 
+// Admin panelindeki route ve sayfa eşleşmelerini tutar.
 export const AdminRoutes = [
   { index: true, element: <SystemOverview /> },
   { path: 'restaurants', element: <Restaurants /> },

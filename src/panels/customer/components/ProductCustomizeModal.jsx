@@ -31,6 +31,42 @@ export default function ProductCustomizeModal({
   // Hardcoded option sets based on category
   const getOptions = () => {
     let options = [];
+
+    // Ürüne özel ek seçenek varsa önce onu gösterir.
+    if (product.extraOptions) {
+      if (Array.isArray(product.extraOptions)) {
+        options = product.extraOptions
+          .map((optGroup, index) => ({
+            id: `custom_group_${index}`,
+            title: optGroup.title || "Seçenekler",
+            type: optGroup.type || "single",
+            required: optGroup.required || false,
+            choices: (optGroup.options || []).map((opt) => ({
+              name: opt.name,
+              price: Number(opt.price) || 0,
+            })),
+          }))
+          .filter((group) => group.choices.length > 0);
+      } else {
+        options = [
+          {
+            id: "generic_extra",
+            title: product.extraOptions.title || "Ek Seçenekler",
+            type: product.extraOptions.type || "single",
+            required: product.extraOptions.required || false,
+            choices: (product.extraOptions.options || []).map((opt) => ({
+              name: opt.name,
+              price: Number(opt.price) || 0,
+            })),
+          },
+        ].filter((group) => group.choices.length > 0);
+      }
+    }
+
+    if (options.length > 0) {
+      return options;
+    }
+
     if (isBurger) {
       options = [
         {
@@ -132,34 +168,6 @@ export default function ProductCustomizeModal({
       ];
     }
 
-    // fallback for regular items
-    if (options.length === 0 && product.extraOptions) {
-      if (Array.isArray(product.extraOptions)) {
-        options = product.extraOptions.map((optGroup, index) => ({
-          id: `custom_group_${index}`,
-          title: optGroup.title || "Seçenekler",
-          type: optGroup.type || "single", // single or multi
-          required: optGroup.required || false,
-          choices: (optGroup.options || []).map((opt) => ({
-            name: opt.name,
-            price: Number(opt.price) || 0,
-          })),
-        }));
-      } else {
-        options = [
-          {
-            id: "generic_extra",
-            title: product.extraOptions.title || "Ek Seçenekler",
-            type: "single",
-            required: true,
-            choices: (product.extraOptions.options || []).map((opt) => ({
-              name: opt.name,
-              price: Number(opt.price) || 0,
-            })),
-          },
-        ];
-      }
-    }
     return options;
   };
 

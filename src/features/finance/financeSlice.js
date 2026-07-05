@@ -7,6 +7,7 @@ const INITIAL_FINANCIALS = [
   { id: '#4122', restaurant: 'Green Farm Salad', date: '13 Eki 2023, 16:05', gross: 4300.00, comm: 344.00, net: 3956.00, status: 'İptal Edildi' }
 ];
 
+// Platform finans kayıtlarını ve temel ücretleri yönetir.
 const financeSlice = createSlice({
   name: 'finance',
   initialState: {
@@ -15,9 +16,11 @@ const financeSlice = createSlice({
     baseDeliveryFee: 24.90,
   },
   reducers: {
+    // Yeni finans hareketini liste başına ekler.
     addFinancialLog: (state, action) => {
       state.financials.unshift(action.payload);
     },
+    // Finans kaydının durumunu günceller.
     updateFinancialStatus: (state, action) => {
       const { id, status } = action.payload;
       const f = state.financials.find(log => log.id === id);
@@ -25,9 +28,11 @@ const financeSlice = createSlice({
         f.status = status;
       }
     },
+    // Varsayılan platform komisyon oranını değiştirir.
     updateBaseCommission: (state, action) => {
       state.baseCommission = action.payload;
     },
+    // Varsayılan teslimat ücretini değiştirir.
     updateBaseDeliveryFee: (state, action) => {
       state.baseDeliveryFee = action.payload;
     }

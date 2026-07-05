@@ -1,5 +1,6 @@
 import React from "react";
 
+// Yeni restoran oluşturma formunu gösterir.
 export default function RestaurantCreateForm({
   handleAddRestaurantSubmit,
   newRestName,

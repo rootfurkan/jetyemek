@@ -5,6 +5,7 @@ import OverviewSalesChart from "./OverviewSalesChart.jsx";
 import OverviewStatsGrid from "./OverviewStatsGrid.jsx";
 import OverviewTopRestaurants from "./OverviewTopRestaurants.jsx";
 
+// Admin ana sayfa özet kartlarını gösterir.
 export default function AdminOverviewTab({
   coreStats,
   monthlyOrderBars,

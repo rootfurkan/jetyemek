@@ -6,10 +6,12 @@ import StatCard from '../../../common/components/StatCard.jsx';
 import StatusBadge from '../../../common/components/StatusBadge.jsx';
 import { useToast } from '../../../common/components/Toast.jsx';
 
+// Yorum tarihini sıralama için Date değerine çevirir.
 function getReviewDate(review) {
   return new Date(review.createdAt || review.date || 0);
 }
 
+// Adminin tüm restoran yorumlarını yönettiği sayfayı açar.
 export default function PlatformReviews() {
   const addToast = useToast();
   const [reviews, setReviews] = useState([]);
@@ -22,6 +24,7 @@ export default function PlatformReviews() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+// Yorum, restoran ve sistem ayarlarını birlikte yükler.
     async function loadPageData() {
       setLoading(true);
 
@@ -47,6 +50,7 @@ export default function PlatformReviews() {
 
   const forbiddenWords = settings?.forbiddenReviewWords || [];
 
+// Yorumlara restoran adını ve varsayılan durumu ekler.
   const enrichedReviews = useMemo(() => (
     reviews.map((review) => {
       const restaurant = restaurants.find((item) => String(item.id) === String(review.restaurantId));
@@ -59,6 +63,7 @@ export default function PlatformReviews() {
     })
   ), [restaurants, reviews]);
 
+// Arama ve durum filtresine göre yorum listesini hazırlar.
   const filteredReviews = useMemo(() => {
     const searchText = search.trim().toLocaleLowerCase('tr-TR');
 
@@ -80,6 +85,7 @@ export default function PlatformReviews() {
   const publishedCount = enrichedReviews.filter((review) => review.status === 'Yayında').length;
   const negativeCount = enrichedReviews.filter((review) => Number(review.rating) <= 2).length;
 
+// Onay bekleyen yorumu yayına alır.
   const handleApproveReview = async (review) => {
     try {
       const response = await api.patch(`/reviews/${review.id}`, {
@@ -97,6 +103,7 @@ export default function PlatformReviews() {
     }
   };
 
+// Seçilen yorumu db.jsondan siler.
   const handleDeleteReview = async () => {
     if (!deleteModal?.id) return;
 
@@ -110,6 +117,7 @@ export default function PlatformReviews() {
     }
   };
 
+// Yeni yasaklı kelimeyi sistem ayarlarına ekler.
   const handleAddForbiddenWord = async () => {
     const word = newForbiddenWord.trim();
     if (!word || !settings?.id) return;
@@ -136,6 +144,7 @@ export default function PlatformReviews() {
     }
   };
 
+// Yasaklı kelimeyi sistem ayarlarından kaldırır.
   const handleRemoveForbiddenWord = async (word) => {
     if (!settings?.id) return;
 

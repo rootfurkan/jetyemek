@@ -6,6 +6,7 @@ import RestaurantCreateForm from "./RestaurantCreateForm.jsx";
 import RestaurantDeleteModal from "./RestaurantDeleteModal.jsx";
 import RestaurantListTable from "./RestaurantListTable.jsx";
 
+// Restoran ekleme, listeleme ve komisyon işlemlerini gösterir.
 export default function AdminRestaurantsTab({
   searchQuery,
   setSearchQuery,

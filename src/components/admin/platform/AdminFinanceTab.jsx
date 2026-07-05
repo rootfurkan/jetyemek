@@ -5,6 +5,7 @@ import StatCard from "../../../common/components/StatCard.jsx";
 import StatusBadge from "../../../common/components/StatusBadge.jsx";
 import TableEmptyState from "../../../common/components/TableEmptyState.jsx";
 
+// Platform finansal analiz sekmesini gösterir.
 export default function AdminFinanceTab({
   financials,
   filteredFinancials,

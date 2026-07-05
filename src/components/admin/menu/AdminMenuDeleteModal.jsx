@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Ürün silme işleminden önce onay alır.
 export default function AdminMenuDeleteModal({ isOpen, onClose, onConfirm }) {
   return (
     <AnimatePresence>

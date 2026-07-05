@@ -14,16 +14,19 @@ const defaultWorkingHours = [
   { day: 'Pazar', start: '10:00', end: '21:00', closed: true },
 ];
 
+// Sayısal ayar değerini güvenli biçimde okur.
 function getNumber(value, fallback = '') {
   const match = String(value || '').match(/\d+/);
   return match ? match[0] : fallback;
 }
 
+// Girilen adrese göre harita bağlantısı üretir.
 function buildMapUrl(address) {
   const query = encodeURIComponent(address || 'İstanbul');
   return `https://www.google.com/maps?q=${query}&output=embed`;
 }
 
+// Restoran ayarları ekranını yönetir.
 export default function AdminSettings() {
   const dispatch = useDispatch();
   const addToast = useToast();
@@ -138,10 +141,12 @@ export default function AdminSettings() {
 
   const mapUrl = useMemo(() => buildMapUrl(form.address), [form.address]);
 
+  // Tek bir restoran ayarı alanını günceller.
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Çalışma saatindeki seçili günü düzenler.
   const handleHourChange = (index, field, value) => {
     setForm((prev) => ({
       ...prev,
@@ -151,6 +156,7 @@ export default function AdminSettings() {
     }));
   };
 
+  // Seçili günü açık veya kapalı yapar.
   const handleToggleDayClosed = (index) => {
     setForm((prev) => ({
       ...prev,
@@ -160,6 +166,7 @@ export default function AdminSettings() {
     }));
   };
 
+  // Restoran ayarlarını db.json tarafına kaydeder.
   const handleSaveChanges = async () => {
     if (!restaurant?.id) {
       addToast({ message: 'Restoran bilgisi bulunamadı.', type: 'error' });
