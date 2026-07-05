@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import store from './app/store.js';
 import AppRouter from './routes/AppRouter.jsx';
-import { getMenuItems, getRestaurants, getAddresses, getOrders } from './services/api.js';
+import { getMenuItems, getRestaurants, getAddresses, getOrders, getUserById } from './services/api.js';
 import { setMenuItems } from './features/menu/menuSlice.js';
 import { setRestaurants } from './features/restaurants/restaurantsSlice.js';
-import { setAddresses } from './features/auth/authSlice.js';
+import { setAddresses, setFavorites } from './features/auth/authSlice.js';
 import { fetchReviews } from './features/reviews/reviewsSlice.js';
 import {
   setActiveOrder,
@@ -44,10 +44,17 @@ function AppDataLoader() {
 
     async function loadUserData() {
       try {
-        // Adresler (müşteri ise)
+        // Adresler ve Favoriler (müşteri ise)
         if (userRole === 'customer') {
-          const addresses = await getAddresses(currentUser.id);
+          const [addresses, userDb] = await Promise.all([
+            getAddresses(currentUser.id),
+            getUserById(currentUser.id)
+          ]);
           dispatch(setAddresses(addresses));
+          
+          if (userDb && userDb.favorites) {
+            dispatch(setFavorites(userDb.favorites));
+          }
         }
 
         // Siparişler

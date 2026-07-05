@@ -1,4 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { updateUser } from '../../services/api.js';
 
 // ─── localStorage yardımcıları ─────────────────────────────────────────────────
 const STORAGE_KEY = 'jetyemek_auth';
@@ -182,6 +183,14 @@ const authSlice = createSlice({
     },
 
     // ─── Favoriler ────────────────────────────────────────────────────────────
+    setFavorites: (state, action) => {
+      state.favorites = action.payload || [];
+      const stored = loadFromStorage();
+      if (stored) {
+        saveToStorage({ ...stored, favorites: state.favorites });
+      }
+    },
+
     toggleFavorite: (state, action) => {
       const id = action.payload;
       if (state.favorites.includes(id)) {
@@ -197,6 +206,31 @@ const authSlice = createSlice({
   },
 });
 
+export const toggleFavoriteAsync = createAsyncThunk(
+  'auth/toggleFavoriteAsync',
+  async (productId, { getState, dispatch }) => {
+    try {
+      const state = getState();
+      const currentUser = state.auth.currentUser;
+      
+      // Hemen UI güncellenmesi için standart reducer'ı çağırıyoruz (optimistic update)
+      dispatch(authSlice.actions.toggleFavorite(productId));
+
+      // Eğer kullanıcı giriş yapmışsa db.json'ı da güncelle
+      if (currentUser && currentUser.id) {
+        const newFavorites = getState().auth.favorites;
+        await updateUser(currentUser.id, { favorites: newFavorites });
+      }
+      
+      return productId;
+    } catch (error) {
+      console.error('Favori güncellenirken hata:', error);
+      // Hata durumunda işlemi geri almak isterseniz dispatch(authSlice.actions.toggleFavorite(productId))
+      throw error;
+    }
+  }
+);
+
 export const {
   loginSuccess,
   setLoginError,
@@ -210,6 +244,7 @@ export const {
   addCard,
   deleteCard,
   toggleFavorite,
+  setFavorites,
 } = authSlice.actions;
 
 export default authSlice.reducer;

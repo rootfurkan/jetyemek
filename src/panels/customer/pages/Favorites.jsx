@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { toggleFavorite } from '../../../features/auth/authSlice.js';
+import { toggleFavoriteAsync } from '../../../features/auth/authSlice.js';
 import { useToast } from '../../../common/components/Toast.jsx';
 
 export default function Favorites() {
@@ -32,7 +32,7 @@ export default function Favorites() {
 
   const handleToggleFavorite = (rest, e) => {
     e.stopPropagation();
-    dispatch(toggleFavorite(rest.id));
+    dispatch(toggleFavoriteAsync(rest.id));
     addToast({ message: `${rest.name} favorilerden çıkarıldı.`, type: 'info' });
   };
 

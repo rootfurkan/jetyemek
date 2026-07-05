@@ -25,6 +25,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const update = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -241,8 +243,8 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   <span className="text-xs text-stone-600 leading-relaxed pt-0.5">
-                    <a href="#" className="text-rose-600 font-bold hover:underline" onClick={(e) => e.preventDefault()}>Kullanım Koşulları</a> ve{' '}
-                    <a href="#" className="text-rose-600 font-bold hover:underline" onClick={(e) => e.preventDefault()}>Gizlilik Politikası</a>'nı okudum, kabul ediyorum.
+                    <span className="text-rose-600 font-bold hover:underline cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTermsModal(true); }}>Kullanım Koşulları</span> ve{' '}
+                    <span className="text-rose-600 font-bold hover:underline cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPrivacyModal(true); }}>Gizlilik Politikası</span>'nı okudum, kabul ediyorum.
                   </span>
                 </label>
                 <AnimatePresence>
@@ -294,6 +296,97 @@ export default function RegisterPage() {
           © 2024 JetYemek. Tüm hakları saklıdır.
         </p>
       </motion.div>
+      {/* Kullanım Koşulları Modalı */}
+      <AnimatePresence>
+        {showTermsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setShowTermsModal(false)}
+              className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden z-10"
+            >
+              <div className="p-6 border-b border-stone-100 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-stone-800">Kullanım Koşulları</h2>
+                <button onClick={() => setShowTermsModal(false)} className="text-stone-400 hover:text-stone-600 transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar text-stone-600 text-sm leading-relaxed space-y-4">
+                <p className="font-semibold text-stone-800">1. Taraflar ve Kapsam</p>
+                <p>Bu kullanım koşulları ("Koşullar"), JetYemek platformuna ("Platform") kayıt olan kullanıcılar ("Müşteri") ile JetYemek Inc. arasındaki hukuki ilişkiyi düzenler. Platformu kullanarak bu koşulları peşinen kabul etmiş sayılırsınız.</p>
+                
+                <p className="font-semibold text-stone-800 mt-4">2. Hesap Sorumluluğu</p>
+                <p>Müşteri, hesabına ait giriş bilgilerinin güvenliğinden bizzat sorumludur. Hesabınız üzerinden yapılan tüm işlemlerin (sipariş verme, iptal vb.) sizin tarafınızdan yapıldığı kabul edilir. Şüpheli bir durumda derhal destek ekibiyle iletişime geçilmelidir.</p>
+
+                <p className="font-semibold text-stone-800 mt-4">3. Sipariş ve İptal Şartları</p>
+                <p>Verilen siparişler, restoran tarafından onaylandıktan sonra (Hazırlanıyor aşamasına geçtiğinde) müşteri tarafından iptal edilemez. İptal talepleri ancak "Sipariş Alındı" aşamasındayken destek hattı üzerinden yapılabilir. Yanlış adres bildirimi nedeniyle teslim edilemeyen siparişlerin ücret iadesi yapılmaz.</p>
+
+                <p className="font-semibold text-stone-800 mt-4">4. Teslimat Süreleri</p>
+                <p>Restoranlar tarafından belirtilen tahmini teslimat süreleri (örneğin 20-30 dk) bilgilendirme amaçlıdır ve kesin bir taahhüt içermez. Hava muhalefeti, trafik veya restoranın yoğunluğuna bağlı olarak kurye bekleme sürelerinde opsiyonel gecikmeler yaşanabilir.</p>
+              </div>
+              <div className="p-6 border-t border-stone-100 bg-stone-50 text-right">
+                <button onClick={() => setShowTermsModal(false)} className="px-6 py-2.5 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors shadow-lg shadow-rose-200 cursor-pointer">
+                  Okudum, Anladım
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Gizlilik Politikası Modalı */}
+      <AnimatePresence>
+        {showPrivacyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setShowPrivacyModal(false)}
+              className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden z-10"
+            >
+              <div className="p-6 border-b border-stone-100 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-stone-800">Gizlilik Politikası (KVKK)</h2>
+                <button onClick={() => setShowPrivacyModal(false)} className="text-stone-400 hover:text-stone-600 transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar text-stone-600 text-sm leading-relaxed space-y-4">
+                <p className="font-semibold text-stone-800">1. Veri Sorumlusu</p>
+                <p>Kişisel verileriniz, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, veri sorumlusu sıfatıyla JetYemek Inc. tarafından aşağıda açıklanan kapsamda işlenmektedir.</p>
+
+                <p className="font-semibold text-stone-800 mt-4">2. İşlenen Veriler ve Amacı</p>
+                <p>Platforma üye olurken sağladığınız ad, soyad, e-posta adresi, teslimat adresi ve ödeme bilgileriniz (kart bilgileri tarafımızca saklanmaz, güvenli ödeme altyapısına iletilir); siparişlerinizin size ulaştırılabilmesi, kullanıcı deneyiminin iyileştirilmesi ve hukuki yükümlülüklerimizin yerine getirilmesi amacıyla işlenmektedir.</p>
+
+                <p className="font-semibold text-stone-800 mt-4">3. Veri Güvenliği ve Üçüncü Şahıslarla Paylaşım</p>
+                <p>JetYemek, kişisel verilerinizi en üst düzey güvenlik protokolleriyle (SSL, Uçtan Uca Şifreleme) korur. Sipariş adresiniz ve iletişim numaranız, teslimatın yapılabilmesi amacıyla yalnızca ilgili restoran ve kurye ile paylaşılır. Verileriniz, kanuni zorunluluklar haricinde hiçbir şekilde 3. şahıs kurum veya reklam firmalarına satılmaz ve devredilemez.</p>
+
+                <p className="font-semibold text-stone-800 mt-4">4. Kullanıcı Hakları</p>
+                <p>KVKK 11. Madde gereğince; verilerinizin silinmesini, düzeltilmesini veya anonimleştirilmesini destek paneli üzerinden talep etme hakkına sahipsiniz. Talep halinde hesabınız ve geçmiş sipariş verileriniz kalıcı olarak imha edilecektir.</p>
+              </div>
+              <div className="p-6 border-t border-stone-100 bg-stone-50 text-right">
+                <button onClick={() => setShowPrivacyModal(false)} className="px-6 py-2.5 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors shadow-lg shadow-rose-200 cursor-pointer">
+                  Okudum, Anladım
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

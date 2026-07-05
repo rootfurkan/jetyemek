@@ -5,7 +5,7 @@ import { FOOD_CATEGORIES } from '../../../data.jsx';
 import { useToast } from '../../../common/components/Toast.jsx';
 import ConfirmModal from '../../../common/components/ConfirmModal.jsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { toggleFavorite } from '../../../features/auth/authSlice.js';
+import { toggleFavoriteAsync } from '../../../features/auth/authSlice.js';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -134,7 +134,7 @@ export default function Home() {
       return;
     }
     const isFav = favoritedIds.includes(rest.id);
-    dispatch(toggleFavorite(rest.id));
+    dispatch(toggleFavoriteAsync(rest.id));
     if (isFav) {
       addToast({ message: `${rest.name} favorilerden çıkarıldı.`, type: 'info' });
     } else {

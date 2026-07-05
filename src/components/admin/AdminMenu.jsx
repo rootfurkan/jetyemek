@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '../../features/menu/menuSlice.js';
 import { useToast } from '../../common/components/Toast.jsx';
-import { createMenuItem, updateMenuItemApi } from '../../services/api.js';
+import { createMenuItem, updateMenuItemApi, deleteMenuItemApi } from '../../services/api.js';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const formatProductTag = (tag) => {
   if (tag === 'Hot') return 'Popüler';
@@ -29,6 +30,8 @@ export default function AdminMenu() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
   const [editingPrice, setEditingPrice] = useState(null); // { id, value }
   const [editingProduct, setEditingProduct] = useState(null);
 
@@ -123,9 +126,21 @@ export default function AdminMenu() {
 
   // Handle product deletion — Redux
   const handleDeleteProduct = (id) => {
-    if (window.confirm('Bu ürünü menüden kaldırmak istediğinize emin misiniz?')) {
-      dispatch(deleteMenuItem(id));
-      addToast({ message: 'Ürün başarıyla menüden kaldırıldı.', type: 'success' });
+    setProductToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (productToDelete) {
+      try {
+        await deleteMenuItemApi(productToDelete);
+        dispatch(deleteMenuItem(productToDelete));
+        addToast({ message: 'Ürün başarıyla silindi.', type: 'success' });
+        setIsDeleteModalOpen(false);
+        setProductToDelete(null);
+      } catch (error) {
+        addToast({ message: 'Ürün silinirken bir sorun oluştu.', type: 'error' });
+      }
     }
   };
 
@@ -804,6 +819,59 @@ export default function AdminMenu() {
           </form>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute inset-0 backdrop-blur-sm bg-black/50"
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden"
+            >
+              <div className="p-6 text-center">
+                {/* Warning Icon */}
+                <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-4xl text-red-600">delete</span>
+                </div>
+                
+                <h3 className="text-xl font-bold text-stone-800 mb-2">Ürünü Sil</h3>
+                <p className="text-sm text-stone-500 mb-6">
+                  Bu ürünü menüden kaldırmak istediğinize emin misiniz? Bu işlem geri alınamaz.
+                </p>
+
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-sm rounded-xl transition-all cursor-pointer"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    onClick={confirmDeleteProduct}
+                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+                  >
+                    Evet, Sil
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

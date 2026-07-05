@@ -58,6 +58,17 @@
       "restaurantId": "rest-acktm-usta-1783175907260",
       "name": "Acıktım Usta",
       "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U"
+    },
+    {
+      "id": "jIgWpZTeGFw",
+      "name": "Ahsen",
+      "surname": "Dinler",
+      "email": "ahsen@gmail.com",
+      "password": "musteri123",
+      "role": "customer",
+      "phone": "",
+      "birthdate": "",
+      "avatar": "https://ui-avatars.com/api/?name=Ahsen%2BDinler&background=b51c00&color=fff"
     }
   ],
   "addresses": [
@@ -123,6 +134,13 @@
       "details": "İstanbul DTM A1 Blok",
       "icon": "place",
       "id": "Cg-390xeXL4"
+    },
+    {
+      "userId": "jIgWpZTeGFw",
+      "title": "ev",
+      "details": "kartal",
+      "icon": "work",
+      "id": "ql80LVKsGmY"
     }
   ],
   "cards": [
@@ -194,6 +212,16 @@
       "isDefault": false,
       "logo": "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
       "id": "cUFuHHzkmBY"
+    },
+    {
+      "userId": "jIgWpZTeGFw",
+      "name": "a d",
+      "type": "Visa",
+      "number": "2222",
+      "expiry": "12/33",
+      "isDefault": true,
+      "logo": "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
+      "id": "h9-Bf3oJs8I"
     }
   ],
   "restaurants": [
@@ -208,8 +236,8 @@
       "tag": "hamburger",
       "city": "yıldıztepe mahallesi bağcılar istanbul",
       "commission": 15,
-      "status": "Pasif",
-      "isOpen": false,
+      "status": "Aktif",
+      "isOpen": true,
       "isSponsor": true,
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA",
       "description": "",
@@ -1221,7 +1249,7 @@
       "time": "25-35 dk",
       "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSOrt6uesJp-8csUlD1NHVIWO1w7Uc_3BCj5gTIrcx_w&s=10",
       "category": "Pizzalar",
-      "tag": "Popüler",
+      "tag": "%25 İndirim",
       "extraOptions": [
         {
           "title": "Boyut",
@@ -1299,6 +1327,7 @@
       "time": "25-35 dk",
       "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4DmWe12e9nlK__EeOQoYQ-HnLPJakNFetuPZ7QNj-dA&s=10",
       "category": "Pizzalar",
+      "tag": "%25 İndirim",
       "extraOptions": [
         {
           "title": "Boyut",
@@ -4631,30 +4660,6 @@
       "image": "https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg",
       "category": "İçecekler",
       "status": "Active"
-    },
-    {
-      "restaurantId": "gourmet-burger",
-      "name": "deneme",
-      "price": 11,
-      "description": "de",
-      "category": "Burgerler",
-      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKT_kezDNXel_TOfOnRz9F_7bnHRcZz7hts-DBNX1_ow&s=10",
-      "time": "20-30 dk",
-      "status": "Active",
-      "extraOptions": [
-        {
-          "title": "sos",
-          "type": "multi",
-          "required": false,
-          "options": [
-            {
-              "name": "sos",
-              "price": 1
-            }
-          ]
-        }
-      ],
-      "id": "efLZiuVj2n0"
     }
   ],
   "orders": [
@@ -5255,13 +5260,54 @@
       ],
       "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
       "paymentMethod": "Kredi Kartı",
-      "status": "Hazırlanıyor",
-      "deliveryStatus": "preparing",
-      "progress": 0,
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
       "date": "5 Temmuz 2026",
       "createdAt": "2026-07-05T10:41:23.452Z",
       "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKT_kezDNXel_TOfOnRz9F_7bnHRcZz7hts-DBNX1_ow&s=10",
       "id": "JuAcaZ-xD-w"
+    },
+    {
+      "userId": "jIgWpZTeGFw",
+      "customerName": "Ahsen Dinler",
+      "restaurant": "Hamburgercim",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "truffle-fries",
+          "name": "Trüf Mantarlı & Parmesanlı Patates",
+          "qty": 1,
+          "price": 120,
+          "note": null
+        },
+        {
+          "id": "classic-margherita-Orta-İnceHamur-Parmesan",
+          "name": "Classic Margherita (Orta, İnce Hamur, Parmesan)",
+          "qty": 1,
+          "price": 275,
+          "note": "Domates sosu az olsun"
+        }
+      ],
+      "itemsSummary": "2 Ürün",
+      "total": 395,
+      "subtotal": 395,
+      "deliveryFee": 0,
+      "deliveryDiscount": 50,
+      "couponCode": "",
+      "couponDiscount": 0,
+      "appliedCampaigns": [
+        "camp-free-delivery-150"
+      ],
+      "address": "kartal",
+      "paymentMethod": "Kredi Kartı",
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
+      "date": "5 Temmuz 2026",
+      "createdAt": "2026-07-05T14:13:25.130Z",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2cGw4FsomzQgz1vzcPtyp2AGBwm3p9N9__166BAbHJw&s=10",
+      "id": "CmrogNT9fq8"
     }
   ],
   "reviews": [
@@ -5420,6 +5466,22 @@
       "moderationReason": "",
       "moderationMatchedWord": "",
       "id": "btHoCWbXNoY"
+    },
+    {
+      "orderId": "CmrogNT9fq8",
+      "restaurantId": "gourmet-burger",
+      "userId": "jIgWpZTeGFw",
+      "user": "Ahsen D.",
+      "rating": 5,
+      "comment": "burger güzeldi site de mükemmel olmuş 100 puan almalı",
+      "date": "5 Temmuz 2026",
+      "createdAt": "2026-07-05T14:16:52.554Z",
+      "reply": null,
+      "hasImage": false,
+      "status": "Yayında",
+      "moderationReason": "",
+      "moderationMatchedWord": "",
+      "id": "MitHdC7jUu4"
     }
   ],
   "couriers": [
@@ -5487,7 +5549,7 @@
       "discountValue": 50,
       "minOrder": 150,
       "status": "Aktif",
-      "usageCount": 3,
+      "usageCount": 4,
       "usageLimit": null,
       "description": "150 TL üzeri siparişlerde 50 TL teslimat ücreti bedava"
     },

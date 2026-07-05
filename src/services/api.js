@@ -17,6 +17,16 @@ export async function registerUser(userData) {
   return response.data;
 }
 
+export async function updateUser(id, data) {
+  const response = await api.patch(`/users/${id}`, data);
+  return response.data;
+}
+
+export async function getUserById(id) {
+  const response = await api.get(`/users/${id}`);
+  return response.data;
+}
+
 export async function getRestaurants() {
   const response = await api.get('/restaurants');
   return response.data;
@@ -40,6 +50,11 @@ export async function createMenuItem(menuItem) {
 
 export async function updateMenuItemApi(id, menuItem) {
   const response = await api.patch(`/menuItems/${id}`, menuItem);
+  return response.data;
+}
+
+export async function deleteMenuItemApi(id) {
+  const response = await api.delete(`/menuItems/${id}`);
   return response.data;
 }
 
