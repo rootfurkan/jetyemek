@@ -20,7 +20,7 @@ export default function Home() {
     {
       id: 0,
       badge: "SINIRLI SÜRE",
-      title: <>İlk Siparişine<br />50TL İndirim</>,
+      title: <>Bugünkü İlk Siparişine<br />50TL İndirim</>,
       image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA",
       buttonText: "Kuponu Al",
       action: () => setCouponModalOpen(true)
@@ -28,16 +28,16 @@ export default function Home() {
     {
       id: 1,
       badge: "HAFTASONU ÖZEL",
-      title: <>Tüm Pizzalarda<br />%25 İndirim</>,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdsrEu0cTgCoAyw-HYvB8hMUEXf8mijFgr2COUjT4SaGIGbQCLEVqNQtdK2e8Xtrby-L_i53rdRO3Shm6qKK1umC71PCYlkfY6Z2b4_U_drhT2luNRMPPsD2jsqX-9OZ69M1Fi545TVlxKaRypp9Q4UECwSHEIIl5rniNqVMGek6mD8eUWyFk4BxBAKJPrLuOUrTh9B7n4t4Dz5XlQ9UTGshFgZcdvb7UW042vdbpVrbqKLA00vLZ26EyNZZ11_HqBZvBwZ-sCcRU",
+      title: <>Dünya Pizza Gününe Özel<br />Tüm Pizzalarda %25 İndirim</>,
+      image: "https://png.pngtree.com/thumb_back/fh260/background/20240720/pngtree-taking-slice-picture-of-prepared-delicious-pizza-with-sausage-rings-and-image_15902897.jpg",
       buttonText: "Restoranları Gör",
       action: () => handleScroll('right')
     },
     {
       id: 2,
       badge: "ÜCRETSİZ TESLİMAT",
-      title: <>Seçili Restoranlarda<br />Sıfır Kargo Ücreti</>,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U",
+      title: <>Bugüne Özel<br />Seçili Restoranlarda Ücretsiz Kargo Fırsatı</>,
+      image: "https://www.shutterstock.com/image-photo/closeup-chicken-burger-caught-by-260nw-2676992407.jpg",
       buttonText: "Menüyü Keşfet",
       action: () => navigate('/restaurant/gourmet-burger')
     }
@@ -53,11 +53,12 @@ export default function Home() {
   // Load datasets from Redux state
   const sponsorRestaurants = useSelector((state) => state.restaurants.sponsorList);
   const restaurantGrid = useSelector((state) => state.restaurants.gridList);
+  const allMenuItems = useSelector((state) => state.menu?.items || []);
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [activeSort, setActiveSort] = useState(null); // 'rating', 'minOrder'
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const scrollContainerRef = useRef(null);
 
   // Filter & sort logic
@@ -65,14 +66,35 @@ export default function Home() {
 
   // 1. Category filter
   if (selectedCategory) {
-    displayedRestaurants = displayedRestaurants.filter(
-      r => r.tag === selectedCategory
-    );
+    const normalizeTr = (str) => {
+      if (!str) return '';
+      return str.toLowerCase()
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c');
+    };
+    
+    const searchCat = normalizeTr(selectedCategory);
+    displayedRestaurants = displayedRestaurants.filter(r => {
+      // Doğrudan restoran tag'i eşleşirse göster
+      if (r.tag === selectedCategory) return true;
+      
+      // Restoranın ürünlerinde seçili kategoride/isimde ürün varsa göster
+      const rItems = allMenuItems.filter(item => String(item.restaurantId) === String(r.id));
+      return rItems.some(item => 
+        (item.category && normalizeTr(item.category).includes(searchCat)) ||
+        (item.name && normalizeTr(item.name).includes(searchCat)) ||
+        (r.category && normalizeTr(r.category).includes(searchCat))
+      );
+    });
   }
 
   // 2. Search query filter
   if (searchQuery) {
-    displayedRestaurants = displayedRestaurants.filter(r => 
+    displayedRestaurants = displayedRestaurants.filter(r =>
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -145,10 +167,10 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               className="absolute inset-0"
             >
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] group-hover:scale-105" 
-                style={{ 
-                  backgroundImage: `url('${slides[activeSlide].image}')` 
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] group-hover:scale-105"
+                style={{
+                  backgroundImage: `url('${slides[activeSlide].image}')`
                 }}
               ></div>
               <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent flex flex-col justify-center px-8 md:px-16">
@@ -158,7 +180,7 @@ export default function Home() {
                 <h1 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6 tracking-tight">
                   {slides[activeSlide].title}
                 </h1>
-                <button 
+                <button
                   onClick={slides[activeSlide].action}
                   className="bg-white hover:bg-rose-50 text-primary px-10 py-4 rounded-full font-extrabold text-sm md:text-base hover:shadow-2xl hover:-translate-y-0.5 transition-all w-fit cursor-pointer active:scale-95 shadow-lg shadow-black/20"
                 >
@@ -174,9 +196,8 @@ export default function Home() {
               <button
                 key={slide.id}
                 onClick={() => setActiveSlide(idx)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  activeSlide === idx ? 'w-10 bg-white' : 'w-4 bg-white/30 hover:bg-white/50'
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === idx ? 'w-10 bg-white' : 'w-4 bg-white/30 hover:bg-white/50'
+                  }`}
                 aria-label={`Slide ${idx + 1}`}
               ></button>
             ))}
@@ -196,13 +217,13 @@ export default function Home() {
             </h2>
           </div>
           <div className="flex gap-2 select-none">
-            <button 
+            <button
               onClick={() => handleScroll('left')}
               className="p-2.5 rounded-full border border-stone-200 bg-white hover:bg-stone-50 hover:border-stone-300 active:scale-90 transition-all cursor-pointer shadow-sm flex items-center justify-center text-stone-600"
             >
               <span className="material-symbols-outlined text-[20px]">chevron_left</span>
             </button>
-            <button 
+            <button
               onClick={() => handleScroll('right')}
               className="p-2.5 rounded-full border border-stone-200 bg-white hover:bg-stone-50 hover:border-stone-300 active:scale-90 transition-all cursor-pointer shadow-sm flex items-center justify-center text-stone-600"
             >
@@ -211,21 +232,21 @@ export default function Home() {
           </div>
         </div>
 
-        <div 
+        <div
           ref={scrollContainerRef}
           className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth pb-2 -mx-2 px-2"
         >
           {sponsorRestaurants.map((rest) => (
-            <div 
+            <div
               key={rest.id}
               onClick={() => navigate('/restaurant/' + rest.id)}
               className="min-w-[280px] sm:min-w-[310px] max-w-[310px] group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-stone-100 hover:border-rose-100/50 transition-all duration-300 cursor-pointer flex flex-col"
             >
               <div className="relative h-44 overflow-hidden bg-stone-100 shrink-0">
-                <img 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  alt={rest.name} 
-                  src={rest.image} 
+                <img
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  alt={rest.name}
+                  src={rest.image}
                 />
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-xl text-xs font-bold text-stone-800 shadow-sm flex items-center gap-1">
                   <span className="material-symbols-outlined text-amber-500 text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
@@ -266,21 +287,19 @@ export default function Home() {
                 onClick={() => setSelectedCategory(isSelected ? null : cat.id)}
                 className="flex flex-col items-center gap-2.5 min-w-[76px] group cursor-pointer focus:outline-none"
               >
-                <div 
-                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 ${
-                    isSelected 
-                      ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105' 
-                      : 'bg-rose-50/50 hover:bg-rose-50 text-stone-600 group-hover:scale-105 group-hover:text-primary border border-stone-100'
-                  }`}
+                <div
+                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 ${isSelected
+                    ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
+                    : 'bg-rose-50/50 hover:bg-rose-50 text-stone-600 group-hover:scale-105 group-hover:text-primary border border-stone-100'
+                    }`}
                 >
                   <span className="material-symbols-outlined text-[28px] select-none">
                     {cat.icon}
                   </span>
                 </div>
-                <span 
-                  className={`text-[12px] font-bold transition-colors ${
-                    isSelected ? 'text-primary' : 'text-stone-500 group-hover:text-primary'
-                  }`}
+                <span
+                  className={`text-[12px] font-bold transition-colors ${isSelected ? 'text-primary' : 'text-stone-500 group-hover:text-primary'
+                    }`}
                 >
                   {cat.name}
                 </span>
@@ -293,25 +312,23 @@ export default function Home() {
       {/* 4. Sorting & Filters Bar */}
       <div className="sticky top-16 z-30 bg-white/85 backdrop-blur-md py-4 border-b border-stone-200/40 flex gap-3 overflow-x-auto no-scrollbar items-center justify-between">
         <div className="flex gap-2.5">
-          <button 
+          <button
             onClick={() => setActiveSort(activeSort === 'rating' ? null : 'rating')}
-            className={`px-5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer ${
-              activeSort === 'rating'
-                ? 'border-primary bg-primary text-white'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
-            }`}
+            className={`px-5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer ${activeSort === 'rating'
+              ? 'border-primary bg-primary text-white'
+              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
           >
             <span className="material-symbols-outlined text-[16px]">grade</span>
             En Yüksek Puan
           </button>
 
-          <button 
+          <button
             onClick={() => setActiveSort(activeSort === 'minOrder' ? null : 'minOrder')}
-            className={`px-5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer ${
-              activeSort === 'minOrder'
-                ? 'border-primary bg-primary text-white'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
-            }`}
+            className={`px-5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-2 transition-all duration-200 cursor-pointer ${activeSort === 'minOrder'
+              ? 'border-primary bg-primary text-white'
+              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
           >
             <span className="material-symbols-outlined text-[16px]">sort</span>
             Minimum Sipariş
@@ -319,7 +336,7 @@ export default function Home() {
         </div>
 
         {(selectedCategory || activeSort || searchQuery) && (
-          <button 
+          <button
             onClick={() => {
               setSelectedCategory(null);
               setActiveSort(null);
@@ -338,12 +355,12 @@ export default function Home() {
         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-[20px]">
           search
         </span>
-        <input 
+        <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-stone-50 border border-stone-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" 
-          placeholder="Yemek veya restoran ara..." 
-          type="text" 
+          className="w-full bg-stone-50 border border-stone-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          placeholder="Yemek veya restoran ara..."
+          type="text"
         />
       </div>
 
@@ -355,7 +372,7 @@ export default function Home() {
               restaurant
             </span>
             <p className="mt-4 font-bold">Aradığınız kriterlere uygun restoran bulunamadı.</p>
-            <button 
+            <button
               onClick={() => {
                 setSelectedCategory(null);
                 setActiveSort(null);
@@ -369,16 +386,16 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {displayedRestaurants.map((rest) => (
-              <div 
+              <div
                 key={rest.id}
                 onClick={() => navigate('/restaurant/' + rest.id)}
                 className="group relative bg-white rounded-3xl overflow-hidden border border-stone-100 hover:border-rose-100/40 shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col"
               >
                 <div className="relative h-48 overflow-hidden bg-stone-100 shrink-0">
-                  <img 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                  <img
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     alt={rest.name}
-                    src={rest.image} 
+                    src={rest.image}
                   />
                   {!rest.isOpen && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -389,7 +406,7 @@ export default function Home() {
                   )}
 
                   <div className="absolute top-3 right-3 z-10 flex gap-2">
-                    <button 
+                    <button
                       onClick={(e) => handleToggleFavorite(rest, e)}
                       className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-stone-600 hover:text-primary hover:bg-white active:scale-90 transition-all shadow-sm flex items-center justify-center cursor-pointer border border-white/50"
                     >

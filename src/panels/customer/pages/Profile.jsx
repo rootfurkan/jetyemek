@@ -175,9 +175,8 @@ function ActiveOrderTracker({ order, restaurantName, onStatusUpdate }) {
                   </span>
                 </motion.div>
                 <span
-                  className={`text-[10px] font-bold text-center leading-tight ${
-                    isCurrent ? 'text-primary' : isCompleted ? 'text-stone-600' : 'text-stone-400'
-                  }`}
+                  className={`text-[10px] font-bold text-center leading-tight ${isCurrent ? 'text-primary' : isCompleted ? 'text-stone-600' : 'text-stone-400'
+                    }`}
                 >
                   {step.label}
                 </span>
@@ -193,10 +192,10 @@ function ActiveOrderTracker({ order, restaurantName, onStatusUpdate }) {
             {order.deliveryStatus === 'ready'
               ? 'Siparişiniz hazırlandı, kurye bekleniyor.'
               : order.deliveryStatus === 'on_the_way'
-              ? 'Kurye yolda! Yakında kapınızda olacak.'
-              : order.deliveryStatus === 'delivered'
-              ? 'Siparişiniz teslim edildi. Afiyet olsun!'
-              : 'Siparişiniz hazırlanıyor, lütfen bekleyiniz...'}
+                ? 'Kurye yolda! Yakında kapınızda olacak.'
+                : order.deliveryStatus === 'delivered'
+                  ? 'Siparişiniz teslim edildi. Afiyet olsun!'
+                  : 'Siparişiniz hazırlanıyor, lütfen bekleyiniz...'}
           </span>
         </div>
       </div>
@@ -257,6 +256,7 @@ export default function Profile() {
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Değerlendirme Modalı State
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -344,7 +344,7 @@ export default function Profile() {
             // Platform order durumunu da güncelle
             dispatch(updatePlatformOrderStatus({ id: activeOrder.id, status: 'Kurye Yola Çıktı' }));
           }
-        } catch (_) {}
+        } catch (_) { }
         addToast({ message: '🛵 Kurye siparişinizi aldı ve yola çıktı!', type: 'success', duration: 5000 });
       }, 15000);
 
@@ -379,7 +379,7 @@ export default function Profile() {
             });
             dispatch(updatePlatformOrderStatus({ id: activeOrder.id, status: 'Teslim Edildi' }));
           }
-        } catch (_) {}
+        } catch (_) { }
 
         dispatch(deliverActiveOrder());
         addToast({ message: '🎉 Siparişiniz teslim edildi! Afiyet olsun.', type: 'success', duration: 6000 });
@@ -496,6 +496,7 @@ export default function Profile() {
       rating: reviewRating,
       comment: reviewComment,
       date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      createdAt: new Date().toISOString(),
       reply: null,
       hasImage: false
     };
@@ -514,6 +515,9 @@ export default function Profile() {
       addToast({ message: 'Değerlendirme gönderilemedi.', type: 'error' });
     }
   };
+
+  const totalPages = Math.ceil(previousOrders.length / 5);
+  const currentOrders = previousOrders.slice((currentPage - 1) * 5, currentPage * 5);
 
   return (
     <div className="flex flex-col md:flex-row w-full gap-8 items-start min-h-[calc(100vh-140px)] animate-fade-in text-left">
@@ -606,7 +610,7 @@ export default function Profile() {
                     </button>
                   </div>
                 ) : null}
-                {!ordersLoading && previousOrders.map((order) => (
+                {!ordersLoading && currentOrders.map((order) => (
                   <motion.div
                     key={order.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -678,6 +682,35 @@ export default function Profile() {
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Pagination Controls */}
+                {!ordersLoading && totalPages > 1 && (
+                  <div className="flex items-center justify-between bg-stone-50 p-2 rounded-2xl mt-6 border border-stone-100">
+                    <button
+                      onClick={() => {
+                        setCurrentPage(p => p - 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 bg-white text-stone-600 font-bold text-xs rounded-xl shadow-sm border border-stone-200/50 hover:bg-stone-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      Önceki
+                    </button>
+                    <span className="text-xs font-bold text-stone-500">
+                      Sayfa {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setCurrentPage(p => p + 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 bg-white text-primary font-bold text-xs rounded-xl shadow-sm border border-rose-100/50 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      Sonraki
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -723,7 +756,7 @@ export default function Profile() {
                           </div>
                         </div>
                         <p className="text-stone-600 text-xs font-medium leading-relaxed mt-2">{review.comment}</p>
-                        
+
                         {/* Restaurant Reply */}
                         {review.reply && (
                           <div className="mt-4 bg-white p-4 rounded-xl border-l-4 border-primary shadow-sm">
@@ -1048,7 +1081,7 @@ export default function Profile() {
             <h3 className="font-extrabold text-stone-800 text-lg">{getRestaurantName(reviewTargetOrder || {})}</h3>
             <p className="text-xs text-stone-500 font-medium mt-1">Siparişinizi nasıl buldunuz?</p>
           </div>
-          
+
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button

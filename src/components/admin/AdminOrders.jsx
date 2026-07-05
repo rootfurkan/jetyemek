@@ -238,13 +238,20 @@ export default function AdminOrders() {
                 <div className="p-5 flex-1 flex flex-col justify-between">
                   <ul className="space-y-2.5">
                     {order.items.map((item, idx) => (
-                      <li key={idx} className="flex justify-between items-center text-sm text-stone-700 gap-3">
-                        <span className="font-bold">
-                          {item.qty}x <span className="font-semibold text-stone-800">{item.name}</span>
-                        </span>
-                        <span className="text-stone-500 font-medium whitespace-nowrap">
-                          {formatPrice((Number(item.qty) || 0) * (Number(item.price) || 0))}
-                        </span>
+                      <li key={idx} className="flex flex-col gap-1.5 text-sm text-stone-700">
+                        <div className="flex justify-between items-start gap-3">
+                          <span className="font-bold leading-tight">
+                            {item.qty}x <span className="font-semibold text-stone-800">{item.name}</span>
+                          </span>
+                          <span className="text-stone-500 font-medium whitespace-nowrap">
+                            {formatPrice((Number(item.qty) || 0) * (Number(item.price) || 0))}
+                          </span>
+                        </div>
+                        {item.note && (
+                          <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/50 font-medium w-fit shadow-sm">
+                            <span className="font-bold mr-1">Not:</span> {item.note}
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>

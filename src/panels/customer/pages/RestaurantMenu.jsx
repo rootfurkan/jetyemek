@@ -5,6 +5,7 @@ import { addToCart } from "../../../features/cart/cartSlice.js";
 import { fetchReviews } from "../../../features/reviews/reviewsSlice.js";
 import { useToast } from "../../../common/components/Toast.jsx";
 import Modal from "../../../common/components/Modal.jsx";
+import ProductCustomizeModal from "../components/ProductCustomizeModal.jsx";
 
 const formatProductTag = (tag) => {
   if (tag === "Hot") return "Popüler";
@@ -59,6 +60,7 @@ export default function RestaurantMenu() {
   const logoImage = restaurant.image || defaultLogoImage;
 
   const [selectedSection, setSelectedSection] = useState("Popüler");
+  const [ratingFilter, setRatingFilter] = useState(null);
   const [menuSearch, setMenuSearch] = useState("");
 
   // Modals state
@@ -72,12 +74,31 @@ export default function RestaurantMenu() {
   const [grammageOption, setGrammageOption] = useState("90gr");
   const [sauceOption, setSauceOption] = useState("İstemiyorum");
 
-  const sections = [
-    "Popüler",
-    ...new Set(
-      menuItems.map((i) => i.category).filter((c) => c && c !== "Popüler"),
-    ),
-  ];
+  let defaultCategories = Array.from(
+    new Set(menuItems.map((i) => i.category).filter((c) => c && c !== "Popüler"))
+  );
+
+  if (restaurantId === "gourmet-burger") {
+    const predefinedOrder = ["Burgerler", "Pizzalar", "Atıştırmalıklar", "Tatlılar", "İçecekler"];
+    
+    // Ensure all predefined categories exist in defaultCategories if requested
+    predefinedOrder.forEach(cat => {
+      if (!defaultCategories.includes(cat)) {
+        defaultCategories.push(cat);
+      }
+    });
+
+    defaultCategories.sort((a, b) => {
+      const indexA = predefinedOrder.indexOf(a);
+      const indexB = predefinedOrder.indexOf(b);
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }
+
+  const sections = ["Popüler", ...defaultCategories];
 
   // Filter items based on active section and live search input
   let displayedItems = menuItems.filter((item) => {
@@ -89,6 +110,18 @@ export default function RestaurantMenu() {
     return matchesSection && matchesSearch;
   });
 
+  if (restaurantId === "gourmet-burger") {
+    const predefinedOrder = ["Burgerler", "Pizzalar", "Atıştırmalıklar", "Tatlılar", "İçecekler"];
+    displayedItems.sort((a, b) => {
+      const indexA = predefinedOrder.indexOf(a.category);
+      const indexB = predefinedOrder.indexOf(b.category);
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      return (a.category || "").localeCompare(b.category || "");
+    });
+  }
+
   const handleAddClick = (item) => {
     if (!isAuthenticated) {
       addToast({
@@ -99,25 +132,25 @@ export default function RestaurantMenu() {
       navigate("/login", { state: { from: location.pathname } });
       return;
     }
-    const itemOptions = item.extraOptions?.options || [];
-    if (itemOptions.length === 0) {
-      dispatch(
-        addToCart({
-          ...item,
-          restaurantId,
-          restaurantName: restaurant.name,
-        }),
-      );
-      addToast({ message: `${item.name} sepete eklendi!`, type: "success" });
+
+    const isBurger = item.category === 'Burgerler' || item.name.toLowerCase().includes('burger');
+    const isPizza = item.category === 'Pizzalar' || item.name.toLowerCase().includes('pizza');
+    const isDessert = item.category === 'Tatlılar' || item.name.toLowerCase().includes('tatlı');
+    const hasExtras = item.extraOptions && item.extraOptions.options && item.extraOptions.options.length > 0;
+
+    if (isBurger || isPizza || isDessert || hasExtras) {
+      setCustomizingItem(item);
       return;
     }
 
-    setWrapOption("Tek lavaş");
-    setDrinkOption("Kola");
-    setGrammageOption("90gr");
-    setSauceOption("İstemiyorum");
-    setSelectedExtraOption(itemOptions[0]);
-    setCustomizingItem(item);
+    dispatch(
+      addToCart({
+        ...item,
+        restaurantId,
+        restaurantName: restaurant.name,
+      }),
+    );
+    addToast({ message: `${item.name} sepete eklendi!`, type: "success" });
   };
 
   const getItemCountInCart = (itemId) => {
@@ -187,7 +220,7 @@ export default function RestaurantMenu() {
               Günün Fırsatı
             </span>
             <h3 className="text-xl md:text-2xl font-extrabold text-white mt-3 leading-tight">
-              2 Menü Al 1 Bedava
+              İLK50 Koduyla 50TL İndirim
             </h3>
             <p className="text-xs mt-1 text-rose-100 font-medium">
               Sadece bugüne özel siparişlerde geçerlidir!
@@ -436,13 +469,66 @@ export default function RestaurantMenu() {
               </p>
             </div>
           </div>
+          
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-2 border-b border-stone-100 no-scrollbar">
+            <button
+              onClick={() => setRatingFilter(null)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                ratingFilter === null ? "bg-amber-500 text-white shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              }`}
+            >
+              Tümü
+            </button>
+            {[5, 4, 3, 2, 1].map((star) => (
+              <button
+                key={star}
+                onClick={() => setRatingFilter(star)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                  ratingFilter === star ? "bg-amber-500 text-white shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                }`}
+              >
+                {star} <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              </button>
+            ))}
+          </div>
+
           <div className="divide-y divide-stone-100 max-h-[350px] overflow-y-auto pr-1">
             {restaurantReviews.length === 0 ? (
               <p className="text-center text-xs text-stone-500 py-4 font-semibold">
                 Henüz hiç değerlendirme yapılmamış.
               </p>
+            ) : [...restaurantReviews].filter((r) => ratingFilter === null || r.rating === ratingFilter).length === 0 ? (
+              <p className="text-center text-xs text-stone-500 py-4 font-semibold">
+                Bu yıldıza ait henüz bir değerlendirme bulunmuyor.
+              </p>
             ) : (
-              restaurantReviews.map((review) => (
+              [...restaurantReviews].filter((r) => ratingFilter === null || r.rating === ratingFilter).sort((a, b) => {
+                const getTimestamp = (r) => {
+                  if (r.createdAt) return new Date(r.createdAt).getTime();
+                  if (!r.date) return 0;
+                  
+                  const m = { "Ocak": 0, "Şubat": 1, "Mart": 2, "Nisan": 3, "Mayıs": 4, "Haziran": 5, "Temmuz": 6, "Ağustos": 7, "Eylül": 8, "Ekim": 9, "Kasım": 10, "Aralık": 11 };
+                  const p = r.date.split(" ");
+                  
+                  let timeParts = [0, 0];
+                  if (r.time && typeof r.time === 'string' && r.time.includes(":")) {
+                    timeParts = r.time.split(":");
+                  } else if (p.length >= 4 && p[3].includes(":")) {
+                    timeParts = p[3].split(":");
+                  }
+
+                  if (p.length >= 3) {
+                    const day = parseInt(p[0], 10) || 1;
+                    const month = m[p[1]] !== undefined ? m[p[1]] : 0;
+                    const year = parseInt(p[2], 10) || 2026;
+                    const hour = parseInt(timeParts[0], 10) || 0;
+                    const minute = parseInt(timeParts[1], 10) || 0;
+                    return new Date(year, month, day, hour, minute).getTime();
+                  }
+                  return new Date(r.date).getTime() || 0;
+                };
+                return getTimestamp(b) - getTimestamp(a);
+              }).map((review) => (
                 <div key={review.id} className="py-4 first:pt-0 last:pb-0">
                   <div className="flex justify-between items-start mb-1">
                     <div>
@@ -498,335 +584,15 @@ export default function RestaurantMenu() {
         </div>
       </Modal>
 
-      {/* Customize Options Modal */}
-      <Modal
+      {/* Product Customize Modal */}
+      <ProductCustomizeModal
         isOpen={!!customizingItem}
-        onClose={() => {
-          setCustomizingItem(null);
-          setSelectedExtraOption(null);
-        }}
-        title={
-          customizingItem
-            ? `${customizingItem.name} Seçenekleri`
-            : "Ürün Seçenekleri"
-        }
-      >
-        {customizingItem &&
-          (() => {
-            const customOptions = customizingItem.extraOptions?.options || [];
-            if (customOptions.length > 0) {
-              const selectedOption = selectedExtraOption || customOptions[0];
-              const optionPrice = Number(selectedOption?.price) || 0;
-              const currentPrice = Number(customizingItem.price) + optionPrice;
-
-              const handleConfirmAdd = () => {
-                const finalName = selectedOption?.name
-                  ? `${customizingItem.name} (${selectedOption.name})`
-                  : customizingItem.name;
-                const finalId = selectedOption?.name
-                  ? `${customizingItem.id}-${selectedOption.name.replace(/\s+/g, "")}`
-                  : customizingItem.id;
-
-                dispatch(
-                  addToCart({
-                    ...customizingItem,
-                    id: finalId,
-                    name: finalName,
-                    price: currentPrice,
-                    restaurantId,
-                    restaurantName: restaurant.name,
-                  }),
-                );
-
-                addToast({
-                  message: `${finalName} sepete eklendi!`,
-                  type: "success",
-                });
-                setCustomizingItem(null);
-                setSelectedExtraOption(null);
-              };
-
-              return (
-                <div className="space-y-6 text-left">
-                  <div className="border-b border-stone-100 pb-4">
-                    <p className="text-xs text-stone-500 leading-relaxed font-semibold">
-                      {customizingItem.description}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">
-                      {customizingItem.extraOptions.title || "Ek Secenek"}
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {customOptions.map((option) => (
-                        <button
-                          key={option.name}
-                          type="button"
-                          onClick={() => setSelectedExtraOption(option)}
-                          className={`flex justify-between items-center py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                            selectedOption?.name === option.name
-                              ? "border-primary bg-rose-50/20 text-primary"
-                              : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                          }`}
-                        >
-                          <span>{option.name}</span>
-                          <span className="font-extrabold text-primary">
-                            {Number(option.price) > 0
-                              ? `+${Number(option.price)} TL`
-                              : "Ucretsiz"}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-stone-100 pt-4 flex items-center justify-between mt-6">
-                    <div>
-                      <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">
-                        Toplam Fiyat
-                      </p>
-                      <p className="text-xl font-black text-primary">
-                        ₺{currentPrice}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleConfirmAdd}
-                      className="brand-gradient-bg text-white font-extrabold text-xs px-8 py-3.5 rounded-xl hover:scale-102 active:scale-98 transition-all cursor-pointer border-none shadow-md shadow-rose-900/10"
-                    >
-                      Sepete Ekle
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            const isCigkofta =
-              customizingItem.category === "Çiğ Köfte" ||
-              customizingItem.category === "Dürümler" ||
-              customizingItem.name.toLowerCase().includes("çiğ") ||
-              customizingItem.name.toLowerCase().includes("cig");
-            const isMenu =
-              customizingItem.category === "Menüler" ||
-              customizingItem.name.toLowerCase().includes("menü") ||
-              customizingItem.name.toLowerCase().includes("menu");
-            const isBurger =
-              customizingItem.category === "Burgerler" ||
-              customizingItem.name.toLowerCase().includes("burger");
-
-            // Addons price calculation
-            let addonPrice = 0;
-            if (isBurger) {
-              if (grammageOption === "120gr") addonPrice += 100;
-              if (grammageOption === "150gr") addonPrice += 200;
-            }
-            if (sauceOption === "Ketçap" || sauceOption === "Mayonez") {
-              addonPrice += 20;
-            }
-
-            const currentPrice = customizingItem.price + addonPrice;
-
-            const handleConfirmAdd = () => {
-              let details = [];
-              if (isCigkofta) details.push(wrapOption);
-              if (isMenu) details.push(drinkOption);
-              if (isBurger) details.push(grammageOption);
-              if (sauceOption !== "İstemiyorum") details.push(sauceOption);
-
-              const detailsText = details.join(", ");
-              const finalName =
-                details.length > 0
-                  ? `${customizingItem.name} (${detailsText})`
-                  : customizingItem.name;
-              const finalId =
-                details.length > 0
-                  ? `${customizingItem.id}-${details.join("-").replace(/\s+/g, "")}`
-                  : customizingItem.id;
-
-              dispatch(
-                addToCart({
-                  ...customizingItem,
-                  id: finalId,
-                  name: finalName,
-                  price: currentPrice,
-                  restaurantId,
-                  restaurantName: restaurant.name,
-                }),
-              );
-
-              addToast({
-                message: `${finalName} sepete eklendi!`,
-                type: "success",
-              });
-              setCustomizingItem(null);
-            };
-
-            return (
-              <div className="space-y-6 text-left">
-                {/* Product Info Description */}
-                <div className="border-b border-stone-100 pb-4">
-                  <p className="text-xs text-stone-500 leading-relaxed font-semibold">
-                    {customizingItem.description}
-                  </p>
-                </div>
-
-                {/* Wrap Option (Çiğköfte only) */}
-                {isCigkofta && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">
-                      Lavaş Tercihi
-                    </h4>
-                    <div className="flex gap-3">
-                      {["Tek lavaş", "İki lavaş"].map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setWrapOption(opt)}
-                          className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                            wrapOption === opt
-                              ? "border-primary bg-rose-50/20 text-primary"
-                              : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Drink Option (Menus only) */}
-                {isMenu && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">
-                      İçecek Tercihi
-                    </h4>
-                    <div className="grid grid-cols-3 gap-2">
-                      {["Kola", "Gazoz", "Ice Tea", "Ayran", "Su"].map(
-                        (opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => setDrinkOption(opt)}
-                            className={`py-3 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                              drinkOption === opt
-                                ? "border-primary bg-rose-50/20 text-primary"
-                                : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Meat Weight Option (Burgers only) */}
-                {isBurger && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">
-                      Köfte Gramajı Tercihi
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {[
-                        { label: "90gr (Varsayılan)", value: "90gr", extra: 0 },
-                        {
-                          label: "120gr (+100 TL)",
-                          value: "120gr",
-                          extra: 100,
-                        },
-                        {
-                          label: "150gr (+200 TL)",
-                          value: "150gr",
-                          extra: 200,
-                        },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setGrammageOption(opt.value)}
-                          className={`flex justify-between items-center py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                            grammageOption === opt.value
-                              ? "border-primary bg-rose-50/20 text-primary"
-                              : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                          }`}
-                        >
-                          <span>{opt.label}</span>
-                          {opt.extra > 0 && (
-                            <span className="font-extrabold text-primary">
-                              +{opt.extra} ₺
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Sauce Option (All items) */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black text-stone-700 uppercase tracking-wide">
-                    Ekstra Sos Tercihi
-                  </h4>
-                  <div className="flex flex-col gap-2">
-                    {[
-                      {
-                        label: "İstemiyorum (Ücretsiz)",
-                        value: "İstemiyorum",
-                        extra: 0,
-                      },
-                      { label: "Ketçap (+20 TL)", value: "Ketçap", extra: 20 },
-                      {
-                        label: "Mayonez (+20 TL)",
-                        value: "Mayonez",
-                        extra: 20,
-                      },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setSauceOption(opt.value)}
-                        className={`flex justify-between items-center py-3 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                          sauceOption === opt.value
-                            ? "border-primary bg-rose-50/20 text-primary"
-                            : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {opt.extra > 0 && (
-                          <span className="font-extrabold text-primary">
-                            +{opt.extra} ₺
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer pricing CTA */}
-                <div className="border-t border-stone-100 pt-4 flex items-center justify-between mt-6">
-                  <div>
-                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">
-                      Toplam Fiyat
-                    </p>
-                    <p className="text-xl font-black text-primary">
-                      ₺{currentPrice}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleConfirmAdd}
-                    className="brand-gradient-bg text-white font-extrabold text-xs px-8 py-3.5 rounded-xl hover:scale-102 active:scale-98 transition-all cursor-pointer border-none shadow-md shadow-rose-900/10"
-                  >
-                    Sepete Ekle
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-      </Modal>
+        onClose={() => setCustomizingItem(null)}
+        product={customizingItem}
+        restaurant={restaurant}
+        onAddToCart={(cartItem) => dispatch(addToCart(cartItem))}
+        addToast={addToast}
+      />
     </div>
   );
 }
