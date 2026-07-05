@@ -47,9 +47,8 @@ export default function AdminMenu() {
   const [newProductTag, setNewProductTag] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [hasExtraOptions, setHasExtraOptions] = useState(false);
-  const [extraOptionTitle, setExtraOptionTitle] = useState('');
-  const [extraOptions, setExtraOptions] = useState([
-    { name: '', price: '' },
+  const [extraOptionGroups, setExtraOptionGroups] = useState([
+    { title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }
   ]);
 
   const resetProductForm = () => {
@@ -61,8 +60,7 @@ export default function AdminMenu() {
     setNewProductImg('');
     setNewProductTag('');
     setHasExtraOptions(false);
-    setExtraOptionTitle('');
-    setExtraOptions([{ name: '', price: '' }]);
+    setExtraOptionGroups([{ title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }]);
   };
 
   const openAddProductModal = () => {
@@ -79,15 +77,31 @@ export default function AdminMenu() {
     setNewProductImg(product.image || '');
     setNewProductTag(product.tag || '');
     setHasExtraOptions(!!product.extraOptions);
-    setExtraOptionTitle(product.extraOptions?.title || '');
-    setExtraOptions(
-      product.extraOptions?.options?.length
-        ? product.extraOptions.options.map((option) => ({
-            name: option.name || '',
-            price: option.price?.toString() || '',
+    if (product.extraOptions) {
+      if (Array.isArray(product.extraOptions)) {
+        setExtraOptionGroups(
+          product.extraOptions.map((group) => ({
+            title: group.title || '',
+            type: group.type || 'single',
+            required: !!group.required,
+            options: group.options?.length
+              ? group.options.map((opt) => ({ name: opt.name || '', price: opt.price?.toString() || '' }))
+              : [{ name: '', price: '' }]
           }))
-        : [{ name: '', price: '' }]
-    );
+        );
+      } else {
+        setExtraOptionGroups([{
+          title: product.extraOptions.title || '',
+          type: 'single',
+          required: false,
+          options: product.extraOptions.options?.length
+            ? product.extraOptions.options.map((opt) => ({ name: opt.name || '', price: opt.price?.toString() || '' }))
+            : [{ name: '', price: '' }]
+        }]);
+      }
+    } else {
+      setExtraOptionGroups([{ title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }]);
+    }
     setShowAddModal(true);
   };
 
@@ -137,34 +151,38 @@ export default function AdminMenu() {
     }
 
     const defaultImg = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80';
-    const cleanExtraOptions = extraOptions
-      .map((option) => ({
-        name: option.name.trim(),
-        price: Number(option.price) || 0,
-      }))
-      .filter((option) => option.name);
-
+    
+    // YENİ JSON ŞEMASINA UYGUN PAYLOAD OLUŞTURMA
     const menuItemPayload = {
-      name: newProductName,
-      price: parseFloat(newProductPrice),
-      description: newProductDesc || 'Özenle hazırlanan gurme lezzetler.',
-      category: newProductCat,
-      image: newProductImg || defaultImg,
-      status: editingProduct?.status || 'Active',
-      tag: newProductTag || null,
       restaurantId,
+      name: newProductName.trim(),
+      price: parseFloat(newProductPrice),
+      description: newProductDesc.trim(),
+      category: newProductCat || categories[0] || 'Kategorisiz',
+      image: newProductImg.trim() || defaultImg,
+      time: "20-30 dk", // Varsayılan süre
+      status: "Active"
     };
 
+    if (newProductTag && newProductTag.trim() !== '') {
+      menuItemPayload.tag = newProductTag.trim();
+    }
+
     if (hasExtraOptions) {
-      if (!extraOptionTitle.trim() || cleanExtraOptions.length === 0) {
-        addToast({ message: 'Ek seçenek başlığı ve en az bir seçenek giriniz.', type: 'error' });
+      const validGroups = extraOptionGroups.map(g => ({
+        title: g.title.trim(),
+        type: g.type,
+        required: g.required,
+        options: g.options
+          .map(o => ({ name: o.name.trim(), price: Number(o.price) || 0 }))
+          .filter(o => o.name)
+      })).filter(g => g.title && g.options.length > 0);
+
+      if (validGroups.length === 0) {
+        addToast({ message: 'Lütfen geçerli ek seçenekler ekleyin veya toggleı kapatın.', type: 'error' });
         return;
       }
-
-      menuItemPayload.extraOptions = {
-        title: extraOptionTitle.trim(),
-        options: cleanExtraOptions,
-      };
+      menuItemPayload.extraOptions = validGroups;
     } else if (editingProduct?.extraOptions) {
       menuItemPayload.extraOptions = null;
     }
@@ -179,7 +197,7 @@ export default function AdminMenu() {
       }
     } catch (error) {
       console.error('Urun kaydedilirken hata:', error);
-      addToast({ message: 'Urun db.json dosyasina kaydedilemedi.', type: 'error' });
+      addToast({ message: 'Ürün kaydedilirken bir hata oluştu.', type: 'error' });
       return;
     }
 
@@ -189,7 +207,7 @@ export default function AdminMenu() {
     setShowAddModal(false);
     addToast({
       message: wasEditing
-        ? `"${productName}" urunu guncellendi.`
+        ? `"${productName}" ürünü güncellendi.`
         : `"${productName}" menüye eklendi ve müşteri paneline yansıdı!`,
       type: 'success'
     });
@@ -637,57 +655,100 @@ export default function AdminMenu() {
                 </div>
 
                 {hasExtraOptions && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Secenek Basligi</label>
-                      <input
-                        type="text"
-                        value={extraOptionTitle}
-                        onChange={(e) => setExtraOptionTitle(e.target.value)}
-                        placeholder="Orn: Ekstra Sos Tercihi"
-                        className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
-                      />
-                    </div>
-
-                    {extraOptions.map((option, index) => (
-                      <div key={index} className="grid grid-cols-[1fr_110px_36px] gap-2 items-center">
-                        <input
-                          type="text"
-                          value={option.name}
-                          onChange={(e) => setExtraOptions(prev => prev.map((item, itemIndex) => (
-                            itemIndex === index ? { ...item, name: e.target.value } : item
-                          )))}
-                          placeholder="Orn: Ketcap"
-                          className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={option.price}
-                          onChange={(e) => setExtraOptions(prev => prev.map((item, itemIndex) => (
-                            itemIndex === index ? { ...item, price: e.target.value } : item
-                          )))}
-                          placeholder="TL"
-                          className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-stone-800 focus:outline-none"
-                        />
+                  <div className="space-y-6">
+                    {extraOptionGroups.map((group, groupIndex) => (
+                      <div key={groupIndex} className="bg-white border border-stone-200 rounded-2xl p-4 space-y-4 relative shadow-sm">
                         <button
                           type="button"
-                          onClick={() => setExtraOptions(prev => prev.length === 1 ? [{ name: '', price: '' }] : prev.filter((_, itemIndex) => itemIndex !== index))}
-                          className="h-10 rounded-xl bg-white border border-stone-200 text-stone-400 hover:text-red-500 hover:bg-red-50 cursor-pointer"
-                          title="Secenegi sil"
+                          onClick={() => setExtraOptionGroups(prev => prev.length === 1 ? [{ title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }] : prev.filter((_, idx) => idx !== groupIndex))}
+                          className="absolute top-3 right-3 text-stone-300 hover:text-red-500 transition-colors cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                          <span className="material-symbols-outlined text-[20px]">close</span>
                         </button>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Grup Başlığı</label>
+                            <input
+                              type="text"
+                              value={group.title}
+                              onChange={(e) => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, title: e.target.value } : g))}
+                              placeholder="Örn: Ekstra Soslar"
+                              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-stone-800 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Seçim Türü</label>
+                            <select
+                              value={group.type}
+                              onChange={(e) => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, type: e.target.value } : g))}
+                              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-stone-800 outline-none"
+                            >
+                              <option value="single">Tekli Seçim (Radio)</option>
+                              <option value="multi">Çoklu Seçim (Checkbox)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {group.type === 'single' && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <input
+                              type="checkbox"
+                              id={`req-${groupIndex}`}
+                              checked={group.required}
+                              onChange={(e) => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, required: e.target.checked } : g))}
+                              className="w-4 h-4 text-primary rounded border-stone-300"
+                            />
+                            <label htmlFor={`req-${groupIndex}`} className="text-xs text-stone-600 font-semibold cursor-pointer select-none">Bu gruptan en az 1 seçim zorunlu olsun</label>
+                          </div>
+                        )}
+
+                        <div className="space-y-2 pt-3 border-t border-stone-100">
+                          {group.options.map((option, optIndex) => (
+                            <div key={optIndex} className="grid grid-cols-[1fr_110px_36px] gap-2 items-center">
+                              <input
+                                type="text"
+                                value={option.name}
+                                onChange={(e) => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, options: g.options.map((o, oIdx) => oIdx === optIndex ? { ...o, name: e.target.value } : o) } : g))}
+                                placeholder="Seçenek Adı"
+                                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-stone-800 outline-none"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={option.price}
+                                onChange={(e) => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, options: g.options.map((o, oIdx) => oIdx === optIndex ? { ...o, price: e.target.value } : o) } : g))}
+                                placeholder="TL"
+                                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-stone-800 outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, options: g.options.length === 1 ? [{ name: '', price: '' }] : g.options.filter((_, oIdx) => oIdx !== optIndex) } : g))}
+                                className="h-10 rounded-xl bg-stone-50 border border-stone-200 text-stone-400 hover:text-red-500 hover:bg-red-50 cursor-pointer flex items-center justify-center transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                              </button>
+                            </div>
+                          ))}
+                          
+                          <button
+                            type="button"
+                            onClick={() => setExtraOptionGroups(prev => prev.map((g, idx) => idx === groupIndex ? { ...g, options: [...g.options, { name: '', price: '' }] } : g))}
+                            className="w-full border border-dashed border-stone-300 text-stone-500 bg-stone-50 hover:bg-stone-100 hover:border-stone-400 hover:text-stone-700 rounded-xl py-2.5 text-xs font-bold cursor-pointer transition-all mt-2"
+                          >
+                            + Alt Seçenek Ekle
+                          </button>
+                        </div>
                       </div>
                     ))}
-
+                    
                     <button
                       type="button"
-                      onClick={() => setExtraOptions(prev => [...prev, { name: '', price: '' }])}
-                      className="w-full border border-dashed border-primary/40 text-primary bg-white hover:bg-rose-50 rounded-xl py-2.5 text-xs font-black cursor-pointer"
+                      onClick={() => setExtraOptionGroups(prev => [...prev, { title: '', type: 'single', required: false, options: [{ name: '', price: '' }] }])}
+                      className="w-full border-2 border-dashed border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 rounded-xl py-3.5 text-xs font-black cursor-pointer transition-all uppercase tracking-wide"
                     >
-                      + Secenek Ekle
+                      + Yeni Seçenek Grubu Ekle
                     </button>
                   </div>
                 )}

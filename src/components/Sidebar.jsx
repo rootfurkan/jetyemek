@@ -14,6 +14,7 @@ export default function Sidebar({
 
   const menuItems = [
     { id: 'orders', label: 'Siparişlerim', icon: 'receipt_long' },
+    { id: 'reviews', label: 'Değerlendirmelerim', icon: 'star_rate' },
     { id: 'profile', label: 'Kişisel Bilgiler', icon: 'person' },
     { id: 'cards', label: 'Kartlarım', icon: 'credit_card' },
     { id: 'preferences', label: 'Tercihler', icon: 'notifications' },

@@ -177,7 +177,7 @@ export default function Cart() {
         customerName: currentUser?.name + (currentUser?.surname ? ' ' + currentUser.surname : ''),
         restaurant: restaurantName,
         restaurantId: firstItem?.restaurantId || '',
-        items: cartItems.map((i) => ({ id: i.id, name: i.name, qty: i.quantity, price: i.price })),
+        items: cartItems.map((i) => ({ id: i.id, name: i.name, qty: i.quantity, price: i.price, note: i.note || null })),
         itemsSummary: `${cartItems.reduce((a, c) => a + c.quantity, 0)} Ürün`,
         total,
         address: activeAddress?.details || 'Adres belirtilmedi',
@@ -272,6 +272,9 @@ export default function Cart() {
                     <div className="flex-grow">
                       <h3 className="font-bold text-stone-800 text-sm">{item.name}</h3>
                       <p className="text-[10px] text-stone-400 font-medium mt-0.5">{item.description || 'Özel tarif'}</p>
+                      {item.note && (
+                        <p className="text-[11px] text-stone-500 italic mt-1 bg-stone-50 border border-stone-200 px-2 py-1 rounded-md inline-block">Not: {item.note}</p>
+                      )}
                       <p className="text-primary font-extrabold text-sm mt-1">₺{item.price * item.quantity}</p>
                     </div>
                     <div className="flex items-center gap-3 bg-stone-50 border border-stone-200/50 rounded-full px-2 py-1 select-none">

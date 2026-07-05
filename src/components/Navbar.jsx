@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../features/auth/authSlice.js';
@@ -16,6 +16,64 @@ export default function Navbar({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, currentUser } = useSelector((state) => state.auth);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const restaurantsList = useSelector((state) => state.restaurants?.list) || [];
+  const menuItems = useSelector((state) => state.menu?.items) || [];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredRestaurants = debouncedSearchTerm 
+    ? restaurantsList.filter(r => 
+        r.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || 
+        r.category.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      ).slice(0, 3) 
+    : [];
+
+  const filteredItems = debouncedSearchTerm
+    ? menuItems.filter(item => 
+        item.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || 
+        (item.description && item.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
+      ).slice(0, 5)
+    : [];
+
+  const handleResultClick = (restaurantId) => {
+    navigate(`/restaurant/${restaurantId}`);
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setIsDropdownOpen(false);
+    if (onSearch) onSearch(""); 
+  };
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+    if (val.trim().length > 0) {
+      setIsDropdownOpen(true);
+    } else {
+      setIsDropdownOpen(false);
+    }
+    if (onSearch) onSearch(val); 
+  };
 
   const handleLogout = () => {
     dispatch(logout());
@@ -83,17 +141,91 @@ export default function Navbar({
           </button>
         </nav>
 
-        {/* Global Search Input */}
-        <div className="hidden sm:block flex-grow max-w-md relative mx-4 group">
+        {/* Global Search Input & Dropdown */}
+        <div ref={dropdownRef} className="hidden sm:block flex-grow max-w-md relative mx-4 group">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-primary transition-colors text-[20px]">
             search
           </span>
           <input 
-            onChange={(e) => onSearch && onSearch(e.target.value)}
+            value={searchTerm}
+            onChange={handleInputChange}
+            onFocus={() => { if (searchTerm.trim().length > 0) setIsDropdownOpen(true); }}
             className="w-full bg-rose-50/40 hover:bg-rose-50/60 border border-stone-200/50 focus:border-rose-200 focus:bg-white rounded-full py-2 pl-11 pr-4 text-sm focus:ring-4 focus:ring-primary/5 transition-all text-stone-800 placeholder-stone-400 focus:outline-none" 
             placeholder="Yemek veya restoran ara..." 
             type="text" 
           />
+          
+          {/* Dropdown UI */}
+          {isDropdownOpen && debouncedSearchTerm.trim().length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-100 overflow-hidden z-[60]">
+              {filteredRestaurants.length === 0 && filteredItems.length === 0 ? (
+                <div className="p-8 text-center text-stone-500">
+                  <span className="material-symbols-outlined text-4xl mb-2 text-stone-300">search_off</span>
+                  <p className="text-sm font-medium">"{debouncedSearchTerm}" için sonuç bulunamadı.</p>
+                </div>
+              ) : (
+                <div className="max-h-[60vh] overflow-y-auto no-scrollbar py-2">
+                  {/* Restoranlar Bölümü */}
+                  {filteredRestaurants.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-4 py-1.5 text-[10px] font-black tracking-wider text-stone-400 uppercase">Restoranlar</div>
+                      <div className="flex flex-col">
+                        {filteredRestaurants.map((restaurant) => (
+                          <div 
+                            key={`res-${restaurant.id}`}
+                            onClick={() => handleResultClick(restaurant.id)}
+                            className="px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 cursor-pointer transition-colors"
+                          >
+                            <img src={restaurant.image} alt={restaurant.name} className="w-10 h-10 rounded-full object-cover border border-stone-100 shadow-sm" />
+                            <div>
+                              <p className="text-sm font-bold text-stone-800">{restaurant.name}</p>
+                              <p className="text-xs text-stone-500">{restaurant.category}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Yemekler Bölümü */}
+                  {filteredItems.length > 0 && (
+                    <div>
+                      <div className="px-4 py-1.5 text-[10px] font-black tracking-wider text-stone-400 uppercase border-t border-stone-100 mt-1 pt-3">Yemekler / Ürünler</div>
+                      <div className="flex flex-col">
+                        {filteredItems.map((item) => {
+                          const restaurant = restaurantsList.find(r => r.id === item.restaurantId);
+                          return (
+                            <div 
+                              key={`item-${item.id}`}
+                              onClick={() => handleResultClick(item.restaurantId)}
+                              className="px-4 py-2.5 flex items-center justify-between hover:bg-stone-50 cursor-pointer transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                {item.image ? (
+                                  <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover shadow-sm" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-stone-400 text-[20px]">restaurant</span>
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-sm font-bold text-stone-800 line-clamp-1">{item.name}</p>
+                                  <p className="text-[11px] font-medium text-stone-500 line-clamp-1">
+                                    {restaurant ? restaurant.name : "Restoran Bilinmiyor"}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-sm font-black text-primary whitespace-nowrap pl-2">{item.price} TL</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right actions */}
