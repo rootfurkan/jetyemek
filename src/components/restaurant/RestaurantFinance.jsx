@@ -41,7 +41,7 @@ function getPeriodStart(period) {
   return date;
 }
 
-export default function AdminFinance() {
+export default function RestaurantFinance() {
   const addToast = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('Last30');
   const [searchQuery, setSearchQuery] = useState('');

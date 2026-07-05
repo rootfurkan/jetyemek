@@ -27,7 +27,10 @@
       "birthdate": "15.05.1988",
       "role": "customer",
       "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ",
-      "status": "Aktif"
+      "status": "Aktif",
+      "favorites": [
+        "lezzet-sofrasi"
+      ]
     },
     {
       "id": "2eM7FL-qwQ0",
@@ -5578,14 +5581,14 @@
       "description": "150 TL üzeri siparişlerde %25 indirim"
     },
     {
-      "id": "awxwfrsKmiU",
-      "name": "Test Kampanyası",
-      "code": "FRK10",
+      "id": "XVYqJkxhoAI",
+      "name": "Furkana Özel",
+      "code": "FRK20",
       "type": "coupon_percent",
       "discountValue": 50,
       "minOrder": 150,
       "status": "Aktif",
-      "usageCount": 1,
+      "usageCount": 0,
       "usageLimit": 10000,
       "description": "150 TL üzeri siparişlerde geçerli kupon"
     }

@@ -1,6 +1,6 @@
 import React from 'react';
-import AdminOrders from '../../../components/admin/AdminOrders.jsx';
+import RestaurantOrders from '../../../components/restaurant/RestaurantOrders.jsx';
 
 export default function Orders() {
-  return <AdminOrders />;
+  return <RestaurantOrders />;
 }

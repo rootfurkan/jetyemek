@@ -34,7 +34,7 @@ function formatPrice(value) {
   return `${Number(value || 0).toFixed(2)} TL`;
 }
 
-export default function AdminOrders() {
+export default function RestaurantOrders() {
   const addToast = useToast();
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.currentUser);

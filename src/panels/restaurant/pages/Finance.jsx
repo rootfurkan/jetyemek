@@ -1,6 +1,6 @@
 import React from 'react';
-import AdminFinance from '../../../components/admin/AdminFinance.jsx';
+import RestaurantFinance from '../../../components/restaurant/RestaurantFinance.jsx';
 
 export default function Finance() {
-  return <AdminFinance />;
+  return <RestaurantFinance />;
 }

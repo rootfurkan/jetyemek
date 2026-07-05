@@ -1,20 +1,6 @@
 import React from 'react';
 import Modal from './Modal.jsx';
 
-/**
- * ConfirmModal — Onay gerektiren işlemler için bir modal bileşeni.
- *
- * Props:
- *   isOpen         : boolean
- *   onClose        : () => void   (İptal)
- *   onConfirm      : () => void   (Onayla)
- *   title          : string
- *   message        : string | ReactNode
- *   confirmLabel   : string  (default: "Evet, Devam Et")
- *   cancelLabel    : string  (default: "İptal")
- *   danger         : boolean (default: false) — onay butonu kırmızı olur
- *   icon           : string  (material symbol name, default: "help")
- */
 export default function ConfirmModal({
   isOpen,
   onClose,

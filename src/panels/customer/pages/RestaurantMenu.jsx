@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { addToCart } from "../../../features/cart/cartSlice.js";
@@ -6,6 +6,15 @@ import { fetchReviews } from "../../../features/reviews/reviewsSlice.js";
 import { useToast } from "../../../common/components/Toast.jsx";
 import Modal from "../../../common/components/Modal.jsx";
 import ProductCustomizeModal from "../components/ProductCustomizeModal.jsx";
+import { getCampaigns } from "../../../services/api.js";
+import {
+  getActiveCampaigns,
+  getCampaignBadge,
+  getCampaignDescription,
+  getCampaignTitle,
+  isCouponCampaign,
+  savePendingCoupon,
+} from "../../../common/utils/campaignUtils.js";
 
 const formatProductTag = (tag) => {
   if (tag === "Hot") return "Popüler";
@@ -44,6 +53,12 @@ export default function RestaurantMenu() {
     }
   }, [dispatch, restaurantId]);
 
+  React.useEffect(() => {
+    getCampaigns()
+      .then((data) => setCampaigns(getActiveCampaigns(data)))
+      .catch(() => setCampaigns([]));
+  }, []);
+
   // Restoran bilgisini al
   const restaurant = restaurants.find((r) => r.id === restaurantId) || {
     name: "Restoran",
@@ -62,6 +77,7 @@ export default function RestaurantMenu() {
   const [selectedSection, setSelectedSection] = useState("Popüler");
   const [ratingFilter, setRatingFilter] = useState(null);
   const [menuSearch, setMenuSearch] = useState("");
+  const [campaigns, setCampaigns] = useState([]);
 
   // Modals state
   const [showReviewsModal, setShowReviewsModal] = useState(false);
@@ -158,6 +174,28 @@ export default function RestaurantMenu() {
     return found ? found.quantity : 0;
   };
 
+  const displayedCampaigns = campaigns.slice(0, 2);
+
+  const handleCampaignClick = (campaign) => {
+    if (isCouponCampaign(campaign)) {
+      savePendingCoupon(campaign.code);
+      addToast({
+        message: `"${campaign.code}" kuponu sepetinize tanımlandı. Sepette koşul sağlanınca otomatik uygulanacak.`,
+        type: "success",
+      });
+
+      if (currentCartItems.length > 0) {
+        navigate("/cart");
+      }
+      return;
+    }
+
+    addToast({
+      message: `${campaign.name} kampanyası sepet koşulu sağlandığında otomatik uygulanır.`,
+      type: "info",
+    });
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Hero Section Banner */}
@@ -213,70 +251,47 @@ export default function RestaurantMenu() {
       </section>
 
       {/* Campaigns & Flash Deals Inside Restaurant */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-rose-900 to-red-800 text-white flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all border border-rose-800/10">
-          <div className="z-10">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-2.5 py-1 rounded-full">
-              Günün Fırsatı
-            </span>
-            <h3 className="text-xl md:text-2xl font-extrabold text-white mt-3 leading-tight">
-              İLK50 Koduyla 50TL İndirim
-            </h3>
-            <p className="text-xs mt-1 text-rose-100 font-medium">
-              Sadece bugüne özel siparişlerde geçerlidir!
-            </p>
-            <button
-              onClick={() =>
-                addToast({
-                  message:
-                    "Menü fırsatı seçildi! Lütfen dilediğiniz burgerleri sepete ekleyin.",
-                  type: "info",
-                })
-              }
-              className="mt-4 px-6 py-2.5 bg-white hover:bg-rose-50 text-rose-900 font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95 border-none"
-            >
-              Şimdi Sipariş Ver
-            </button>
-          </div>
-          <div className="absolute right-4 bottom-4 w-28 h-28 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all select-none">
-            <span className="material-symbols-outlined text-[110px] text-white">
-              local_offer
-            </span>
-          </div>
-        </div>
+      {displayedCampaigns.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {displayedCampaigns.map((campaign, index) => {
+            const isCoupon = isCouponCampaign(campaign);
+            const theme =
+              index % 2 === 0
+                ? "from-rose-900 to-red-800 border-rose-800/10 text-rose-900 hover:bg-rose-50"
+                : "from-amber-900 to-amber-700 border-amber-800/10 text-amber-900 hover:bg-amber-50";
 
-        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-amber-900 to-amber-700 text-white flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all border border-amber-800/10">
-          <div className="z-10">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-2.5 py-1 rounded-full">
-              Özel İndirim
-            </span>
-            <h3 className="text-xl md:text-2xl font-extrabold text-white mt-3 leading-tight">
-              %25 İndirim Fırsatı
-            </h3>
-            <p className="text-xs mt-1 text-amber-100 font-medium">
-              Tüm pizza çeşitlerinde geçerli anında indirim.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedSection("Popüler");
-                addToast({
-                  message: "Pizza ve popüler lezzetler filtrelendi!",
-                  type: "info",
-                });
-              }}
-              className="mt-4 px-6 py-2.5 bg-white hover:bg-amber-50 text-amber-900 font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95 border-none"
-            >
-              Menüyü İncele
-            </button>
-          </div>
-          <div className="absolute right-4 bottom-4 w-28 h-28 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all select-none">
-            <span className="material-symbols-outlined text-[110px] text-white">
-              confirmation_number
-            </span>
-          </div>
-        </div>
-      </section>
-
+            return (
+              <div
+                key={campaign.id}
+                className={`relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br ${theme} text-white flex justify-between items-center group cursor-pointer shadow-md hover:shadow-lg transition-all`}
+              >
+                <div className="z-10">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-2.5 py-1 rounded-full">
+                    {getCampaignBadge(campaign)}
+                  </span>
+                  <h3 className="text-xl md:text-2xl font-extrabold text-white mt-3 leading-tight">
+                    {getCampaignTitle(campaign)}
+                  </h3>
+                  <p className="text-xs mt-1 text-white/80 font-medium">
+                    {getCampaignDescription(campaign)}
+                  </p>
+                  <button
+                    onClick={() => handleCampaignClick(campaign)}
+                    className={`mt-4 px-6 py-2.5 bg-white font-extrabold text-xs rounded-full shadow-sm hover:shadow-md transition-all active:scale-95 border-none ${theme}`}
+                  >
+                    {isCoupon ? "Kuponu Kullan" : "Sepette Uygulanır"}
+                  </button>
+                </div>
+                <div className="absolute right-4 bottom-4 w-28 h-28 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all select-none">
+                  <span className="material-symbols-outlined text-[110px] text-white">
+                    {isCoupon ? "confirmation_number" : "local_shipping"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
       {/* Categories sub-navigation Bar (Popüler, Burgerler, etc.) */}
       <nav className="sticky top-16 z-30 bg-white/90 backdrop-blur-md border-b border-stone-200/30 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
@@ -596,3 +611,4 @@ export default function RestaurantMenu() {
     </div>
   );
 }
+

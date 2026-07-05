@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { FOOD_CATEGORIES } from '../../../data.jsx';
@@ -6,6 +6,15 @@ import { useToast } from '../../../common/components/Toast.jsx';
 import ConfirmModal from '../../../common/components/ConfirmModal.jsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { toggleFavoriteAsync } from '../../../features/auth/authSlice.js';
+import { getCampaigns } from '../../../services/api.js';
+import {
+  getActiveCampaigns,
+  getCampaignBadge,
+  getCampaignDescription,
+  getCampaignTitle,
+  isCouponCampaign,
+  savePendingCoupon,
+} from '../../../common/utils/campaignUtils.js';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -15,8 +24,10 @@ export default function Home() {
   const favoritedIds = useSelector((state) => state.auth.favorites) || [];
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [campaigns, setCampaigns] = useState([]);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
 
-  const slides = [
+  const fallbackSlides = [
     {
       id: 0,
       badge: "SINIRLI SÜRE",
@@ -38,10 +49,39 @@ export default function Home() {
       badge: "ÜCRETSİZ TESLİMAT",
       title: <>Bugüne Özel<br />Seçili Restoranlarda Ücretsiz Kargo Fırsatı</>,
       image: "https://www.shutterstock.com/image-photo/closeup-chicken-burger-caught-by-260nw-2676992407.jpg",
-      buttonText: "Menüyü Keşfet",
+      buttonText: "Menüleri Keşfet",
       action: () => navigate('/restaurant/gourmet-burger')
     }
   ];
+
+  const activeCampaigns = getActiveCampaigns(campaigns);
+  const slides = activeCampaigns.length
+    ? activeCampaigns.slice(0, 3).map((campaign, index) => ({
+        id: campaign.id,
+        badge: getCampaignBadge(campaign),
+        title: getCampaignTitle(campaign),
+        description: getCampaignDescription(campaign),
+        image: [
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA",
+          "https://png.pngtree.com/thumb_back/fh260/background/20240720/pngtree-taking-slice-picture-of-prepared-delicious-pizza-with-sausage-rings-and-image_15902897.jpg",
+          "https://www.shutterstock.com/image-photo/closeup-chicken-burger-caught-by-260nw-2676992407.jpg",
+        ][index % 3],
+        buttonText: isCouponCampaign(campaign) ? "Kuponu Al" : "Restoranları Gör",
+        action: () => {
+          if (isCouponCampaign(campaign)) {
+            setSelectedCampaign(campaign);
+            setCouponModalOpen(true);
+            return;
+          }
+
+          handleScroll("right");
+          addToast({
+            message: `${campaign.name} kampanyası aktif restoranlarda geçerli.`,
+            type: "info",
+          });
+        },
+      }))
+    : fallbackSlides;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -49,6 +89,18 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
+
+  useEffect(() => {
+    getCampaigns()
+      .then((data) => setCampaigns(getActiveCampaigns(data)))
+      .catch(() => setCampaigns([]));
+  }, []);
+
+  useEffect(() => {
+    if (activeSlide >= slides.length) {
+      setActiveSlide(0);
+    }
+  }, [activeSlide, slides.length]);
 
   // Load datasets from Redux state
   const sponsorRestaurants = useSelector((state) => state.restaurants.sponsorList);
@@ -121,8 +173,20 @@ export default function Home() {
     }
   };
 
-  const onCouponClaim = () => {
-    setCouponModalOpen(true);
+  const handleClaimCampaign = () => {
+    const campaign = selectedCampaign || activeCampaigns.find(isCouponCampaign);
+    if (!campaign?.code) {
+      setCouponModalOpen(false);
+      return;
+    }
+
+    savePendingCoupon(campaign.code);
+    setCouponModalOpen(false);
+    addToast({
+      message: `"${campaign.code}" kuponu sepetinize tanımlandı. Sepette koşul sağlanınca otomatik uygulanacak.`,
+      type: 'success',
+    });
+    navigate('/cart');
   };
 
   const handleToggleFavorite = (rest, e) => {
@@ -147,10 +211,13 @@ export default function Home() {
       {/* Coupon Confirm Modal */}
       <ConfirmModal
         isOpen={couponModalOpen}
-        onClose={() => setCouponModalOpen(false)}
-        onConfirm={() => addToast({ message: "'İLK50' kupon kodu sepetinize tanımlandı. 50 TL indirim kazandınız!", type: 'success' })}
+        onClose={() => {
+          setCouponModalOpen(false);
+          setSelectedCampaign(null);
+        }}
+        onConfirm={handleClaimCampaign}
         title="Kuponu Kullan"
-        message="'İLK50' kupon kodunu sepetinize eklemek istiyor musunuz? İlk siparişinizde 50 TL indirim kazanacaksınız!"
+        message={`"${selectedCampaign?.code || activeCampaigns.find(isCouponCampaign)?.code || 'KUPON'}" kuponunu sepetinize eklemek istiyor musunuz? Sepette kampanya koşulu sağlanınca indirim otomatik uygulanacak.`}
         confirmLabel="Kuponu Al"
         cancelLabel="Vazgeç"
         icon="local_offer"
@@ -180,6 +247,11 @@ export default function Home() {
                 <h1 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6 tracking-tight">
                   {slides[activeSlide].title}
                 </h1>
+                {slides[activeSlide].description && (
+                  <p className="text-white/85 text-sm md:text-base font-semibold max-w-xl -mt-3 mb-6">
+                    {slides[activeSlide].description}
+                  </p>
+                )}
                 <button
                   onClick={slides[activeSlide].action}
                   className="bg-white hover:bg-rose-50 text-primary px-10 py-4 rounded-full font-extrabold text-sm md:text-base hover:shadow-2xl hover:-translate-y-0.5 transition-all w-fit cursor-pointer active:scale-95 shadow-lg shadow-black/20"
@@ -458,3 +530,6 @@ export default function Home() {
     </div>
   );
 }
+
+
+

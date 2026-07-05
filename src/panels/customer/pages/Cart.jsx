@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { removeFromCart, addToCart, clearCart } from '../../../features/cart/cartSlice.js';
@@ -8,6 +8,7 @@ import { createOrder, createAddress, getCards, createCard, getCampaigns, updateC
 import { useToast } from '../../../common/components/Toast.jsx';
 import CreditCardForm, { validateCardForm } from '../../../common/components/CreditCardForm.jsx';
 import Modal from '../../../common/components/Modal.jsx';
+import { PENDING_COUPON_KEY, isCouponCampaign } from '../../../common/utils/campaignUtils.js';
 
 const CARD_LOGOS = {
   Visa: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ',
@@ -48,6 +49,7 @@ export default function Cart() {
   const [couponApplied, setCouponApplied] = useState(null);
   const [couponInput, setCouponInput] = useState('');
   const [campaigns, setCampaigns] = useState([]);
+  const pendingCouponNoticeRef = useRef('');
 
   // Saved cards state (loaded from DB)
   const [savedCards, setSavedCards] = useState([]);
@@ -112,6 +114,41 @@ export default function Cart() {
   const total = Math.max(0, subtotal + deliveryFee - discount);
 
   const activeAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0];
+
+  useEffect(() => {
+    const pendingCode = window.localStorage.getItem(PENDING_COUPON_KEY);
+    if (!pendingCode || couponApplied || campaigns.length === 0) return;
+
+    const coupon = campaigns.find((campaign) => (
+      campaign.code?.toUpperCase() === pendingCode.toUpperCase() &&
+      isCouponCampaign(campaign)
+    ));
+
+    if (!coupon) {
+      window.localStorage.removeItem(PENDING_COUPON_KEY);
+      addToast({ message: 'Seçtiğiniz kupon artık aktif değil.', type: 'error' });
+      return;
+    }
+
+    setCouponInput(coupon.code);
+
+    if (subtotal < Number(coupon.minOrder || 0)) {
+      if (pendingCouponNoticeRef.current !== coupon.code) {
+        pendingCouponNoticeRef.current = coupon.code;
+        addToast({
+          message: `"${coupon.code}" kuponu hazır. Uygulanması için sepet tutarı en az ${Number(coupon.minOrder || 0)} TL olmalı.`,
+          type: 'info',
+        });
+      }
+      return;
+    }
+
+    setCouponApplied(coupon);
+    setCouponInput('');
+    window.localStorage.removeItem(PENDING_COUPON_KEY);
+    pendingCouponNoticeRef.current = '';
+    addToast({ message: `"${coupon.code}" kuponu otomatik uygulandı.`, type: 'success' });
+  }, [campaigns, subtotal, couponApplied, addToast]);
 
   const handleApplyCouponBtn = (e) => {
     e.preventDefault();
