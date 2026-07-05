@@ -1,17 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-/**
- * CreditCardForm — Kredi kartı formu + 3D flip animasyonu.
- *
- * Props:
- *   cardNumber    : string
- *   cardName      : string
- *   cardExpiry    : string  (MM/YY formatında)
- *   cardCVV       : string
- *   onChange      : ({ cardNumber, cardName, cardExpiry, cardCVV }) => void
- *   errors        : { cardNumber?, cardName?, cardExpiry?, cardCVV? }
- */
 export default function CreditCardForm({
   cardNumber = '',
   cardName = '',

@@ -31,10 +31,10 @@ export default function AdminMenuProductModal({
   onSubmit,
 }) {
   // Ek seçenek grubunu günceller.
-  const updateGroup = (groupIndex, patch) => {
-    setExtraOptionGroups((prev) =>
-      prev.map((group, index) =>
-        index === groupIndex ? { ...group, ...patch } : group,
+  const updateGroup = (groupIndex, patch) => { // patch: güncellenecek yeni alanları taşır.
+    setExtraOptionGroups((prev) => // prev ile önceki seçenekleri aldık
+      prev.map((group, index) => // ek seçenek grubu ile sıralamasını aldık
+        index === groupIndex ? { ...group, ...patch } : group, // eğer mevcut index güncelleyeceğimz ile aynıysa eskiyi koruduk yeniyi üzerine yazdık
       ),
     );
   };
@@ -59,8 +59,8 @@ export default function AdminMenuProductModal({
   const removeGroup = (groupIndex) => {
     setExtraOptionGroups((prev) =>
       prev.length === 1
-        ? [emptyOptionGroup]
-        : prev.filter((_, index) => index !== groupIndex),
+        ? [emptyOptionGroup] // eğer listede 1 seçenek grubu varsa tamamen silmek yerine boş grup bıraktık
+        : prev.filter((_, index) => index !== groupIndex), //eşit değilse listeden çıkar
     );
   };
 
@@ -73,7 +73,7 @@ export default function AdminMenuProductModal({
               ...group,
               options:
                 group.options.length === 1
-                  ? [{ name: '', price: '' }]
+                  ? [{ name: '', price: '' }] // 1 tane varsa içini boşalt yoksa sil
                   : group.options.filter((_, optIndex) => optIndex !== optionIndex),
             }
           : group,

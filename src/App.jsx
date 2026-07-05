@@ -34,11 +34,11 @@ function AppDataLoader() {
   useEffect(() => {
     async function loadPublicData() {
       try {
-        const [restaurants, menuItems] = await Promise.all([
+        const [restaurants, menuItems] = await Promise.all([ //birden fazla async işlemi aynı anda çalıştırır
           getRestaurants(),
           getMenuItems(),
         ]);
-        dispatch(setRestaurants(restaurants));
+        dispatch(setRestaurants(restaurants)); //apiden gelen verileri redux stora kaydettik
         dispatch(setMenuItems(menuItems));
         dispatch(fetchReviews());
       } catch (error) {
@@ -60,9 +60,9 @@ function AppDataLoader() {
             getAddresses(currentUser.id),
             getUserById(currentUser.id)
           ]);
-          dispatch(setAddresses(addresses));
+          dispatch(setAddresses(addresses)); // uygulamanın farklı yerlerinde de kullanmak için reduxa gönderilir
           
-          if (userDb && userDb.favorites) {
+          if (userDb && userDb.favorites) { //Eğer userDb verisi varsa ve bu verinin içinde favorites alanı varsa bu blok çalışır.
             dispatch(setFavorites(userDb.favorites));
           }
         }
