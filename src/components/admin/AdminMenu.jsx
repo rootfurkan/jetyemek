@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '../../features/menu/menuSlice.js';
 import { useToast } from '../../common/components/Toast.jsx';
+import AdminPagination from '../../common/components/AdminPagination.jsx';
 import { createMenuItem, updateMenuItemApi, deleteMenuItemApi } from '../../services/api.js';
 import AdminMenuCategoryModal from './menu/AdminMenuCategoryModal.jsx';
 import AdminMenuDeleteModal from './menu/AdminMenuDeleteModal.jsx';
@@ -261,9 +262,99 @@ export default function AdminMenu() {
     setSelectedCategory(catName);
     setNewProductCat(catName);
     setNewCategoryName('');
-    setShowCategoryModal(false);
     addToast({ message: `"${catName}" kategorisi eklendi.`, type: 'success' });
   };
+
+  // Kategori adını ürünlere ve yerel kategori listesine yansıtır.
+  const handleRenameCategory = async (oldCategory, nextCategoryValue) => {
+    const nextCategory = nextCategoryValue.trim();
+
+    if (!nextCategory) {
+      addToast({ message: 'Kategori adı boş bırakılamaz.', type: 'error' });
+      return;
+    }
+
+    const exists = categories.some(
+      (category) =>
+        category !== oldCategory &&
+        category.toLowerCase() === nextCategory.toLowerCase(),
+    );
+
+    if (exists) {
+      addToast({ message: 'Bu kategori zaten mevcut.', type: 'error' });
+      return;
+    }
+
+    const productsToUpdate = products.filter((product) => product.category === oldCategory);
+
+    try {
+      await Promise.all(
+        productsToUpdate.map(async (product) => {
+          const updatedMenuItem = await updateMenuItemApi(product.id, { category: nextCategory });
+          dispatch(updateMenuItem(updatedMenuItem));
+        }),
+      );
+
+      setExtraCategories((prev) =>
+        prev.map((category) => (category === oldCategory ? nextCategory : category)),
+      );
+
+      if (selectedCategory === oldCategory) {
+        setSelectedCategory(nextCategory);
+      }
+      if (newProductCat === oldCategory) {
+        setNewProductCat(nextCategory);
+      }
+
+      addToast({ message: 'Kategori güncellendi.', type: 'success' });
+    } catch (error) {
+      addToast({ message: 'Kategori güncellenirken bir sorun oluştu.', type: 'error' });
+    }
+  };
+
+  // Kategoriyi siler; içindeki ürünleri Kategorisiz alanına taşır.
+  const handleDeleteCategory = async (categoryToDelete) => {
+    const fallbackCategory = 'Kategorisiz';
+
+    if (categoryToDelete === fallbackCategory) {
+      addToast({ message: 'Kategorisiz alanı silinemez.', type: 'error' });
+      return;
+    }
+
+    const productsToUpdate = products.filter((product) => product.category === categoryToDelete);
+
+    try {
+      await Promise.all(
+        productsToUpdate.map(async (product) => {
+          const updatedMenuItem = await updateMenuItemApi(product.id, { category: fallbackCategory });
+          dispatch(updateMenuItem(updatedMenuItem));
+        }),
+      );
+
+      setExtraCategories((prev) => prev.filter((category) => category !== categoryToDelete));
+
+      if (selectedCategory === categoryToDelete) {
+        setSelectedCategory('Tümü');
+      }
+      if (newProductCat === categoryToDelete) {
+        setNewProductCat(fallbackCategory);
+      }
+
+      addToast({
+        message: productsToUpdate.length
+          ? `"${categoryToDelete}" silindi. Ürünler Kategorisiz alanına taşındı.`
+          : `"${categoryToDelete}" silindi.`,
+        type: 'success',
+      });
+    } catch (error) {
+      addToast({ message: 'Kategori silinirken bir sorun oluştu.', type: 'error' });
+    }
+  };
+
+  const categoryCounts = categoryOptions.reduce((acc, category) => {
+    acc[category] = products.filter((product) => product.category === category).length;
+    return acc;
+  }, {});
 
   const filteredProducts = selectedCategory === 'Tümü'
     ? products
@@ -332,7 +423,7 @@ export default function AdminMenu() {
           className="flex items-center gap-1 text-primary hover:text-primary-container font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[16px]">category</span>
-          Yeni Kategori
+          Kategori Yönetimi
         </button>
       </div>
 
@@ -372,55 +463,26 @@ export default function AdminMenu() {
       )}
 
       {filteredProducts.length > productsPerPage && (
-        <div className="bg-white border border-stone-100 rounded-2xl px-4 py-3 shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs font-bold text-stone-500">
-            {(safePage - 1) * productsPerPage + 1}-{Math.min(safePage * productsPerPage, filteredProducts.length)} / {filteredProducts.length} ürün gösteriliyor
-          </p>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={safePage === 1}
-              className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center"
-              title="Önceki sayfa"
-            >
-              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-            </button>
-
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() => setCurrentPage(page)}
-                className={`w-9 h-9 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                  safePage === page
-                    ? 'bg-primary text-white border-primary shadow-md shadow-primary/15'
-                    : 'bg-white text-stone-500 border-stone-200 hover:bg-stone-50 hover:text-primary'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              disabled={safePage === totalPages}
-              className="w-9 h-9 rounded-xl border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center"
-              title="Sonraki sayfa"
-            >
-              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-            </button>
-          </div>
+        <div className="bg-white border border-stone-100 rounded-2xl overflow-hidden shadow-soft">
+          <AdminPagination
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            label={`${(safePage - 1) * productsPerPage + 1}-${Math.min(safePage * productsPerPage, filteredProducts.length)} / ${filteredProducts.length} ürün gösteriliyor`}
+            showPageNumbers
+          />
         </div>
       )}
 
       {showCategoryModal && (
         <AdminMenuCategoryModal
+          categories={categoryOptions}
+          categoryCounts={categoryCounts}
           newCategoryName={newCategoryName}
           setNewCategoryName={setNewCategoryName}
-          onSubmit={handleAddCategorySubmit}
+          onAddCategory={handleAddCategorySubmit}
+          onRenameCategory={handleRenameCategory}
+          onDeleteCategory={handleDeleteCategory}
           onClose={() => {
             setShowCategoryModal(false);
             setNewCategoryName('');

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToast } from '../../common/components/Toast.jsx';
+import AdminPagination from '../../common/components/AdminPagination.jsx';
 import { updatePlatformOrderStatus } from '../../features/orders/ordersSlice.js';
 import { updateOrder } from '../../services/api.js';
 
@@ -40,6 +41,7 @@ function formatPrice(value) {
 
 // Restoranın canlı sipariş ekranını yönetir.
 export default function RestaurantOrders() {
+  const ordersPerPage = 9;
   const addToast = useToast();
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.currentUser);
@@ -47,6 +49,7 @@ export default function RestaurantOrders() {
   const platformOrders = useSelector((state) => state.orders.platformOrders);
   const [activeTab, setActiveTab] = useState('All');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const orders = useMemo(() => {
     const restaurantId = currentUser?.restaurantId;
@@ -149,6 +152,12 @@ export default function RestaurantOrders() {
     if (activeTab === 'Ready') return order.status === 'Ready' || order.status === 'OnTheWay';
     return order.status === activeTab;
   });
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ordersPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedOrders = filteredOrders.slice(
+    (safePage - 1) * ordersPerPage,
+    safePage * ordersPerPage,
+  );
 
   const filterButtons = [
     { id: 'All', label: 'Tümü', count: stats.all },
@@ -178,7 +187,11 @@ export default function RestaurantOrders() {
           {filterButtons.map((button) => (
             <button
               key={button.id}
-              onClick={() => setActiveTab(button.id)}
+              onClick={() => {
+                setActiveTab(button.id);
+                setCurrentPage(1);
+                setExpandedOrderId(null);
+              }}
               className={`flex flex-col items-center justify-center rounded-2xl px-5 py-2 min-w-[90px] border-2 transition-all cursor-pointer ${
                 activeTab === button.id
                   ? 'border-primary bg-primary/5 text-primary shadow-sm font-bold'
@@ -204,7 +217,7 @@ export default function RestaurantOrders() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredOrders.map((order) => {
+          {paginatedOrders.map((order) => {
             const isExpanded = expandedOrderId === order.id;
 
             return (
@@ -380,6 +393,20 @@ export default function RestaurantOrders() {
               </div>
             );
           })}
+          {filteredOrders.length > ordersPerPage && (
+            <div className="md:col-span-2 xl:col-span-3 bg-white rounded-[20px] border border-stone-100 overflow-hidden shadow-soft">
+              <AdminPagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                onPageChange={(page) => {
+                  setCurrentPage(page);
+                  setExpandedOrderId(null);
+                }}
+                label={`${filteredOrders.length} sipariş içinde ${safePage}. sayfa`}
+                showPageNumbers
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
