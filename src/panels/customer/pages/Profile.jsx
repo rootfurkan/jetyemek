@@ -501,8 +501,13 @@ export default function Profile() {
     };
 
     try {
-      await dispatch(addReview(newReview)).unwrap();
-      addToast({ message: 'Değerlendirmeniz başarıyla eklendi.', type: 'success' });
+      const savedReview = await dispatch(addReview(newReview)).unwrap();
+      addToast({
+        message: savedReview.status === 'Onay Bekliyor'
+          ? 'Değerlendirmeniz admin onayına gönderildi.'
+          : 'Değerlendirmeniz başarıyla yayınlandı.',
+        type: 'success'
+      });
       setShowReviewModal(false);
       setReviewTargetOrder(null);
     } catch (err) {

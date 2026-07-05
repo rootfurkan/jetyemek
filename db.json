@@ -26,7 +26,8 @@
       "phone": "0532 123 45 67",
       "birthdate": "15.05.1988",
       "role": "customer",
-      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ"
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ",
+      "status": "Aktif"
     },
     {
       "id": "2eM7FL-qwQ0",
@@ -781,6 +782,40 @@
       "createdAt": "2026-07-04T14:16:21.534Z",
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPoRs6VKT-ySLSQhdu8Boq9afALJYNi_qrxHW-yLf_DmqyDxotD82BvURB4QL-MlsTp2H8vqXlt1wKPxvYswVY99Au7AamrCyBaahAzRkn5kFLIX-KgTpWc-in1avO-e_2PAF4dENFsQbj_rgqNpYrhGZ0ts-zVI_y95NpjAqahKSopcwfRkK51fX0_bxNsfcoIlzBfCilwibiS63DPsMkr-Tl1_Y4PCq8YrGFEchU9eSaiEywQw4fB8hU_4EykbBLLWrVMQpj_U",
       "id": "E8cv_j796kY"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Hamburgercim",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "signature-truffle-burger",
+          "name": "Signature Truffle Burger",
+          "qty": 1,
+          "price": 245
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 122.5,
+      "subtotal": 245,
+      "deliveryFee": 0,
+      "deliveryDiscount": 50,
+      "couponCode": "FRK10",
+      "couponDiscount": 122.5,
+      "appliedCampaigns": [
+        "camp-free-delivery-150",
+        "awxwfrsKmiU"
+      ],
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
+      "date": "5 Temmuz 2026",
+      "createdAt": "2026-07-04T23:52:08.100Z",
+      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAy2joy79cLjE53ZVVj-QcyGtU5VHGUGaD33pQPIl1VQLu1mqIulTj6EY9tO7pJr116jgfbOH6tWIxCgLwBOAPOut8gQxD1aayUXF3lXxwj4rI7RGMch6go3o-WiqMJWYe1lyK-K0OG18rfo5tc9MECoNuAJXrMl1A_VzL2N65vbRLX1F-FYpHxdDWSJSZvciViNoKdy-G8l-F_K1o2_4_7cHkF-0I1AHpx37qc1xmCEgfmPNv-Fg10j1ynyHuOoS8IiuOt1tbz5S8",
+      "id": "0yPI6h2ZWPw"
     }
   ],
   "reviews": [
@@ -791,7 +826,7 @@
       "user": "Ahmet Y.",
       "rating": 5,
       "date": "4 Temmuz 2026",
-      "comment": "Siparis hizli geldi, burger sicakti."
+      "comment": "Sipariş hızlı geldi, burger sıcaktı."
     },
     {
       "id": "review-2",
@@ -800,7 +835,7 @@
       "user": "Furkan Y.",
       "rating": 4,
       "date": "4 Temmuz 2026",
-      "comment": "Lezzet guzeldi, paketleme daha iyi olabilir."
+      "comment": "Lezzet güzeldi, paketleme daha iyi olabilir."
     },
     {
       "id": "review-3",
@@ -809,7 +844,7 @@
       "user": "Ahmet Y.",
       "rating": 5,
       "date": "4 Temmuz 2026",
-      "comment": "Corba lezzetliydi, porsiyon yeterliydi."
+      "comment": "Çorba lezzetliydi, porsiyon yeterliydi."
     },
     {
       "orderId": "j9Wc935LXu0",
@@ -901,7 +936,7 @@
       "discountValue": 50,
       "minOrder": 150,
       "status": "Aktif",
-      "usageCount": 0,
+      "usageCount": 1,
       "usageLimit": null,
       "description": "150 TL üzeri siparişlerde 50 TL teslimat ücreti bedava"
     },
@@ -928,6 +963,18 @@
       "usageCount": 0,
       "usageLimit": 5000,
       "description": "150 TL üzeri siparişlerde %25 indirim"
+    },
+    {
+      "id": "awxwfrsKmiU",
+      "name": "Test Kampanyası",
+      "code": "FRK10",
+      "type": "coupon_percent",
+      "discountValue": 50,
+      "minOrder": 150,
+      "status": "Aktif",
+      "usageCount": 1,
+      "usageLimit": 10000,
+      "description": "150 TL üzeri siparişlerde geçerli kupon"
     }
   ],
   "financeLogs": [],
@@ -935,7 +982,21 @@
     {
       "id": "1",
       "baseCommission": 12,
-      "baseDeliveryFee": 24.9
+      "baseDeliveryFee": 24.9,
+      "emailNotifications": true,
+      "smsNotifications": false,
+      "adminName": "Admin",
+      "adminEmail": "admin@jetyemek.com",
+      "adminAvatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuC1OnzU0H07Jl19OAJhRmnrjZ1nAia79SjMtiOy3icj_YvZO5DNspysFfERiG-MU5GAqwRkXTj-VdE5FNzuC503l8VsgNko6DqRo3LlwHUacAkoepZaI4yDBXXY4qRe44OrrodkHRwmf9nEd3gnRjdgAgTorRBJeWhqfVu9Q9BWI8BafCM9juKMCEArpEvFb5Czp_JVB6lLvLJxMMRdTywYRRpHSle7Bg_4btImvyUWekAuCeN2AcTlYQ",
+      "forbiddenReviewWords": [
+        "rezil",
+        "berbat",
+        "iğrenç",
+        "pislik",
+        "aptal",
+        "salak"
+      ],
+      "updatedAt": "2026-07-05T00:19:47.278Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

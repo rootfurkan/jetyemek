@@ -119,7 +119,7 @@ export async function getReviews(restaurantId) {
   const url = restaurantId ? `/reviews?restaurantId=${restaurantId}` : '/reviews';
   const response = await api.get(url);
   // Sort by date (newest first)
-  const reviews = response.data || [];
+  const reviews = (response.data || []).filter((review) => review.status !== 'Onay Bekliyor' && review.status !== 'Silindi');
   return reviews.sort((a, b) => {
     const dateA = new Date(a.date || 0);
     const dateB = new Date(b.date || 0);
@@ -127,13 +127,54 @@ export async function getReviews(restaurantId) {
   });
 }
 
+function normalizeReviewText(text) {
+  return String(text || '')
+    .toLocaleLowerCase('tr-TR')
+    .replaceAll('ı', 'i')
+    .replaceAll('ğ', 'g')
+    .replaceAll('ü', 'u')
+    .replaceAll('ş', 's')
+    .replaceAll('ö', 'o')
+    .replaceAll('ç', 'c');
+}
+
+async function getModerationWords() {
+  try {
+    const response = await api.get('/settings');
+    const settings = (response.data || [])[0] || {};
+    return settings.forbiddenReviewWords || [];
+  } catch (error) {
+    return [];
+  }
+}
+
 export async function createReview(reviewData) {
-  const response = await api.post('/reviews', reviewData);
+  const forbiddenWords = await getModerationWords();
+  const normalizedComment = normalizeReviewText(reviewData.comment || reviewData.text);
+  const matchedWord = forbiddenWords.find((word) => normalizedComment.includes(normalizeReviewText(word)));
+  const moderationData = matchedWord
+    ? {
+        status: 'Onay Bekliyor',
+        moderationReason: `"${matchedWord}" kelimesi nedeniyle admin onayı bekliyor.`,
+        moderationMatchedWord: matchedWord,
+      }
+    : {
+        status: 'Yayında',
+        moderationReason: '',
+        moderationMatchedWord: '',
+      };
+
+  const response = await api.post('/reviews', { ...reviewData, ...moderationData });
   return response.data;
 }
 
 export async function updateReview(id, data) {
   const response = await api.patch(`/reviews/${id}`, data);
+  return response.data;
+}
+
+export async function deleteReview(id) {
+  const response = await api.delete(`/reviews/${id}`);
   return response.data;
 }
 

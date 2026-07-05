@@ -34,7 +34,7 @@ export default function RestaurantMenu() {
     (item) => item.restaurantId === restaurantId,
   );
   const restaurantReviews = allReviews.filter(
-    (r) => r.restaurantId === restaurantId,
+    (r) => r.restaurantId === restaurantId && (r.status === 'Yayında' || !r.status),
   );
 
   React.useEffect(() => {

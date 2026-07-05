@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/auth/authSlice.js';
 import { ToastProvider } from '../common/components/Toast.jsx';
+import api from '../services/api.js';
+
+const DEFAULT_ADMIN_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW3F7uh6g1Kznczffnq89_eaBUXJq8xASo0zbD3eje_5FDbt5YvAYODYbkYpUnOEh1Hw2G6gPOlJBj9uGmtICPXc7xJGIts_Pe7soyVnnalozY_lL_RLoT8N3gng22vnqC7Q9hGG5FCSn-TtpYKjeTzSZuIxZvnd0sQnEKV_eeRZPLl6XSdbmnYHOffUF_DfOylLNs5qVH5kcor9EUg-LfQCi8dLcsRuaNNac3lG-cjyMYLGlcECKbklmwsAXuYFS93v2MYPGR6Ug';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.currentUser);
+  const [platformSettings, setPlatformSettings] = useState(null);
 
   const activePath = location.pathname;
   const menuItems = [
@@ -18,6 +22,7 @@ export default function AdminLayout() {
     { name: 'Tüm Siparişler', icon: 'receipt_long', path: '/admin/orders' },
     { name: 'Kuryeler', icon: 'sports_motorsports', path: '/admin/couriers' },
     { name: 'Kampanyalar', icon: 'campaign', path: '/admin/campaigns' },
+    { name: 'Yorumlar', icon: 'reviews', path: '/admin/reviews' },
     { name: 'Finansal Analiz', icon: 'payments', path: '/admin/finance' },
     { name: 'Sistem Ayarları', icon: 'settings_suggest', path: '/admin/settings' },
   ];
@@ -26,6 +31,32 @@ export default function AdminLayout() {
     dispatch(logout());
     navigate('/login', { replace: true });
   };
+
+  useEffect(() => {
+    async function loadPlatformSettings() {
+      try {
+        const response = await api.get('/settings');
+        setPlatformSettings((response.data || [])[0] || null);
+      } catch (error) {
+        setPlatformSettings(null);
+      }
+    }
+
+    const handleSettingsUpdated = (event) => {
+      setPlatformSettings(event.detail || null);
+    };
+
+    loadPlatformSettings();
+    window.addEventListener('platformSettingsUpdated', handleSettingsUpdated);
+
+    return () => {
+      window.removeEventListener('platformSettingsUpdated', handleSettingsUpdated);
+    };
+  }, []);
+
+  const adminName = platformSettings?.adminName || currentUser?.name || 'Platform Admin';
+  const adminEmail = platformSettings?.adminEmail || currentUser?.email || 'admin@jetyemek.com';
+  const adminAvatar = platformSettings?.adminAvatar || currentUser?.avatar || DEFAULT_ADMIN_AVATAR;
 
   return (
     <ToastProvider>
@@ -65,21 +96,20 @@ export default function AdminLayout() {
           </nav>
 
           <div className="pt-4 border-t border-stone-100 flex flex-col gap-2">
-            {currentUser && (
-              <div className="flex items-center gap-3 px-4 py-2 mb-1">
-                <div className="w-8 h-8 rounded-full overflow-hidden border border-stone-200 flex-shrink-0 bg-stone-100">
-                  {currentUser.avatar ? (
-                    <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="material-symbols-outlined text-stone-300 text-[18px] w-full h-full flex items-center justify-center">admin_panel_settings</span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-stone-800 truncate">{currentUser.name}</p>
-                  <p className="text-[10px] text-primary font-semibold uppercase tracking-wide">Admin</p>
-                </div>
+            <div className="flex items-center gap-3 px-4 py-2 mb-1">
+              <div className="w-9 h-9 rounded-xl overflow-hidden border border-rose-100 flex-shrink-0 bg-rose-50">
+                <img
+                  src={adminAvatar}
+                  alt={adminName}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
               </div>
-            )}
+              <div className="min-w-0">
+                <p className="text-xs font-black text-stone-800 truncate">{adminName}</p>
+                <p className="text-[10px] text-primary font-semibold truncate">{adminEmail}</p>
+              </div>
+            </div>
 
             <button
               onClick={handleLogout}
@@ -101,12 +131,17 @@ export default function AdminLayout() {
               <span className="text-[11px] font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 ● Sistem Aktif
               </span>
-              <div className="w-8 h-8 rounded-full bg-stone-100 overflow-hidden border border-stone-200">
-                {currentUser?.avatar ? (
-                  <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="material-symbols-outlined text-stone-300 text-[18px] w-full h-full flex items-center justify-center">admin_panel_settings</span>
-                )}
+              <div className="hidden sm:block text-right">
+                <p className="text-xs font-black text-stone-800 leading-tight">{adminName}</p>
+                <p className="text-[10px] font-bold text-stone-400 leading-tight">{adminEmail}</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-rose-50 overflow-hidden border border-rose-100">
+                <img
+                  src={adminAvatar}
+                  alt={adminName}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
               </div>
             </div>
           </header>
