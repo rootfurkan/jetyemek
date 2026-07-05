@@ -116,6 +116,13 @@
       "details": "Bakırköy İstanbul",
       "icon": "work",
       "id": "ocNk19iZY-Y"
+    },
+    {
+      "userId": "1",
+      "title": "Softito",
+      "details": "İstanbul DTM A1 Blok",
+      "icon": "place",
+      "id": "Cg-390xeXL4"
     }
   ],
   "cards": [
@@ -177,6 +184,16 @@
       "isDefault": false,
       "logo": "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
       "id": "5XdVl8iTTmY"
+    },
+    {
+      "userId": "1",
+      "name": "Furkan Yorulmaz",
+      "type": "Visa",
+      "number": "3123",
+      "expiry": "12/35",
+      "isDefault": false,
+      "logo": "https://lh3.googleusercontent.com/aida-public/AB6AXuBHQVFbGuXYR69Yf-GNnywtqpwzCkHMwBpL6ZZ6h4SdtqFJcEoy6119eRON1z7sfhQnyZDCF_pJbHR6MbTUVAclhpk_ihlKrlrw2SLeL12VS-9noEP5rLnLZ6h9pwAS088OmcXR9LtdoT4Itk-fhhrSRiYInxW__VeoIx4vabjI4s1p93n2hEkUqg8slUDKQ5NdYWEqKpygeGleqadagqDYSbT483UWXQ_w8x6csqaWbG1rXSToszFwNQ",
+      "id": "cUFuHHzkmBY"
     }
   ],
   "restaurants": [
@@ -191,8 +208,8 @@
       "tag": "hamburger",
       "city": "yıldıztepe mahallesi bağcılar istanbul",
       "commission": 15,
-      "status": "Aktif",
-      "isOpen": true,
+      "status": "Pasif",
+      "isOpen": false,
       "isSponsor": true,
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAdjrsT9Ktj1yZGgop0d8nrS1TsyeJIP4RonQZLlchh1vlAM3nmjFdF6UNKbgug-T12zhD7iCHI9cGKLIZrOfuHK1x8_pul3qzJ4_sjG1yQXWPNmAe43xo7PvPFVy7QSqmCguNviM-K3-Ww1N4kJVBm5-gV2c8u451IRcAV6kTEWilXjikql8G4_3f9Ys9tLQQx0zKehgs4zJDZvBqbEV2XnxJnE3QzIwghdO9OKBBTzSyY6lbAV0r7xSoXwwphKDnMC3uGq2w8XjA",
       "description": "",
@@ -246,7 +263,8 @@
           "end": "21:00",
           "closed": true
         }
-      ]
+      ],
+      "bannerImage": ""
     },
     {
       "id": "lezzet-sofrasi",
@@ -5169,13 +5187,81 @@
       "total": 310,
       "address": "Bakırköy İstanbul",
       "paymentMethod": "Kredi Kartı",
-      "status": "Hazırlanıyor",
-      "deliveryStatus": "preparing",
-      "progress": 0,
+      "status": "Teslim Edildi",
+      "deliveryStatus": "delivered",
+      "progress": 100,
       "date": "5 Temmuz 2026",
       "createdAt": "2026-07-05T10:25:47.097Z",
       "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuD-xY1ESozbcRunXRdcckHoR3xD-Ddu2NmbZnRZh1LXYHQhhg8KyuJs9kxM2kTfBbrP6THsaLo69_0NlNFJgVMB2sXjosshOXxz3uLDHpl39kNZKqIP3b1cuR-HYPqPInfMc8ZCnqM9giyt7npX_np_CUkxcJUDjR7lf6SvzNUapeb5VjkaDWR6DfXPgJub9ZdM_tTZG65G03FAyonv1ebKfQg7LBi2NUg-hta336lmD-JqkhD4OSzmtt_4QbgpD7idFt3LrQvA2n0",
       "id": "TQmDrJaq5Zc"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Chef's Makarna",
+      "restaurantId": "chefs-makarna",
+      "items": [
+        {
+          "id": "penne-arrabbiata",
+          "name": "Penne Arrabbiata",
+          "qty": 1,
+          "price": 180,
+          "note": null
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 180,
+      "subtotal": 180,
+      "deliveryFee": 0,
+      "deliveryDiscount": 50,
+      "couponCode": "",
+      "couponDiscount": 0,
+      "appliedCampaigns": [
+        "camp-free-delivery-150"
+      ],
+      "address": "İstanbul DTM A1 Blok",
+      "paymentMethod": "Mastercard **** 4291",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "5 Temmuz 2026",
+      "createdAt": "2026-07-05T10:36:27.796Z",
+      "image": "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=800&q=80",
+      "id": "E8LHiqhb-Yg"
+    },
+    {
+      "userId": "1",
+      "customerName": "Ahmet Yılmaz",
+      "restaurant": "Hamburgercim",
+      "restaurantId": "gourmet-burger",
+      "items": [
+        {
+          "id": "efLZiuVj2n0-120gr-Ketçap-Mayonez-KaramelizeSoğan-Marul-Turşu",
+          "name": "deneme (120gr, Ketçap, Mayonez, Karamelize Soğan, Marul, Turşu)",
+          "qty": 1,
+          "price": 171,
+          "note": "Çıtır çıtır olsun ustam"
+        }
+      ],
+      "itemsSummary": "1 Ürün",
+      "total": 171,
+      "subtotal": 171,
+      "deliveryFee": 0,
+      "deliveryDiscount": 50,
+      "couponCode": "",
+      "couponDiscount": 0,
+      "appliedCampaigns": [
+        "camp-free-delivery-150"
+      ],
+      "address": "Atatürk Mah. Sütçü İmam Cad. No:45 D:8 Ümraniye, İstanbul",
+      "paymentMethod": "Kredi Kartı",
+      "status": "Hazırlanıyor",
+      "deliveryStatus": "preparing",
+      "progress": 0,
+      "date": "5 Temmuz 2026",
+      "createdAt": "2026-07-05T10:41:23.452Z",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKT_kezDNXel_TOfOnRz9F_7bnHRcZz7hts-DBNX1_ow&s=10",
+      "id": "JuAcaZ-xD-w"
     }
   ],
   "reviews": [
@@ -5385,7 +5471,7 @@
       "discountValue": 50,
       "minOrder": 150,
       "status": "Aktif",
-      "usageCount": 1,
+      "usageCount": 3,
       "usageLimit": null,
       "description": "150 TL üzeri siparişlerde 50 TL teslimat ücreti bedava"
     },
