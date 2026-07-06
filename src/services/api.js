@@ -164,16 +164,16 @@ async function getModerationWords() {
 }
 
 export async function createReview(reviewData) { // yasaklı kelimelerin kontrol edilir
-  const forbiddenWords = await getModerationWords();
-  const normalizedComment = normalizeReviewText(reviewData.comment || reviewData.text);
-  const matchedWord = forbiddenWords.find((word) => normalizedComment.includes(normalizeReviewText(word)));
-  const moderationData = matchedWord
+  const forbiddenWords = await getModerationWords(); //db den yasaklı kelimeler çekilir
+  const normalizedComment = normalizeReviewText(reviewData.comment || reviewData.text); // yorumu normalize eder küçük büyük harf
+  const matchedWord = forbiddenWords.find((word) => normalizedComment.includes(normalizeReviewText(word))); // yasaklı kelimelerde gezer ilk bulduğunu alır
+  const moderationData = matchedWord // eşleşen verileri alıp koşul oluşturur
     ? {
         status: 'Onay Bekliyor',
         moderationReason: `"${matchedWord}" kelimesi nedeniyle admin onayı bekliyor.`, // eğer yasaklı kelimeyle eşleşirse onay bekliyor a atar
         moderationMatchedWord: matchedWord,
       }
-    : {
+    : { // değilse yayına al
         status: 'Yayında',
         moderationReason: '',
         moderationMatchedWord: '',

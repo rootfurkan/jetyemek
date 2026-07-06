@@ -22,7 +22,7 @@ function getNumber(value, fallback = '') {
 
 // Girilen adrese göre harita bağlantısı üretir.
 function buildMapUrl(address) {
-  const query = encodeURIComponent(address || 'İstanbul');
+  const query = encodeURIComponent(address || 'İstanbul'); // özel karakterleri url ye uygun kodlar
   return `https://www.google.com/maps?q=${query}&output=embed`;
 }
 
@@ -139,7 +139,7 @@ export default function AdminSettings() {
     });
   }, [restaurant, currentUser?.email]);
 
-  const mapUrl = useMemo(() => buildMapUrl(form.address), [form.address]);
+  const mapUrl = useMemo(() => buildMapUrl(form.address), [form.address]); //google maps
 
   // Tek bir restoran ayarı alanını günceller.
   const updateField = (field, value) => {
@@ -188,7 +188,7 @@ export default function AdminSettings() {
       deliveryZones: form.deliveryZones.trim(),
       phone: form.phone.trim(),
       email: form.email.trim(),
-      address: form.address.trim(),
+      address: form.address.trim(), // google maps
       city: form.address.trim() || form.deliveryZones.trim(),
       image: form.image.trim(),
       bannerImage: form.bannerImage.trim(),
