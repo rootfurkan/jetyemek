@@ -55,6 +55,3 @@ npm run dev
 Tarayıcınızda `http://localhost:3000` adresine giderek uygulamayı görüntüleyebilirsiniz! 🎉
 
 ---
-<div align="center">
-  <b>Modern web teknolojileri ile 💙 ile geliştirildi.</b>
-</div>
