@@ -163,14 +163,14 @@ async function getModerationWords() {
   }
 }
 
-export async function createReview(reviewData) {
+export async function createReview(reviewData) { // yasaklı kelimelerin kontrol edilir
   const forbiddenWords = await getModerationWords();
   const normalizedComment = normalizeReviewText(reviewData.comment || reviewData.text);
   const matchedWord = forbiddenWords.find((word) => normalizedComment.includes(normalizeReviewText(word)));
   const moderationData = matchedWord
     ? {
         status: 'Onay Bekliyor',
-        moderationReason: `"${matchedWord}" kelimesi nedeniyle admin onayı bekliyor.`,
+        moderationReason: `"${matchedWord}" kelimesi nedeniyle admin onayı bekliyor.`, // eğer yasaklı kelimeyle eşleşirse onay bekliyor a atar
         moderationMatchedWord: matchedWord,
       }
     : {

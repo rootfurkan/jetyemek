@@ -102,7 +102,7 @@ export default function PlatformAdminDashboard({
   );
 
   // En çok ciro yapan restoranları hesaplar.
-  const topRestaurants = useMemo(() => {
+  const topRestaurants = useMemo(() => { // büyük bir veri olduğu için sadece veri değiştiği zaman çalışır
     const salesByRestaurant = {};
 
     paidOrders.forEach((order) => {

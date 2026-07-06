@@ -46,7 +46,7 @@ const restaurantsSlice = createSlice({
       const { id, commission } = action.payload;
       const update = arr => {
         const r = arr.find(r => r.id === id);
-        if (r) r.commission = parseFloat(commission);
+        if (r) r.commission = parseFloat(commission); // stringi temizler number döner örn 12.5 TL => 12.5
       };
       update(state.list);
       update(state.gridList);

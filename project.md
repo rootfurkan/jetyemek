@@ -51,7 +51,7 @@ jetyemek/
  │    │    └── api.js                # db.json/json-server istek fonksiyonları
  │    ├── App.jsx                    # Provider, Router ve başlangıç veri yükleme akışı
  │    ├── main.jsx                   # React uygulamasının DOM'a bağlandığı giriş dosyası
- │    └── data.jsx                   # Eski/statik başlangıç verileri; bazı kategori ve seed verileri
+ 
  ├── db.json                         # json-server veritabanı: users, restaurants, menuItems, orders, reviews
  ├── .env                            # API adresi gibi ortam değişkenleri
  ├── .env.example                    # Örnek env dosyası
@@ -79,23 +79,21 @@ Backend simülasyonu için `json-server` kullanılmıştır. Veritabanı tasarı
 - **`menuItems`**: Her ürünün `extraOptions` adında dinamik bir dizisi vardır. Bu dizi, `ProductCustomizeModal` içerisindeki tekli (radio) veya çoklu (checkbox) seçim mantığını (hamur tipi, ekstra malzeme, boyut) besler.
 - **`orders`**: Müşteri ID'si, restoran ID'si ve sepet detaylarının yanında, anlık statü (`Hazırlanıyor`, `Kurye Yola Çıktı`) durumlarını barındırır.
 
-## 🚧 Karşılaşılan Teknik Zorluklar ve Çözümler
+## 🧰 Kullanılan Teknolojiler
 
-1. **Native Modalların (window.confirm) Kısıtlamaları:**
-   - *Sorun:* Tarayıcının varsayılan uyarı pencereleri temanın bütünlüğünü bozuyordu ve kullanıcı deneyimi açısından zayıftı.
-   - *Çözüm:* Framer Motion kullanılarak `Modal.jsx` ve `ConfirmModal.jsx` bileşenleri sıfırdan yazıldı. Hesap silme, sepeti boşaltma ve kupon onayları gibi kritik işlemler bu estetik modallara bağlandı.
+Bu proje aşağıdaki temel teknoloji ve kütüphaneler kullanılarak geliştirilmiştir:
 
-2. **Karmaşık Ürün Kişiselleştirmesi ve Sepet ID Çakışması:**
-   - *Sorun:* Müşteri aynı hamburgeri bir kez "Acılı", bir kez "Acısız" eklediğinde sepette miktar 2 olarak birleşiyordu.
-   - *Çözüm:* `ProductCustomizeModal` içinde, seçilen opsiyonların isimleri birleştirilerek (`id: burger1-Acili-Ketcap`) benzersiz varyasyon ID'leri üretildi. Böylece farklı opsiyonlu aynı ürünler sepette ayrı satırlar olarak listelendi.
+- **React** (Vite ile) — UI kütüphanesi ve bileşen tabanlı geliştirme.
+- **Redux Toolkit** — Merkezi state yönetimi, feature slice yapısı ve asenkron thunk'lar.
+- **React Router** — Route yönetimi ve rol bazlı yönlendirme.
+- **Tailwind CSS** — Hızlı stil üretimi ve tema kontrolü.
+- **Framer Motion / motion** — UI animasyonları ve geçişler (Modal, Toast vb.).
+- **Axios** — API istekleri için HTTP istemcisi (`src/services/api.js`).
+- **json-server** — Geliştirme/demo amaçlı sahte REST API (`db.json`).
+- **jsPDF** — Rapor/finans PDF çıktıları oluşturmak için.
+- **Diğer yardımcı kütüphaneler**: `lucide-react` (ikonlar), küçük yardımcı paketler ve Tailwind eklentileri.
 
-3. **SPA'larda Sayfa Değişiminde Scroll Problemi:**
-   - *Sorun:* React Router ile sayfa değiştirildiğinde, kullanıcı bir önceki sayfanın kaldığı scroll pozisyonunda kalıyordu (sayfanın ortasında açılması).
-   - *Çözüm:* `App.jsx` içerisine `ScrollToTop` hook'u entegre edilerek `pathname` her değiştiğinde `window.scrollTo(0, 0)` tetiklendi.
-
-4. **Yorum ve Sipariş Sıralamaları (Sorting):**
-   - *Sorun:* JSON Server varsayılan olarak verileri eklenme sırasına göre döndürüyordu.
-   - *Çözüm:* Redux'a veri aktarılmadan önce veya arayüzde listelenirken JavaScript ile zaman damgası karşılaştırması (`new Date(b.createdAt) - new Date(a.createdAt)`) yapılarak "En Yeni" sıralama mantığı uygulandı. Puan bazlı filtreler için ayrı state'ler (`activeSort`) kullanıldı.
+Geliştirme araçları ve script'ler proje kökünde `package.json` içinde tanımlıdır (`dev`, `server`, `build`, vb.).
 
 ## 🚀 Yol Haritası (Roadmap) / Gelecek Özellikler
 

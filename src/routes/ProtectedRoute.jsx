@@ -2,13 +2,6 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-/**
- * ProtectedRoute — Kimlik doğrulama ve rol bazlı erişim kontrolü
- *
- * @param {string} allowedRole - İzin verilen kullanıcı rolü: 'customer' | 'restaurant' | 'admin'
- * @param {boolean} requireAuth - true ise giriş yapılmamışsa login'e yönlendir
- * @param {React.ReactNode} children - Korunan içerik
- */
 // Rol kontrolü yapıp yetkisiz kullanıcıyı login sayfasına yollar.
 export default function ProtectedRoute({ allowedRole, requireAuth = false, children }) {
   const { isAuthenticated, userRole } = useSelector((state) => state.auth);
